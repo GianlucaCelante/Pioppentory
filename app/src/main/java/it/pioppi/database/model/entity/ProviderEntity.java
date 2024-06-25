@@ -1,9 +1,10 @@
-package it.pioppi.database.model;
+package it.pioppi.database.model.entity;
 
 import androidx.annotation.NonNull;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.ForeignKey;
+import androidx.room.Ignore;
 import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
@@ -16,7 +17,14 @@ import it.pioppi.ConstantUtils;
 
 @Entity(
         tableName = ConstantUtils.PROVIDER_TABLE_NAME,
-        indices = {@Index("id")}
+        indices = {@Index("id"), @Index("item_id")},
+        foreignKeys = {
+                @ForeignKey(
+                        entity = ItemEntity.class,
+                        parentColumns = "id",
+                        childColumns = "item_id"
+                )
+        }
 )public class ProviderEntity extends BaseEntity{
 
     @ColumnInfo(name = "id")
@@ -27,19 +35,24 @@ import it.pioppi.ConstantUtils;
     private String name;
     @ColumnInfo(name = "address")
     private String address;
-    @ColumnInfo(name = "phoneNumber")
+    @ColumnInfo(name = "phone_number")
     private String phoneNumber;
     @ColumnInfo(name = "email")
     private String email;
+    @ColumnInfo(name = "item_id")
+    private UUID itemId;
 
-    public ProviderEntity(@NonNull UUID id, String name, String address, String phoneNumber, String email, LocalDateTime creationDate, LocalDateTime lastUpdateDate) {
+    public ProviderEntity() {}
+
+    @Ignore
+    public ProviderEntity(@NonNull UUID id, String name, String address, String phoneNumber, String email, UUID itemId) {
+        super();
         this.id = id;
         this.name = name;
         this.address = address;
         this.phoneNumber = phoneNumber;
         this.email = email;
-        super.setCreationDate(creationDate);
-        super.setLastUpdateDate(lastUpdateDate);
+        this.itemId = itemId;
     }
 
     @NotNull
@@ -81,6 +94,14 @@ import it.pioppi.ConstantUtils;
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public UUID getItemId() {
+        return itemId;
+    }
+
+    public void setItemId(UUID itemId) {
+        this.itemId = itemId;
     }
 
     @Override

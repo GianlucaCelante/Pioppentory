@@ -2,13 +2,20 @@ package it.pioppi.database.model;
 
 public enum QuantityType {
 
-    STRATO,
-    CARTONE,
-    SACCHETTO,
-    KG;
+    STRATO("Strato"),
+    CARTONE("Cartone"),
+    SACCHETTO("Sacchetto"),
+    KG("Kg");
 
+    private final String description;
+    private Integer quantity;
 
-    public static Integer convertToPorzione(QuantityType quantityType, Integer quantity) {
+    QuantityType(String description) {
+        this.description = description;
+        this.quantity = 0;
+    }
+
+    public static Integer getTotPortions(QuantityType quantityType, Integer quantity) {
 
         switch (quantityType) {
             case STRATO:
@@ -22,4 +29,15 @@ public enum QuantityType {
         }
     }
 
+    public String getDescription() {
+        return description;
+    }
+
+    public Integer getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(Integer quantity) {
+        this.quantity = quantity;
+    }
 }

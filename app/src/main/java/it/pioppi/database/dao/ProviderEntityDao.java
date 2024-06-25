@@ -6,11 +6,11 @@ import androidx.room.Insert;
 import androidx.room.Query;
 import androidx.room.Transaction;
 import androidx.room.Update;
+import androidx.room.Upsert;
 
 import java.util.UUID;
 
-import it.pioppi.database.model.ProviderEntity;
-import it.pioppi.database.model.ProviderWithItemsEntity;
+import it.pioppi.database.model.entity.ProviderEntity;
 
 @Dao
 public interface ProviderEntityDao extends BaseDao<ProviderEntity> {
@@ -27,7 +27,8 @@ public interface ProviderEntityDao extends BaseDao<ProviderEntity> {
     @Insert
     public void insert(ProviderEntity entity);
 
-    @Transaction
-    @Query("SELECT * FROM provider WHERE id = :providerId")
-    ProviderWithItemsEntity getProviderWithItems(UUID providerId);
+    @Override
+    @Upsert
+    public void upsert(ProviderEntity entity);
+
 }

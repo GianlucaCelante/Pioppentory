@@ -1,71 +1,29 @@
-package it.pioppi.database.model;
-
-import androidx.annotation.NonNull;
-import androidx.room.ColumnInfo;
-import androidx.room.Entity;
-import androidx.room.ForeignKey;
-import androidx.room.Index;
-import androidx.room.PrimaryKey;
-
-import org.jetbrains.annotations.NotNull;
+package it.pioppi.business.dto;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import it.pioppi.ConstantUtils;
+import it.pioppi.database.model.QuantityType;
 
-@Entity(
-        tableName = ConstantUtils.ITEM_TABLE_NAME,
-        foreignKeys = @ForeignKey(
-                entity = ProviderEntity.class,
-                parentColumns = "id",
-                childColumns = "provider_id"
-        ),
-        indices = {@Index("provider_id"), @Index("id")}
-)
-public class ItemEntity extends BaseEntity {
+public class ItemDetailDto {
 
-    @NotNull
-    @PrimaryKey
-    @ColumnInfo(name = "id")
     private UUID id;
-    @ColumnInfo(name = "name")
-    private String name;
-    @ColumnInfo(name = "quantity_type")
-    private QuantityType quantityType;
-    @ColumnInfo(name = "tot_porzioni")
-    private Integer totPorzioni;
-    @ColumnInfo(name = "quantity_to_be_ordered")
+    private QuantityTypeDto quantityType;
     private Integer quantityToBeOrdered;
-    @ColumnInfo(name = "ordered_quantity")
     private Integer orderedQuantity;
-    @ColumnInfo(name = "portions_required_on_saturday")
     private Integer portionsRequiredOnSaturday;
-    @ColumnInfo(name = "portions_required_on_sunday")
     private Integer portionsRequiredOnSunday;
-    @ColumnInfo(name = "portions_per_weekend")
     private Integer portionsPerWeekend;
-    @ColumnInfo(name = "portions_on_holiday")
     private Integer portionsOnHoliday;
-    @ColumnInfo(name = "max_portions_sold")
     private Integer maxPortionsSold;
-    @ColumnInfo(name = "check_date")
-    private LocalDateTime checkDate;
-    @ColumnInfo(name = "delivery_date")
     private LocalDateTime deliveryDate;
-    @ColumnInfo(name = "note")
     private String note;
-    @ColumnInfo(name = "status")
-    private ItemStatus status;
-    @ColumnInfo(name = "provider_id")
-    private UUID providerId;
+    private LocalDateTime creationDate;
+    private LocalDateTime lastUpdateDate;
 
-
-    public ItemEntity(@NotNull UUID id, String name, QuantityType quantityType, Integer totPorzioni, Integer quantityToBeOrdered, Integer orderedQuantity, Integer portionsRequiredOnSaturday, Integer portionsRequiredOnSunday, Integer portionsPerWeekend, Integer portionsOnHoliday, Integer maxPortionsSold, LocalDateTime checkDate, LocalDateTime deliveryDate, ItemStatus status, String note, UUID providerId) {
+    public ItemDetailDto(UUID id, QuantityTypeDto quantityType, Integer quantityToBeOrdered, Integer orderedQuantity, Integer portionsRequiredOnSaturday, Integer portionsRequiredOnSunday, Integer portionsPerWeekend, Integer portionsOnHoliday, Integer maxPortionsSold, LocalDateTime deliveryDate, String note, LocalDateTime creationDate, LocalDateTime lastUpdateDate) {
         this.id = id;
-        this.name = name;
         this.quantityType = quantityType;
-        this.totPorzioni = totPorzioni;
         this.quantityToBeOrdered = quantityToBeOrdered;
         this.orderedQuantity = orderedQuantity;
         this.portionsRequiredOnSaturday = portionsRequiredOnSaturday;
@@ -73,44 +31,28 @@ public class ItemEntity extends BaseEntity {
         this.portionsPerWeekend = portionsPerWeekend;
         this.portionsOnHoliday = portionsOnHoliday;
         this.maxPortionsSold = maxPortionsSold;
-        this.checkDate = checkDate;
         this.deliveryDate = deliveryDate;
         this.note = note;
-        this.status = status;
-        this.providerId = providerId;
+        this.creationDate = creationDate;
+        this.lastUpdateDate = lastUpdateDate;
     }
 
-    @NonNull
+    public ItemDetailDto() {}
+
     public UUID getId() {
         return id;
     }
 
-    public void setId(@NonNull UUID id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public QuantityType getQuantityType() {
+    public QuantityTypeDto getQuantityType() {
         return quantityType;
     }
 
-    public void setQuantityType(QuantityType quantityType) {
+    public void setQuantityType(QuantityTypeDto quantityType) {
         this.quantityType = quantityType;
-    }
-
-    public Integer getTotPorzioni() {
-        return totPorzioni;
-    }
-
-    public void setTotPorzioni(Integer totPorzioni) {
-        this.totPorzioni = totPorzioni;
     }
 
     public Integer getQuantityToBeOrdered() {
@@ -169,14 +111,6 @@ public class ItemEntity extends BaseEntity {
         this.maxPortionsSold = maxPortionsSold;
     }
 
-    public LocalDateTime getCheckDate() {
-        return checkDate;
-    }
-
-    public void setCheckDate(LocalDateTime checkDate) {
-        this.checkDate = checkDate;
-    }
-
     public LocalDateTime getDeliveryDate() {
         return deliveryDate;
     }
@@ -193,19 +127,19 @@ public class ItemEntity extends BaseEntity {
         this.note = note;
     }
 
-    public ItemStatus getStatus() {
-        return status;
+    public LocalDateTime getCreationDate() {
+        return creationDate;
     }
 
-    public void setStatus(ItemStatus status) {
-        this.status = status;
+    public void setCreationDate(LocalDateTime creationDate) {
+        this.creationDate = creationDate;
     }
 
-    public UUID getProviderId() {
-        return providerId;
+    public LocalDateTime getLastUpdateDate() {
+        return lastUpdateDate;
     }
 
-    public void setProviderId(UUID providerId) {
-        this.providerId = providerId;
+    public void setLastUpdateDate(LocalDateTime lastUpdateDate) {
+        this.lastUpdateDate = lastUpdateDate;
     }
 }

@@ -12,19 +12,25 @@ import androidx.room.TypeConverters;
 import androidx.room.migration.Migration;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 
+import it.pioppi.database.dao.ItemDetailEntityDao;
 import it.pioppi.database.dao.ItemEntityDao;
 import it.pioppi.database.dao.ProviderEntityDao;
-import it.pioppi.database.model.ItemEntity;
-import it.pioppi.database.model.ProviderEntity;
-import it.pioppi.database.tipeconverters.LocalDateTimeConverter;
-import it.pioppi.database.tipeconverters.UUIDConverter;
+import it.pioppi.database.dao.QuantityTypeEntityDao;
+import it.pioppi.database.model.entity.ItemDetailEntity;
+import it.pioppi.database.model.entity.ItemEntity;
+import it.pioppi.database.model.entity.ProviderEntity;
+import it.pioppi.database.model.entity.QuantityTypeEntity;
+import it.pioppi.database.typeconverters.Converters;
 
-@Database(entities = {ItemEntity.class, ProviderEntity.class}, version = 1)
-@TypeConverters({LocalDateTimeConverter.class, UUIDConverter.class})
+@Database(entities = {ItemEntity.class, ItemDetailEntity.class, ProviderEntity.class, QuantityTypeEntity.class}, version = 10)
+@TypeConverters({Converters.class})
 public abstract class AppDatabase extends RoomDatabase {
 
     public abstract ItemEntityDao itemEntityDao();
     public abstract ProviderEntityDao providerEntityDao();
+    public abstract ItemDetailEntityDao itemDetailEntityDao();
+    public abstract QuantityTypeEntityDao quantityTypeEntityDao();
+
 
     private static volatile AppDatabase INSTANCE;
 
@@ -33,11 +39,14 @@ public abstract class AppDatabase extends RoomDatabase {
             synchronized (AppDatabase.class) {
                 if (INSTANCE == null) {
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(), AppDatabase.class, APP_DATABASE)
+                            .createFromAsset("database/pioppi.db")
+                            .fallbackToDestructiveMigration()
                             .build();
                 }
             }
         }
         return INSTANCE;
     }
+
 
 }
