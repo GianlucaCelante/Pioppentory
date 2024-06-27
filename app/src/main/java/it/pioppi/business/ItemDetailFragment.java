@@ -1,29 +1,26 @@
 package it.pioppi.business;
 
-import android.content.DialogInterface;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.CalendarView;
 import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import androidx.cardview.widget.CardView;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -33,29 +30,31 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import it.pioppi.R;
 import it.pioppi.business.adapter.EnumAdapter;
 import it.pioppi.business.dto.ItemDetailDto;
 import it.pioppi.business.dto.ItemDto;
 import it.pioppi.business.dto.ItemWithDetailAndProviderAndQuantityTypeDto;
-import it.pioppi.business.dto.ItemWithDetailAndProviderDto;
 import it.pioppi.business.dto.ProviderDto;
 import it.pioppi.business.dto.QuantityTypeDto;
 import it.pioppi.database.AppDatabase;
 import it.pioppi.database.dao.ItemEntityDao;
+import it.pioppi.database.dao.QuantityTypeEntityDao;
 import it.pioppi.database.mapper.EntityDtoMapper;
+import it.pioppi.database.model.QuantityPurpose;
 import it.pioppi.database.model.QuantityType;
 import it.pioppi.database.model.entity.ItemWithDetailAndProviderAndQuantityTypeEntity;
+import it.pioppi.database.model.entity.QuantityTypeEntity;
 
-public class ItemDetailFragment extends Fragment {
+public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLongClickListener {
 
 
     private AppDatabase appDatabase;
     private ExecutorService executorService;
     private ItemWithDetailAndProviderAndQuantityTypeDto itemWithDetailAndProviderAndQuantityTypeDto;
-
-    private UUID itemId;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -72,7 +71,7 @@ public class ItemDetailFragment extends Fragment {
 
         Bundle bundle = getArguments();
         if (bundle != null) {
-            itemId = UUID.fromString(bundle.getString("itemId"));
+            UUID itemId = UUID.fromString(bundle.getString("itemId"));
 
             try {
                 itemWithDetailAndProviderAndQuantityTypeDto = fetchItemWithDetailAndProviderAndQuantityTypeById(itemId);
@@ -82,21 +81,68 @@ public class ItemDetailFragment extends Fragment {
         }
 
         prefillFields(view, itemWithDetailAndProviderAndQuantityTypeDto);
+        setupRecyclerViewAndButtonForQuantityTypes(view, inflater, R.id.recycler_view_quantity_available, R.id.add_quantity_type_available, QuantityPurpose.AVAILABLE);
+        setupRecyclerViewAndButtonForQuantityTypes(view, inflater, R.id.recycler_view_quantity_to_be_ordered, R.id.add_quantity_type_to_be_ordered, QuantityPurpose.TO_BE_ORDERED);
 
-        RecyclerView recyclerView = view.findViewById(R.id.enum_quantity_type_recycler_view);
-        recyclerView.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
-        recyclerView.setAdapter(new EnumAdapter(itemWithDetailAndProviderAndQuantityTypeDto.getQuantityType()));
 
-        Button addQuantityTypeButton = view.findViewById(R.id.add_quantity_type);
-        addQuantityTypeButton.setOnClickListener(v -> {
-            addQuantityType(inflater, recyclerView);
+        // After setup
+        Button calculateQuantityToBeOrderedButton = view.findViewById(R.id.calculate_quantity_to_be_ordered);
+        calculateQuantityToBeOrderedButton.setOnClickListener(v -> calculateNeededPortions(view, itemWithDetailAndProviderAndQuantityTypeDto));
+
+        Button resetCalculatedQuantityToeOrderedButton = view.findViewById(R.id.reset_quantity_to_be_ordered);
+        resetCalculatedQuantityToeOrderedButton.setOnClickListener(v -> {
+
+
         });
+
 
 
         return view;
     }
 
-    private void addQuantityType(LayoutInflater inflater, RecyclerView recyclerView) {
+    private void calculateNeededPortions(View view, ItemWithDetailAndProviderAndQuantityTypeDto itemWithDetailAndProviderAndQuantityTypeDto) {
+
+        CardView itemNameAndTotPortionsCardView = view.findViewById(R.id.item_name_tot_portions);
+        TextView totPortionsTextView = view.findViewById(R.id.tot_portions_detail);
+
+        Integer portionsPerWeekend = itemWithDetailAndProviderAndQuantityTypeDto.getItemDetail().getPortionsPerWeekend();
+
+        List<QuantityTypeDto> quantityTypeToBeOrdered = itemWithDetailAndProviderAndQuantityTypeDto.getQuantityType().stream()
+                .filter(q -> QuantityPurpose.TO_BE_ORDERED.equals(q.getPurpose()))
+                .collect(Collectors.toList());
+
+        List<QuantityTypeDto> quantityTypeAvailable = itemWithDetailAndProviderAndQuantityTypeDto.getQuantityType().stream()
+                .filter(q -> QuantityPurpose.AVAILABLE.equals(q.getPurpose()))
+                .collect(Collectors.toList());
+
+        Integer totPortionsAvailable = calculateTotPortions(quantityTypeAvailable, QuantityPurpose.AVAILABLE);
+        Integer totPortionsToBeOrdered = calculateTotPortions(quantityTypeToBeOrdered, QuantityPurpose.TO_BE_ORDERED);
+        Integer totPortions = totPortionsAvailable + totPortionsToBeOrdered;
+        totPortionsTextView.setText(String.valueOf(totPortions));
+
+        if(totPortions >= portionsPerWeekend){
+            itemNameAndTotPortionsCardView.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.green));
+        } else {
+            itemNameAndTotPortionsCardView.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.red));
+        }
+
+
+    }
+
+    private void setupRecyclerViewAndButtonForQuantityTypes(View view, LayoutInflater inflater, int recyclerViewId, int buttonId, QuantityPurpose purpose) {
+        List<QuantityTypeDto> filteredQuantityTypes = itemWithDetailAndProviderAndQuantityTypeDto.getQuantityType().stream()
+                .filter(quantityTypeDto -> purpose.equals(quantityTypeDto.getPurpose()))
+                .collect(Collectors.toList());
+
+        RecyclerView recyclerView = view.findViewById(recyclerViewId);
+        recyclerView.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
+        recyclerView.setAdapter(new EnumAdapter(filteredQuantityTypes, this));
+
+        Button addButton = view.findViewById(buttonId);
+        addButton.setOnClickListener(v -> addQuantityType(inflater, recyclerView, purpose));
+    }
+
+    private void addQuantityType(LayoutInflater inflater, RecyclerView recyclerView, QuantityPurpose purpose) {
         View dialogView = inflater.inflate(R.layout.dialog_add_quantity_type, null);
 
         // Access the Spinner and EditText from the inflated layout
@@ -115,6 +161,8 @@ public class ItemDetailFragment extends Fragment {
                     QuantityTypeDto quantityTypeDto = new QuantityTypeDto();
                     quantityTypeDto.setId(UUID.randomUUID());
                     quantityTypeDto.setItemId(itemWithDetailAndProviderAndQuantityTypeDto.getItem().getId());
+                    quantityTypeDto.setPurpose(purpose);
+                    quantityTypeDto.setCreationDate(LocalDateTime.now());
 
                     if (spinner.getSelectedItem() != null) {
                         quantityTypeDto.setQuantityType((QuantityType) spinner.getSelectedItem());
@@ -124,21 +172,29 @@ public class ItemDetailFragment extends Fragment {
                     String quantityText = quantityAvailable.getText().toString();
                     if (!quantityText.isEmpty()) {
                             quantityTypeDto.setQuantity(Integer.parseInt(quantityText));
+                    } else {
+                        quantityTypeDto.setQuantity(0);
                     }
 
                     List<QuantityTypeDto> quantityTypes = itemWithDetailAndProviderAndQuantityTypeDto.getQuantityType() == null ? new ArrayList<>() : itemWithDetailAndProviderAndQuantityTypeDto.getQuantityType();
-                    boolean matched = quantityTypes.stream().noneMatch(quantityType -> quantityType.getQuantityType().equals(quantityTypeDto.getQuantityType()));
+                    boolean matched = quantityTypes.stream()
+                            .filter(quantityType -> purpose.equals(quantityType.getPurpose()))
+                            .noneMatch(quantityType -> quantityType.getQuantityType().equals(quantityTypeDto.getQuantityType()));
 
                     if(matched) {
                         quantityTypes.add(quantityTypeDto);
-                        Objects.requireNonNull(recyclerView.getAdapter()).notifyItemInserted(quantityTypes.size() - 1);
+                        itemWithDetailAndProviderAndQuantityTypeDto.setQuantityType(quantityTypes);
+
+                        EnumAdapter enumAdapter = (EnumAdapter) recyclerView.getAdapter();
+                        Objects.requireNonNull(enumAdapter).setQuantityTypes(quantityTypes.stream()
+                                .filter(q -> purpose.equals(q.getPurpose()))
+                                .collect(Collectors.toList()));
+                        Objects.requireNonNull(enumAdapter).notifyItemInserted(quantityTypes.size() - 1);
                         recyclerView.smoothScrollToPosition(quantityTypes.size() - 1);
                     }
 
                 })
-                .setNegativeButton("Cancel", (dialog, id) -> {
-                    dialog.cancel();
-                });
+                .setNegativeButton("Cancel", (dialog, id) -> dialog.cancel());
 
         builder.show();
     }
@@ -169,7 +225,6 @@ public class ItemDetailFragment extends Fragment {
                     providerDto = EntityDtoMapper.entityToDto(itemWithDetailAndProviderAndQuantityType.provider);
                 }
 
-
                 List<QuantityTypeDto> quantityTypeDto = null;
                 if(itemWithDetailAndProviderAndQuantityType.quantityType != null){
                     quantityTypeDto = EntityDtoMapper.entitiesToDtos(itemWithDetailAndProviderAndQuantityType.quantityType);
@@ -179,7 +234,6 @@ public class ItemDetailFragment extends Fragment {
                 itemWithDetailAndProviderAndQuantityTypeDto.setItemDetail(itemDetailDto);
                 itemWithDetailAndProviderAndQuantityTypeDto.setProvider(providerDto);
                 itemWithDetailAndProviderAndQuantityTypeDto.setQuantityType(quantityTypeDto);
-
 
             } else throw new IllegalArgumentException("Item not found");
         });
@@ -191,31 +245,80 @@ public class ItemDetailFragment extends Fragment {
 
     protected void prefillFields(View view, ItemWithDetailAndProviderAndQuantityTypeDto itemWithDetailAndProviderAndQuantityTypeDto) {
         TextView providerNameTextView = view.findViewById(R.id.provider_name);
-        if(itemWithDetailAndProviderAndQuantityTypeDto.getProvider() != null){
-            providerNameTextView.setText(itemWithDetailAndProviderAndQuantityTypeDto.getProvider().getName());
+        ProviderDto provider = itemWithDetailAndProviderAndQuantityTypeDto.getProvider();
+        if(provider != null){
+            providerNameTextView.setText(provider.getName());
         }
 
-        if(itemWithDetailAndProviderAndQuantityTypeDto.getItem() != null){
+        ItemDto item = itemWithDetailAndProviderAndQuantityTypeDto.getItem();
+        if(item != null){
             TextView itemNameTextView = view.findViewById(R.id.item_name);
-            itemNameTextView.setText(itemWithDetailAndProviderAndQuantityTypeDto.getItem().getName());
+            itemNameTextView.setText(item.getName());
+
+            //TextView itemBarcodeTextView = view.findViewById(R.id.item_barcode);
         }
 
         ItemDetailDto itemDetail = itemWithDetailAndProviderAndQuantityTypeDto.getItemDetail();
         if (itemDetail != null) {
+            EditText portionsRequiredOnSaturdayEditText = view.findViewById(R.id.portions_required_on_saturday);
+            Integer portionsRequiredOnSaturday = itemDetail.getPortionsRequiredOnSaturday();
+            portionsRequiredOnSaturdayEditText.setText(String.valueOf(portionsRequiredOnSaturday));
 
-            TextView quantityToBeOrderedTextView = view.findViewById(R.id.quantity_to_be_ordered);
-            quantityToBeOrderedTextView.setText(String.valueOf(itemDetail.getQuantityToBeOrdered()));
+            EditText portionsRequiredOnSundayEditText = view.findViewById(R.id.portions_required_on_sunday);
+            Integer portionsRequiredOnSunday = itemDetail.getPortionsRequiredOnSunday();
+            portionsRequiredOnSundayEditText.setText(String.valueOf(portionsRequiredOnSunday));
 
-            CalendarView deliveryDateCalendarView = view.findViewById(R.id.delivery_date);
-            LocalDateTime deliveryDate = itemDetail.getDeliveryDate();
-            if(deliveryDate != null){
-                deliveryDateCalendarView.setDate(deliveryDate.toEpochSecond(ZoneOffset.UTC));
-            } else {
-                deliveryDateCalendarView.setDate(LocalDate.now().toEpochDay());
-            }
+            TextView portionsPerWeekendTextView = view.findViewById(R.id.portions_per_weekend);
+            Integer portionsPerWeekend = portionsRequiredOnSaturday + portionsRequiredOnSunday;
+            portionsPerWeekendTextView.setText(String.valueOf(portionsPerWeekend));
+            itemDetail.setPortionsPerWeekend(portionsPerWeekend);
+
+            EditText portionsOnHoliday = view.findViewById(R.id.portions_on_holiday);
+            portionsOnHoliday.setText(String.valueOf(itemDetail.getPortionsOnHoliday()));
+
+            EditText maxPortionsSold = view.findViewById(R.id.max_portions_sold);
+            maxPortionsSold.setText(String.valueOf(itemDetail.getMaxPortionsSold()));
 
         }
 
+        List<QuantityTypeDto> quantityTypeAvailable = itemWithDetailAndProviderAndQuantityTypeDto.getQuantityType().stream()
+                .filter(quantityType -> QuantityPurpose.AVAILABLE.equals(quantityType.getPurpose()))
+                .collect(Collectors.toList());
+
+        if (!quantityTypeAvailable.isEmpty()) {
+            Integer totPortions = calculateTotPortions(quantityTypeAvailable, QuantityPurpose.AVAILABLE);
+            TextView totPortionsTextView = view.findViewById(R.id.tot_portions_detail);
+            totPortionsTextView.setText(String.valueOf(totPortions));
+        }
+
+
     }
 
+    protected Integer calculateTotPortions(List<QuantityTypeDto> quantityTypeDtos, QuantityPurpose purpose) {
+        AtomicReference<Integer> totPortions = new AtomicReference<>(0);
+        quantityTypeDtos.stream()
+                .filter(quantityTypeDto -> purpose.equals(quantityTypeDto.getPurpose()))
+                .forEach(quantityTypeDto -> totPortions.updateAndGet(v -> v + QuantityType.getTotPortions(quantityTypeDto.getQuantityType(), quantityTypeDto.getQuantity())));
+        return totPortions.get();
+    }
+
+    @Override
+    public UUID onItemLongClick(QuantityTypeDto quantityTypeDto) throws ExecutionException, InterruptedException{
+
+        if(quantityTypeDto == null) {
+            return null;
+        }
+
+        Future<?> future = executorService.submit(() -> {
+            QuantityTypeEntityDao quantityTypeEntityDao = appDatabase.quantityTypeEntityDao();
+            QuantityTypeEntity quantityTypeEntity = EntityDtoMapper.dtoToEntity(quantityTypeDto);
+            quantityTypeEntityDao.delete(quantityTypeEntity);
+
+        });
+        future.get();
+
+        Toast.makeText(requireContext(), "Deleted", Toast.LENGTH_SHORT).show();
+        return quantityTypeDto.getId();
+
+    }
 }

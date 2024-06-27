@@ -1,33 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
+    android:layout_width="150dp"
+    android:layout_height="100dp"
     android:layout_margin="4dp"
     app:cardCornerRadius="16dp"
     app:cardElevation="4dp">
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:orientation="vertical"
         android:padding="8dp">
 
         <TextView
             android:id="@+id/enum_quantity_type"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="0dp"
+            android:layout_weight="1"
             android:textSize="18sp"
-            android:text="quantitytype"
+            android:textAlignment="center"
             android:padding="8dp"/>
 
         <EditText
             android:id="@+id/enum_tot_portions"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="0dp"
+            android:layout_weight="1"
             android:textSize="18sp"
-            android:hint="totportions"
             android:inputType="number"
+            android:textAlignment="center"
             android:padding="8dp"/>
     </LinearLayout>
 </androidx.cardview.widget.CardView>

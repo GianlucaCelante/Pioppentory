@@ -13,6 +13,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.UUID;
 
 import it.pioppi.ConstantUtils;
+import it.pioppi.database.model.QuantityPurpose;
 import it.pioppi.database.model.QuantityType;
 
 @Entity(
@@ -36,16 +37,19 @@ public class QuantityTypeEntity extends BaseEntity {
     private String quantityTypeDescription;
     @ColumnInfo(name = "quantity_type_available")
     private Integer quantityTypeAvailable;
+    @ColumnInfo(name = "quantity_type_purpose")
+    private QuantityPurpose purpose;
     @ColumnInfo(name = "item_id")
     private UUID itemId;
 
     @Ignore
-    public QuantityTypeEntity(@NotNull UUID id, QuantityType quantityType, String quantityTypeDescription, Integer quantityTypeAvailable, UUID itemId) {
+    public QuantityTypeEntity(@NotNull UUID id, QuantityType quantityType, String quantityTypeDescription, Integer quantityTypeAvailable, QuantityPurpose purpose, UUID itemId) {
         super();
         this.id = id;
         this.quantityType = quantityType;
         this.quantityTypeDescription = quantityTypeDescription;
         this.quantityTypeAvailable = quantityTypeAvailable;
+        this.purpose = purpose;
         this.itemId = itemId;
     }
 
@@ -84,6 +88,14 @@ public class QuantityTypeEntity extends BaseEntity {
 
     public void setQuantityTypeAvailable(Integer quantityTypeAvailable) {
         this.quantityTypeAvailable = quantityTypeAvailable;
+    }
+
+    public QuantityPurpose getPurpose() {
+        return purpose;
+    }
+
+    public void setPurpose(QuantityPurpose purpose) {
+        this.purpose = purpose;
     }
 
     public UUID getItemId() {

@@ -5,6 +5,7 @@ import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.Query;
 import androidx.room.Transaction;
+import androidx.room.Update;
 import androidx.room.Upsert;
 
 import java.util.UUID;
@@ -17,15 +18,19 @@ public interface QuantityTypeEntityDao extends BaseDao<QuantityTypeEntity> {
 
     @Override
     @Delete
-    public void delete(QuantityTypeEntity entity);
+    void delete(QuantityTypeEntity entity);
 
     @Override
     @Insert
-    public void insert(QuantityTypeEntity entity);
+    void insert(QuantityTypeEntity entity);
 
     @Override
     @Upsert
-    public void upsert(QuantityTypeEntity entity);
+    void upsert(QuantityTypeEntity entity);
+
+    @Override
+    @Update
+    void update(QuantityTypeEntity entity);
 
     @Transaction
     @Query("SELECT * FROM item WHERE id = :itemId")

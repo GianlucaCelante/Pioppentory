@@ -2,14 +2,13 @@ package it.pioppi.database.dao;
 
 import androidx.room.Delete;
 import androidx.room.Insert;
-import androidx.room.Query;
 import androidx.room.Update;
 import androidx.room.Upsert;
 
-import it.pioppi.database.model.entity.ProviderEntity;
+import it.pioppi.database.model.entity.BaseEntity;
 
 
-public interface BaseDao<T> {
+public interface BaseDao<T extends BaseEntity> {
 
     @Update
     void update(T entity);

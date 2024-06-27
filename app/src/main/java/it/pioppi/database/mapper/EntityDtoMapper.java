@@ -6,12 +6,10 @@ import java.util.UUID;
 
 import it.pioppi.business.dto.ItemDetailDto;
 import it.pioppi.business.dto.ItemDto;
-import it.pioppi.business.dto.ItemWithDetailAndProviderDto;
 import it.pioppi.business.dto.ProviderDto;
 import it.pioppi.business.dto.QuantityTypeDto;
 import it.pioppi.database.model.entity.ItemDetailEntity;
 import it.pioppi.database.model.entity.ItemEntity;
-import it.pioppi.database.model.entity.ItemWithDetailAndProviderEntity;
 import it.pioppi.database.model.entity.ProviderEntity;
 import it.pioppi.database.model.entity.QuantityTypeEntity;
 
@@ -128,6 +126,9 @@ public class EntityDtoMapper {
         quantityItemDto.setQuantityType(quantityTypeEntity.getQuantityType());
         quantityItemDto.setDescription(quantityTypeEntity.getQuantityTypeDescription());
         quantityItemDto.setQuantity(quantityTypeEntity.getQuantityTypeAvailable());
+        quantityItemDto.setPurpose(quantityTypeEntity.getPurpose());
+        quantityItemDto.setCreationDate(quantityTypeEntity.getCreationDate());
+        quantityItemDto.setLastUpdateDate(quantityTypeEntity.getLastUpdate());
         return quantityItemDto;
     }
 
@@ -146,6 +147,9 @@ public class EntityDtoMapper {
         quantityTypeEntity.setQuantityType(quantityItemDto.getQuantityType());
         quantityTypeEntity.setQuantityTypeDescription(quantityItemDto.getDescription());
         quantityTypeEntity.setQuantityTypeAvailable(quantityItemDto.getQuantity());
+        quantityTypeEntity.setPurpose(quantityItemDto.getPurpose());
+        quantityTypeEntity.setCreationDate(quantityItemDto.getCreationDate());
+        quantityTypeEntity.setLastUpdate(quantityItemDto.getLastUpdateDate());
         return quantityTypeEntity;
     }
 
