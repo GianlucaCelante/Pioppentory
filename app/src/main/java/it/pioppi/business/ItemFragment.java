@@ -23,6 +23,7 @@ import it.pioppi.R;
 import it.pioppi.business.adapter.ItemAdapter;
 import it.pioppi.business.dto.ItemDto;
 import it.pioppi.database.AppDatabase;
+import it.pioppi.database.dao.ItemDetailEntityDao;
 import it.pioppi.database.dao.ItemEntityDao;
 import it.pioppi.database.mapper.EntityDtoMapper;
 import it.pioppi.database.model.entity.ItemEntity;
@@ -55,6 +56,7 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
 
     private void loadItems() {
         executorService.execute(() -> {
+
             ItemEntityDao entityDao = appDatabase.itemEntityDao();
             List<ItemEntity> allItems = entityDao.getAllItems();
             if (allItems == null) {
@@ -63,7 +65,7 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
             final List<ItemDto> itemDtos = EntityDtoMapper.entityToDto(allItems);
 
             requireActivity().runOnUiThread(() -> {
-                itemAdapter = new ItemAdapter(itemDtos, ItemFragment.this);
+                itemAdapter = new ItemAdapter(itemDtos, ItemFragment.this, getContext());
                 recyclerView.setAdapter(itemAdapter);
             });
         });
@@ -87,4 +89,5 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
         navController.navigate(R.id.action_itemFragment_to_itemDetailFragment, bundle);
 
     }
+
 }

@@ -2,6 +2,7 @@ package it.pioppi.database.mapper;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import it.pioppi.business.dto.ItemDetailDto;
 import it.pioppi.business.dto.ItemDto;
@@ -24,7 +25,7 @@ public class EntityDtoMapper {
         itemEntity.setTotPortions(itemDto.getTotPortions());
         itemEntity.setStatus(itemDto.getStatus());
         itemEntity.setBarcode(itemDto.getBarcode());
-        itemEntity.setHasNote(itemDto.hasNote());
+        itemEntity.setNote(itemDto.getNote());
         itemEntity.setCheckDate(itemDto.getCheckDate());
         itemEntity.setCreationDate(itemDto.getCreationDate());
         itemEntity.setLastUpdate(itemDto.getLastUpdateDate());
@@ -46,7 +47,7 @@ public class EntityDtoMapper {
         itemDto.setTotPortions(itemEntity.getTotPortions());
         itemDto.setStatus(itemEntity.getStatus());
         itemDto.setBarcode(itemEntity.getBarcode());
-        itemDto.setHasNote(itemEntity.hasNote());
+        itemDto.setNote(itemEntity.getNote());
         itemDto.setCheckDate(itemEntity.getCheckDate());
         itemDto.setCreationDate(itemEntity.getCreationDate());
         itemDto.setLastUpdateDate(itemEntity.getLastUpdate());
@@ -61,9 +62,10 @@ public class EntityDtoMapper {
         return itemDtos;
     }
 
-    public static ItemDetailEntity detailDtoToEntity(ItemDetailDto itemDetailDto) {
+    public static ItemDetailEntity detailDtoToEntity(ItemDetailDto itemDetailDto, UUID itemId) {
         ItemDetailEntity itemDetailEntity = new ItemDetailEntity();
         itemDetailEntity.setId(itemDetailDto.getId());
+        itemDetailEntity.setItemId(itemId);
         itemDetailEntity.setQuantityToBeOrdered(itemDetailDto.getQuantityToBeOrdered());
         itemDetailEntity.setOrderedQuantity(itemDetailDto.getOrderedQuantity());
         itemDetailEntity.setPortionsRequiredOnSaturday(itemDetailDto.getPortionsRequiredOnSaturday());
@@ -72,15 +74,15 @@ public class EntityDtoMapper {
         itemDetailEntity.setPortionsOnHoliday(itemDetailDto.getPortionsOnHoliday());
         itemDetailEntity.setMaxPortionsSold(itemDetailDto.getMaxPortionsSold());
         itemDetailEntity.setDeliveryDate(itemDetailDto.getDeliveryDate());
-        itemDetailEntity.setNote(itemDetailDto.getNote());
         itemDetailEntity.setCreationDate(itemDetailDto.getCreationDate());
         itemDetailEntity.setLastUpdate(itemDetailDto.getLastUpdateDate());
         return itemDetailEntity;
     }
 
-    public static ItemDetailDto detailEntityToDto(ItemDetailEntity itemDetailEntity) {
+    public static ItemDetailDto detailEntityToDto(ItemDetailEntity itemDetailEntity, UUID itemId) {
         ItemDetailDto itemDetailDto = new ItemDetailDto();
         itemDetailDto.setId(itemDetailEntity.getId());
+        itemDetailDto.setItemId(itemId);
         itemDetailDto.setQuantityToBeOrdered(itemDetailEntity.getQuantityToBeOrdered());
         itemDetailDto.setOrderedQuantity(itemDetailEntity.getOrderedQuantity());
         itemDetailDto.setPortionsRequiredOnSaturday(itemDetailEntity.getPortionsRequiredOnSaturday());
@@ -89,7 +91,6 @@ public class EntityDtoMapper {
         itemDetailDto.setPortionsOnHoliday(itemDetailEntity.getPortionsOnHoliday());
         itemDetailDto.setMaxPortionsSold(itemDetailEntity.getMaxPortionsSold());
         itemDetailDto.setDeliveryDate(itemDetailEntity.getDeliveryDate());
-        itemDetailDto.setNote(itemDetailEntity.getNote());
         itemDetailDto.setCreationDate(itemDetailEntity.getCreationDate());
         itemDetailDto.setLastUpdateDate(itemDetailEntity.getLastUpdate());
         return itemDetailDto;
@@ -103,6 +104,7 @@ public class EntityDtoMapper {
         providerDto.setEmail(providerEntity.getEmail());
         providerDto.setCreationDate(providerEntity.getCreationDate());
         providerDto.setLastUpdateDate(providerEntity.getLastUpdate());
+        providerDto.setItemId(providerEntity.getItemId());
         return providerDto;
     }
 
@@ -115,12 +117,14 @@ public class EntityDtoMapper {
         providerEntity.setEmail(providerDto.getEmail());
         providerEntity.setCreationDate(providerDto.getCreationDate());
         providerEntity.setLastUpdate(providerDto.getLastUpdateDate());
+        providerEntity.setItemId(providerDto.getItemId());
         return providerEntity;
     }
 
     public static QuantityTypeDto entityToDto(QuantityTypeEntity quantityTypeEntity) {
         QuantityTypeDto quantityItemDto = new QuantityTypeDto();
         quantityItemDto.setId(quantityTypeEntity.getId());
+        quantityItemDto.setItemId(quantityTypeEntity.getItemId());
         quantityItemDto.setQuantityType(quantityTypeEntity.getQuantityType());
         quantityItemDto.setDescription(quantityTypeEntity.getQuantityTypeDescription());
         quantityItemDto.setQuantity(quantityTypeEntity.getQuantityTypeAvailable());
@@ -138,6 +142,7 @@ public class EntityDtoMapper {
     public static QuantityTypeEntity dtoToEntity(QuantityTypeDto quantityItemDto) {
         QuantityTypeEntity quantityTypeEntity = new QuantityTypeEntity();
         quantityTypeEntity.setId(quantityItemDto.getId());
+        quantityTypeEntity.setItemId(quantityItemDto.getItemId());
         quantityTypeEntity.setQuantityType(quantityItemDto.getQuantityType());
         quantityTypeEntity.setQuantityTypeDescription(quantityItemDto.getDescription());
         quantityTypeEntity.setQuantityTypeAvailable(quantityItemDto.getQuantity());

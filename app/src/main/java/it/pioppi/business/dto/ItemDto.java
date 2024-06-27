@@ -14,22 +14,18 @@ public class ItemDto {
     private ItemStatus status;
     private String barcode;
     private LocalDateTime checkDate;
-    private boolean hasNote;
-    private UUID providerId;
-    private UUID itemDetailId;
+    private String note;
     private LocalDateTime creationDate;
     private LocalDateTime lastUpdateDate;
 
-    public ItemDto(UUID id, String name, Integer totPortions, ItemStatus status, String barcode, LocalDateTime checkDate, boolean hasNote, UUID providerId, UUID itemDetailId, LocalDateTime creationDate, LocalDateTime lastUpdateDate) {
+    public ItemDto(UUID id, String name, Integer totPortions, ItemStatus status, String barcode, LocalDateTime checkDate, String note, LocalDateTime creationDate, LocalDateTime lastUpdateDate) {
         this.id = id;
         this.name = name;
         this.totPortions = totPortions;
         this.status = status;
         this.barcode = barcode;
         this.checkDate = checkDate;
-        this.hasNote = hasNote;
-        this.providerId = providerId;
-        this.itemDetailId = itemDetailId;
+        this.note = note;
         this.creationDate = creationDate;
         this.lastUpdateDate = lastUpdateDate;
     }
@@ -84,28 +80,12 @@ public class ItemDto {
         this.checkDate = checkDate;
     }
 
-    public boolean hasNote() {
-        return hasNote;
+    public String getNote() {
+        return note;
     }
 
-    public void setHasNote(boolean hasNote) {
-        this.hasNote = hasNote;
-    }
-
-    public UUID getProviderId() {
-        return providerId;
-    }
-
-    public void setProviderId(UUID providerId) {
-        this.providerId = providerId;
-    }
-
-    public UUID getItemDetailId() {
-        return itemDetailId;
-    }
-
-    public void setItemDetailId(UUID itemDetailId) {
-        this.itemDetailId = itemDetailId;
+    public void setNote(String note) {
+        this.note = note;
     }
 
     public LocalDateTime getCreationDate() {

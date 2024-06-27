@@ -48,13 +48,11 @@ public class ItemDetailEntity extends BaseEntity {
     private Integer maxPortionsSold;
     @ColumnInfo(name = "delivery_date")
     private LocalDateTime deliveryDate;
-    @ColumnInfo(name = "note")
-    private String note;
     @ColumnInfo(name = "item_id")
     private UUID itemId;
 
     @Ignore
-    public ItemDetailEntity(@NotNull UUID id, Integer quantityToBeOrdered, Integer orderedQuantity, Integer portionsRequiredOnSaturday, Integer portionsRequiredOnSunday, Integer portionsPerWeekend, Integer portionsOnHoliday, Integer maxPortionsSold, LocalDateTime deliveryDate, String note, UUID itemId) {
+    public ItemDetailEntity(@NotNull UUID id, Integer quantityToBeOrdered, Integer orderedQuantity, Integer portionsRequiredOnSaturday, Integer portionsRequiredOnSunday, Integer portionsPerWeekend, Integer portionsOnHoliday, Integer maxPortionsSold, LocalDateTime deliveryDate, UUID itemId) {
         super();
         this.id = id;
         this.quantityToBeOrdered = quantityToBeOrdered;
@@ -65,7 +63,6 @@ public class ItemDetailEntity extends BaseEntity {
         this.portionsOnHoliday = portionsOnHoliday;
         this.maxPortionsSold = maxPortionsSold;
         this.deliveryDate = deliveryDate;
-        this.note = note;
         this.itemId = itemId;
     }
 
@@ -143,14 +140,6 @@ public class ItemDetailEntity extends BaseEntity {
         this.deliveryDate = deliveryDate;
     }
 
-    public String getNote() {
-        return note;
-    }
-
-    public void setNote(String note) {
-        this.note = note;
-    }
-
     public UUID getItemId() {
         return itemId;
     }
@@ -171,7 +160,6 @@ public class ItemDetailEntity extends BaseEntity {
                 ", portionsOnHoliday=" + portionsOnHoliday +
                 ", maxPortionsSold=" + maxPortionsSold +
                 ", deliveryDate=" + deliveryDate +
-                ", note='" + note + '\'' +
                 '}';
     }
 }

@@ -24,6 +24,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -54,6 +55,8 @@ public class ItemDetailFragment extends Fragment {
     private ExecutorService executorService;
     private ItemWithDetailAndProviderAndQuantityTypeDto itemWithDetailAndProviderAndQuantityTypeDto;
 
+    private UUID itemId;
+
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -69,7 +72,7 @@ public class ItemDetailFragment extends Fragment {
 
         Bundle bundle = getArguments();
         if (bundle != null) {
-            UUID itemId = UUID.fromString(bundle.getString("itemId"));
+            itemId = UUID.fromString(bundle.getString("itemId"));
 
             try {
                 itemWithDetailAndProviderAndQuantityTypeDto = fetchItemWithDetailAndProviderAndQuantityTypeById(itemId);
@@ -86,55 +89,58 @@ public class ItemDetailFragment extends Fragment {
 
         Button addQuantityTypeButton = view.findViewById(R.id.add_quantity_type);
         addQuantityTypeButton.setOnClickListener(v -> {
-            // Inflate the custom layout
-            View dialogView = inflater.inflate(R.layout.dialog_add_quantity_type, null);
-
-            // Access the Spinner and EditText from the inflated layout
-            Spinner spinner = dialogView.findViewById(R.id.quantity_type_spinner);
-            EditText quantityAvailable = dialogView.findViewById(R.id.quantity_type_available);
-
-            // Set up the Spinner with an adapter
-            ArrayAdapter<QuantityType> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, Arrays.asList(QuantityType.values()));
-            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-            spinner.setAdapter(adapter);
-
-            // Build and show the dialog
-            AlertDialog.Builder builder = new AlertDialog.Builder(requireActivity());
-            builder.setView(dialogView)
-                    .setPositiveButton("Aggiungi", (dialog, id) -> {
-                        QuantityTypeDto quantityTypeDto = new QuantityTypeDto();
-                        quantityTypeDto.setId(UUID.randomUUID());
-                        quantityTypeDto.setItemId(itemWithDetailAndProviderAndQuantityTypeDto.getItem().getId());
-
-                        if (spinner.getSelectedItem() != null) {
-                            quantityTypeDto.setQuantityType((QuantityType) spinner.getSelectedItem());
-                            quantityTypeDto.setDescription(((QuantityType) spinner.getSelectedItem()).getDescription());
-                        }
-
-                        String quantityText = quantityAvailable.getText().toString();
-                        if (!quantityText.isEmpty()) {
-                                quantityTypeDto.setQuantity(Integer.parseInt(quantityText));
-                        }
-
-                        List<QuantityTypeDto> quantityTypes = itemWithDetailAndProviderAndQuantityTypeDto.getQuantityType();
-                        boolean matched = quantityTypes.stream().noneMatch(quantityType -> quantityType.getQuantityType().equals(quantityTypeDto.getQuantityType()));
-
-                        if(matched) {
-                            quantityTypes.add(quantityTypeDto);
-                            Objects.requireNonNull(recyclerView.getAdapter()).notifyItemInserted(quantityTypes.size() - 1);
-                            recyclerView.smoothScrollToPosition(quantityTypes.size() - 1);
-                        }
-
-                    })
-                    .setNegativeButton("Cancel", (dialog, id) -> {
-                        dialog.cancel();
-                    });
-
-            builder.show();
+            addQuantityType(inflater, recyclerView);
         });
 
 
         return view;
+    }
+
+    private void addQuantityType(LayoutInflater inflater, RecyclerView recyclerView) {
+        View dialogView = inflater.inflate(R.layout.dialog_add_quantity_type, null);
+
+        // Access the Spinner and EditText from the inflated layout
+        Spinner spinner = dialogView.findViewById(R.id.quantity_type_spinner);
+        EditText quantityAvailable = dialogView.findViewById(R.id.quantity_type_available);
+
+        // Set up the Spinner with an adapter
+        ArrayAdapter<QuantityType> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, Arrays.asList(QuantityType.values()));
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner.setAdapter(adapter);
+
+        // Build and show the dialog
+        AlertDialog.Builder builder = new AlertDialog.Builder(requireActivity());
+        builder.setView(dialogView)
+                .setPositiveButton("Aggiungi", (dialog, id) -> {
+                    QuantityTypeDto quantityTypeDto = new QuantityTypeDto();
+                    quantityTypeDto.setId(UUID.randomUUID());
+                    quantityTypeDto.setItemId(itemWithDetailAndProviderAndQuantityTypeDto.getItem().getId());
+
+                    if (spinner.getSelectedItem() != null) {
+                        quantityTypeDto.setQuantityType((QuantityType) spinner.getSelectedItem());
+                        quantityTypeDto.setDescription(((QuantityType) spinner.getSelectedItem()).getDescription());
+                    }
+
+                    String quantityText = quantityAvailable.getText().toString();
+                    if (!quantityText.isEmpty()) {
+                            quantityTypeDto.setQuantity(Integer.parseInt(quantityText));
+                    }
+
+                    List<QuantityTypeDto> quantityTypes = itemWithDetailAndProviderAndQuantityTypeDto.getQuantityType() == null ? new ArrayList<>() : itemWithDetailAndProviderAndQuantityTypeDto.getQuantityType();
+                    boolean matched = quantityTypes.stream().noneMatch(quantityType -> quantityType.getQuantityType().equals(quantityTypeDto.getQuantityType()));
+
+                    if(matched) {
+                        quantityTypes.add(quantityTypeDto);
+                        Objects.requireNonNull(recyclerView.getAdapter()).notifyItemInserted(quantityTypes.size() - 1);
+                        recyclerView.smoothScrollToPosition(quantityTypes.size() - 1);
+                    }
+
+                })
+                .setNegativeButton("Cancel", (dialog, id) -> {
+                    dialog.cancel();
+                });
+
+        builder.show();
     }
 
 
@@ -155,7 +161,7 @@ public class ItemDetailFragment extends Fragment {
 
                 ItemDetailDto itemDetailDto = null;
                 if (itemWithDetailAndProviderAndQuantityType.itemDetail != null){
-                    itemDetailDto = EntityDtoMapper.detailEntityToDto(itemWithDetailAndProviderAndQuantityType.itemDetail);
+                    itemDetailDto = EntityDtoMapper.detailEntityToDto(itemWithDetailAndProviderAndQuantityType.itemDetail, itemId);
                 }
 
                 ProviderDto providerDto = null;
@@ -178,7 +184,7 @@ public class ItemDetailFragment extends Fragment {
             } else throw new IllegalArgumentException("Item not found");
         });
 
-        future.get(); // attende il completamento del task
+        future.get();
 
         return itemWithDetailAndProviderAndQuantityTypeDto;
     }

@@ -36,4 +36,5 @@ public interface ItemDetailEntityDao extends BaseDao<ItemDetailEntity> {
 
     @Query("SELECT * FROM item_detail")
     List<ItemDetailEntity> getAllItemDetails();
+
 }

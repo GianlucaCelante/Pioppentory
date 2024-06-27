@@ -22,7 +22,7 @@ import it.pioppi.database.model.entity.ProviderEntity;
 import it.pioppi.database.model.entity.QuantityTypeEntity;
 import it.pioppi.database.typeconverters.Converters;
 
-@Database(entities = {ItemEntity.class, ItemDetailEntity.class, ProviderEntity.class, QuantityTypeEntity.class}, version = 10)
+@Database(entities = {ItemEntity.class, ItemDetailEntity.class, ProviderEntity.class, QuantityTypeEntity.class}, version = 11)
 @TypeConverters({Converters.class})
 public abstract class AppDatabase extends RoomDatabase {
 

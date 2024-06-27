@@ -12,6 +12,7 @@ public class ProviderDto {
     private String email;
     private LocalDateTime creationDate;
     private LocalDateTime lastUpdateDate;
+    private UUID itemId;
 
     public UUID getId() {
         return id;
@@ -68,11 +69,17 @@ public class ProviderDto {
     public void setLastUpdateDate(LocalDateTime lastUpdateDate) {
         this.lastUpdateDate = lastUpdateDate;
     }
+    public UUID getItemId() {
+        return itemId;
+    }
+    public void setItemId(UUID itemId) {
+        this.itemId = itemId;
+    }
 
     public ProviderDto() {
     }
 
-    public ProviderDto(UUID id, String name, String address, String phoneNumber, String email, LocalDateTime creationDate, LocalDateTime lastUpdateDate) {
+    public ProviderDto(UUID id, String name, String address, String phoneNumber, String email, LocalDateTime creationDate, LocalDateTime lastUpdateDate, UUID itemId) {
         this.id = id;
         this.name = name;
         this.address = address;
@@ -80,5 +87,6 @@ public class ProviderDto {
         this.email = email;
         this.creationDate = creationDate;
         this.lastUpdateDate = lastUpdateDate;
+        this.itemId = itemId;
     }
 }

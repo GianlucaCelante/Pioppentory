@@ -38,11 +38,11 @@ public class ItemEntity extends BaseEntity {
     private String barcode;
     @ColumnInfo(name = "check_date")
     private LocalDateTime checkDate;
-    @ColumnInfo(name = "has_note")
-    private Boolean hasNote;
+    @ColumnInfo(name = "note")
+    private String note;
 
     @Ignore
-    public ItemEntity(@NotNull UUID id, String name, Integer totPortions, ItemStatus status, String barcode, LocalDateTime checkDate, Boolean hasNote) {
+    public ItemEntity(@NotNull UUID id, String name, Integer totPortions, ItemStatus status, String barcode, LocalDateTime checkDate, String note) {
         super();
         this.id = id;
         this.name = name;
@@ -50,7 +50,7 @@ public class ItemEntity extends BaseEntity {
         this.status = status;
         this.barcode = barcode;
         this.checkDate = checkDate;
-        this.hasNote = hasNote;
+        this.note = note;
     }
 
     public ItemEntity() {}
@@ -103,13 +103,14 @@ public class ItemEntity extends BaseEntity {
         this.checkDate = checkDate;
     }
 
-    public Boolean hasNote() {
-        return hasNote;
+    public String getNote() {
+        return note;
     }
 
-    public void setHasNote(Boolean hasNote) {
-        this.hasNote = hasNote;
+    public void setNote(String note) {
+        this.note = note;
     }
+
 
     @Override
     public String toString() {
@@ -119,7 +120,7 @@ public class ItemEntity extends BaseEntity {
                 ", status=" + status +
                 ", barcode='" + barcode + '\'' +
                 ", checkDate=" + checkDate +
-                ", hasNote=" + hasNote +
+                ", note='" + note + '\'' +
                 '}';
     }
 }

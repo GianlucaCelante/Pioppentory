@@ -17,11 +17,11 @@ public class ItemDetailDto {
     private Integer portionsOnHoliday;
     private Integer maxPortionsSold;
     private LocalDateTime deliveryDate;
-    private String note;
     private LocalDateTime creationDate;
     private LocalDateTime lastUpdateDate;
+    private UUID itemId;
 
-    public ItemDetailDto(UUID id, QuantityTypeDto quantityType, Integer quantityToBeOrdered, Integer orderedQuantity, Integer portionsRequiredOnSaturday, Integer portionsRequiredOnSunday, Integer portionsPerWeekend, Integer portionsOnHoliday, Integer maxPortionsSold, LocalDateTime deliveryDate, String note, LocalDateTime creationDate, LocalDateTime lastUpdateDate) {
+    public ItemDetailDto(UUID id, QuantityTypeDto quantityType, Integer quantityToBeOrdered, Integer orderedQuantity, Integer portionsRequiredOnSaturday, Integer portionsRequiredOnSunday, Integer portionsPerWeekend, Integer portionsOnHoliday, Integer maxPortionsSold, LocalDateTime deliveryDate, LocalDateTime creationDate, LocalDateTime lastUpdateDate, UUID itemId) {
         this.id = id;
         this.quantityType = quantityType;
         this.quantityToBeOrdered = quantityToBeOrdered;
@@ -32,9 +32,9 @@ public class ItemDetailDto {
         this.portionsOnHoliday = portionsOnHoliday;
         this.maxPortionsSold = maxPortionsSold;
         this.deliveryDate = deliveryDate;
-        this.note = note;
         this.creationDate = creationDate;
         this.lastUpdateDate = lastUpdateDate;
+        this.itemId = itemId;
     }
 
     public ItemDetailDto() {}
@@ -119,14 +119,6 @@ public class ItemDetailDto {
         this.deliveryDate = deliveryDate;
     }
 
-    public String getNote() {
-        return note;
-    }
-
-    public void setNote(String note) {
-        this.note = note;
-    }
-
     public LocalDateTime getCreationDate() {
         return creationDate;
     }
@@ -141,5 +133,13 @@ public class ItemDetailDto {
 
     public void setLastUpdateDate(LocalDateTime lastUpdateDate) {
         this.lastUpdateDate = lastUpdateDate;
+    }
+
+    public UUID getItemId() {
+        return itemId;
+    }
+
+    public void setItemId(UUID itemId) {
+        this.itemId = itemId;
     }
 }
