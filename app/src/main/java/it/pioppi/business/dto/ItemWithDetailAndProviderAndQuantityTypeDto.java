@@ -7,7 +7,7 @@ public class ItemWithDetailAndProviderAndQuantityTypeDto {
     private ItemDto item;
     private ItemDetailDto itemDetail;
     private ProviderDto provider;
-    private List<QuantityTypeDto> quantityType;
+    private List<QuantityTypeDto> quantityTypes;
 
     public ItemDto getItem() {
         return item;
@@ -33,11 +33,11 @@ public class ItemWithDetailAndProviderAndQuantityTypeDto {
         this.provider = provider;
     }
 
-    public List<QuantityTypeDto> getQuantityType() {
-        return quantityType;
+    public List<QuantityTypeDto> getQuantityTypes() {
+        return quantityTypes;
     }
 
-    public void setQuantityType(List<QuantityTypeDto> quantityType) {
-        this.quantityType = quantityType;
+    public void setQuantityTypes(List<QuantityTypeDto> quantityTypes) {
+        this.quantityTypes = quantityTypes;
     }
 }

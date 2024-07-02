@@ -5,7 +5,7 @@ public enum QuantityType {
     STRATO("Strato"),
     CARTONE("Cartone"),
     SACCHETTO("Sacchetto"),
-    KG("Kg");
+    PEZZI("Pezzi");
 
     private final String description;
     private Integer quantity;
