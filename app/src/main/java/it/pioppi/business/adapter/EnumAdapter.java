@@ -106,6 +106,16 @@ public class EnumAdapter extends RecyclerView.Adapter<EnumAdapter.EnumViewHolder
         return quantityTypesDto.size();
     }
 
+    public void setQuantityTypes(List<QuantityTypeDto> quantityTypes) {
+        this.quantityTypesDto = new ArrayList<>(quantityTypes);
+        sortQuantityTypes();
+        notifyDataSetChanged();
+    }
+
+    public List<QuantityTypeDto> getQuantityTypes() {
+        return this.quantityTypesDto;
+    }
+
     public static class EnumViewHolder extends RecyclerView.ViewHolder {
         TextView enumQuantityType;
         EditText enumTotPortions;
@@ -116,16 +126,6 @@ public class EnumAdapter extends RecyclerView.Adapter<EnumAdapter.EnumViewHolder
             enumQuantityType = itemView.findViewById(R.id.enum_quantity_type);
             enumTotPortions = itemView.findViewById(R.id.enum_tot_portions);
         }
-    }
-
-    public void setQuantityTypes(List<QuantityTypeDto> quantityTypes) {
-        this.quantityTypesDto = new ArrayList<>(quantityTypes);
-        sortQuantityTypes();
-        notifyDataSetChanged();
-    }
-
-    public List<QuantityTypeDto> getQuantityTypes() {
-        return this.quantityTypesDto;
     }
 
     private int getItemPositionById(UUID id) {

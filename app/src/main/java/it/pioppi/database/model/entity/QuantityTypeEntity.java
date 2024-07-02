@@ -57,12 +57,11 @@ public class QuantityTypeEntity extends BaseEntity {
 
     }
 
-    @NonNull
     public UUID getId() {
         return id;
     }
 
-    public void setId(@NonNull UUID id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 

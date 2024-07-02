@@ -8,11 +8,13 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CalendarView;
 import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -24,14 +26,19 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -47,12 +54,18 @@ import it.pioppi.business.dto.ItemWithDetailAndProviderAndQuantityTypeDto;
 import it.pioppi.business.dto.ProviderDto;
 import it.pioppi.business.dto.QuantityTypeDto;
 import it.pioppi.database.AppDatabase;
+import it.pioppi.database.dao.ItemDetailEntityDao;
 import it.pioppi.database.dao.ItemEntityDao;
+import it.pioppi.database.dao.ProviderEntityDao;
 import it.pioppi.database.dao.QuantityTypeEntityDao;
 import it.pioppi.database.mapper.EntityDtoMapper;
 import it.pioppi.database.model.QuantityPurpose;
 import it.pioppi.database.model.QuantityType;
+import it.pioppi.database.model.entity.ItemDetailEntity;
+import it.pioppi.database.model.entity.ItemEntity;
+import it.pioppi.database.model.entity.ItemStatus;
 import it.pioppi.database.model.entity.ItemWithDetailAndProviderAndQuantityTypeEntity;
+import it.pioppi.database.model.entity.ProviderEntity;
 import it.pioppi.database.model.entity.QuantityTypeEntity;
 
 public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLongClickListener, EnumAdapter.OnTextChangeListener  {
@@ -86,23 +99,166 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
                 throw new RuntimeException(e);
             }
         }
+        // Set up touch listener to hide keyboard when touch happens outside EditText
+        setupUI(view);
 
-        prefillFields(view, itemWithDetailAndProviderAndQuantityTypeDto);
         quantityTypesAvailable = setupRecyclerViewAndButtonForQuantityTypes(view, inflater, R.id.recycler_view_quantity_available, R.id.add_quantity_type_available, QuantityPurpose.AVAILABLE);
         quantityTypesToBeOrdered = setupRecyclerViewAndButtonForQuantityTypes(view, inflater, R.id.recycler_view_quantity_to_be_ordered, R.id.add_quantity_type_to_be_ordered, QuantityPurpose.TO_BE_ORDERED);
+
+        ItemWithDetailAndProviderAndQuantityTypeDto itemWithDetailAndProviderAndQuantityTypeDtoPrefilled = prefillFields(view, itemWithDetailAndProviderAndQuantityTypeDto);
+
+        CalendarView deliveryDateCalendarView = view.findViewById(R.id.delivery_date);
+        deliveryDateCalendarView.setOnDateChangeListener((deliveryDate, year, month, dayOfMonth) -> itemWithDetailAndProviderAndQuantityTypeDtoPrefilled.getItemDetail().setDeliveryDate(
+                        LocalDateTime.of(year, month + 1, dayOfMonth, 0, 0)));
 
         Button calculateQuantityToBeOrderedButton = view.findViewById(R.id.calculate_quantity_to_be_ordered);
         calculateQuantityToBeOrderedButton.setOnClickListener(v -> calculateNeededPortions(view, quantityTypesAvailable, quantityTypesToBeOrdered));
 
-        Button resetCalculatedQuantityToeOrderedButton = view.findViewById(R.id.reset_quantity_to_be_ordered);
-        resetCalculatedQuantityToeOrderedButton.setOnClickListener(v -> resetQuantitiesToBeforeCalculation(view, itemWithDetailAndProviderAndQuantityTypeDto));
+        Button resetCalculatedQuantityToOrderedButton = view.findViewById(R.id.reset_quantity_to_be_ordered);
+        resetCalculatedQuantityToOrderedButton.setOnClickListener(v -> resetQuantitiesToBeforeCalculation(view, itemWithDetailAndProviderAndQuantityTypeDtoPrefilled));
 
         updatePortionsNeededForWeekendWhenPortionsRequiredOnSaturdayAndOnSundayChanged(view);
 
-        // Set up touch listener to hide keyboard when touch happens outside EditText
-        setupUI(view);
+        Button saveButton = view.findViewById(R.id.save_button);
+        saveButton.setOnClickListener(v -> {
+            try {
+                saveAll(view, itemWithDetailAndProviderAndQuantityTypeDtoPrefilled);
+            } catch (ExecutionException | InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        Button cancelButton = view.findViewById(R.id.cancel_button);
+        cancelButton.setOnClickListener(v -> NavHostFragment.findNavController(this).popBackStack());
 
         return view;
+    }
+
+    private void saveAll(View view, ItemWithDetailAndProviderAndQuantityTypeDto itemWithDetailAndProviderAndQuantityTypeDto) throws ExecutionException, InterruptedException{
+
+        ItemEntityDao itemEntityDao = appDatabase.itemEntityDao();
+        QuantityTypeEntityDao quantityTypeEntityDao = appDatabase.quantityTypeEntityDao();
+        ItemDetailEntityDao itemDetailEntityDao = appDatabase.itemDetailEntityDao();
+        ProviderEntityDao providerEntityDao = appDatabase.providerEntityDao();
+
+        ItemDto item = itemWithDetailAndProviderAndQuantityTypeDto.getItem() != null ? itemWithDetailAndProviderAndQuantityTypeDto.getItem() : new ItemDto();
+        ItemDetailDto itemDetail = itemWithDetailAndProviderAndQuantityTypeDto.getItemDetail() != null ? itemWithDetailAndProviderAndQuantityTypeDto.getItemDetail() : new ItemDetailDto();
+        ProviderDto provider = itemWithDetailAndProviderAndQuantityTypeDto.getProvider() != null ? itemWithDetailAndProviderAndQuantityTypeDto.getProvider() : new ProviderDto();
+
+        TextView portionsPerWeekendTextView = view.findViewById(R.id.portions_per_weekend);
+        TextView portionsRequiredOnSaturdayTextView = view.findViewById(R.id.portions_required_on_saturday);
+        TextView portionsRequiredOnSundayTextView = view.findViewById(R.id.portions_required_on_sunday);
+        TextView portionsOnHolidayTextView = view.findViewById(R.id.portions_on_holiday);
+        TextView maxPortionsSoldTextView = view.findViewById(R.id.max_portions_sold);
+        EditText notesEditText = view.findViewById(R.id.note);
+
+
+        // ITEM_DETAIL
+        Integer portionsPerWeekend = parseIntegerValueToTextView(portionsPerWeekendTextView);
+        Integer portionsRequiredOnSaturday = parseIntegerValueToTextView(portionsRequiredOnSaturdayTextView);
+        Integer portionsRequiredOnSunday = parseIntegerValueToTextView(portionsRequiredOnSundayTextView);
+        Integer portionsOnHoliday = parseIntegerValueToTextView(portionsOnHolidayTextView);
+        Integer maxPortionsSold = parseIntegerValueToTextView(maxPortionsSoldTextView);
+        LocalDateTime deliveryDate = itemDetail.getDeliveryDate();
+
+        // QUANTITY_TYPE
+        EnumAdapter adapterAvailable = (EnumAdapter) quantityTypesAvailable.getAdapter();
+        List<QuantityTypeDto> quantityTypesAvailable = adapterAvailable.getQuantityTypes();
+
+        EnumAdapter adapterToBeOrdered = (EnumAdapter) quantityTypesToBeOrdered.getAdapter();
+        List<QuantityTypeDto> quantityTypesToBeOrdered = adapterToBeOrdered.getQuantityTypes();
+
+        List<QuantityTypeDto> quantityTypesAll = new ArrayList<>();
+        quantityTypesAll.addAll(quantityTypesAvailable);
+        quantityTypesAll.addAll(quantityTypesToBeOrdered);
+
+        // ITEM
+        Integer totPortions = calculateTotPortions(quantityTypesAvailable, QuantityPurpose.AVAILABLE);
+        String note = notesEditText.getText().toString();
+
+        ItemDto finalItem = new ItemDto();
+        finalItem.setId(item.getId());
+        finalItem.setName(item.getName());
+        finalItem.setCreationDate(item.getCreationDate());
+        finalItem.setLastUpdateDate(LocalDateTime.now());
+        finalItem.setCheckDate(LocalDateTime.now());
+        finalItem.setStatus(ItemStatus.BLUE);
+        finalItem.setTotPortions(totPortions);
+        finalItem.setBarcode(item.getBarcode());
+        finalItem.setNote(note);
+
+        ItemDetailDto finalItemDetail = new ItemDetailDto();
+        finalItemDetail.setId(itemDetail.getId());
+        finalItemDetail.setItemId(itemDetail.getItemId());
+        finalItemDetail.setPortionsPerWeekend(portionsPerWeekend);
+        finalItemDetail.setPortionsRequiredOnSaturday(portionsRequiredOnSaturday);
+        finalItemDetail.setPortionsRequiredOnSunday(portionsRequiredOnSunday);
+        finalItemDetail.setPortionsOnHoliday(portionsOnHoliday);
+        finalItemDetail.setMaxPortionsSold(maxPortionsSold);
+        finalItemDetail.setDeliveryDate(deliveryDate);
+        finalItemDetail.setCreationDate(itemDetail.getCreationDate());
+        finalItemDetail.setLastUpdateDate(LocalDateTime.now());
+        finalItemDetail.setQuantityToBeOrdered(itemDetail.getQuantityToBeOrdered());
+        finalItemDetail.setOrderedQuantity(itemDetail.getOrderedQuantity());
+
+        List<QuantityTypeDto> finalQuantityTypes = new ArrayList<>();
+        for (QuantityTypeDto quantityTypeDto : quantityTypesAll) {
+            QuantityTypeDto finalQuantityType = new QuantityTypeDto();
+            finalQuantityType.setId(quantityTypeDto.getId());
+            finalQuantityType.setItemId(quantityTypeDto.getItemId());
+            finalQuantityType.setQuantityType(quantityTypeDto.getQuantityType());
+            finalQuantityType.setDescription(quantityTypeDto.getDescription());
+            finalQuantityType.setQuantity(quantityTypeDto.getQuantity());
+            finalQuantityType.setPurpose(quantityTypeDto.getPurpose());
+            finalQuantityType.setCreationDate(quantityTypeDto.getCreationDate());
+            finalQuantityType.setLastUpdateDate(LocalDateTime.now());
+            finalQuantityTypes.add(finalQuantityType);
+        }
+
+        Future<?> future = executorService.submit(() -> {
+            ItemEntity itemEntity = EntityDtoMapper.dtoToEntity(finalItem);
+            if(itemEntity.getId() != null) {
+                itemEntityDao.upsert(itemEntity);
+
+            } else {
+                itemEntity.setId(UUID.randomUUID());
+                itemEntityDao.upsert(itemEntity);
+            }
+
+            ItemDetailEntity itemDetailEntity = EntityDtoMapper.detailDtoToEntity(finalItemDetail);
+            if(itemDetailEntity.getId() != null) {
+                itemDetailEntityDao.upsert(itemDetailEntity);
+            } else {
+                itemDetailEntity.setId(UUID.randomUUID());
+                itemDetailEntityDao.upsert(itemDetailEntity);
+            }
+
+            ProviderEntity providerEntity = EntityDtoMapper.dtoToEntity(provider);
+            if(providerEntity.getId() != null) {
+                providerEntityDao.upsert(providerEntity);
+            } else {
+                providerEntity.setId(UUID.randomUUID());
+                providerEntityDao.upsert(providerEntity);
+            }
+
+            finalQuantityTypes.forEach(quantityTypeDto -> {
+
+                QuantityTypeEntity quantityTypeEntity = EntityDtoMapper.dtoToEntity(quantityTypeDto);
+                if(quantityTypeEntity.getId() != null) {
+                    quantityTypeEntityDao.upsert(quantityTypeEntity);
+                } else {
+                    quantityTypeEntity.setId(UUID.randomUUID());
+                    quantityTypeEntity.setItemId(itemEntity.getId());
+                }
+
+            });
+        });
+
+        future.get();
+
+        Toast.makeText(requireContext(), "Salvato", Toast.LENGTH_SHORT).show();
+        NavHostFragment.findNavController(this).popBackStack();
+
     }
 
     private void updatePortionsNeededForWeekendWhenPortionsRequiredOnSaturdayAndOnSundayChanged(View view) {
@@ -156,7 +312,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         // Set up touch listener for non-text box views to hide keyboard.
         if (!(view instanceof EditText)) {
             view.setOnTouchListener((v, event) -> {
-                hideKeyboard(view);
+                ItemDetailFragment.this.hideKeyboard(view);
                 view.clearFocus();
                 return false;
             });
@@ -304,7 +460,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
 
                 ItemDetailDto itemDetailDto = null;
                 if (itemWithDetailAndProviderAndQuantityType.itemDetail != null) {
-                    itemDetailDto = EntityDtoMapper.detailEntityToDto(itemWithDetailAndProviderAndQuantityType.itemDetail, itemId);
+                    itemDetailDto = EntityDtoMapper.detailEntityToDto(itemWithDetailAndProviderAndQuantityType.itemDetail);
                 }
 
                 ProviderDto providerDto = null;
@@ -330,7 +486,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         return itemWithDetailAndProviderAndQuantityTypeDto;
     }
 
-    protected void prefillFields(View view, ItemWithDetailAndProviderAndQuantityTypeDto itemWithDetailAndProviderAndQuantityTypeDto) {
+    protected ItemWithDetailAndProviderAndQuantityTypeDto prefillFields(View view, ItemWithDetailAndProviderAndQuantityTypeDto itemWithDetailAndProviderAndQuantityTypeDto) {
         TextView providerNameTextView = view.findViewById(R.id.provider_name);
         ProviderDto provider = itemWithDetailAndProviderAndQuantityTypeDto.getProvider();
         if (provider != null) {
@@ -340,7 +496,13 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         ItemDto item = itemWithDetailAndProviderAndQuantityTypeDto.getItem();
         if (item != null) {
             TextView itemNameTextView = view.findViewById(R.id.item_name);
+            TextView totPortionsTextView = view.findViewById(R.id.tot_portions_detail);
+
             itemNameTextView.setText(item.getName());
+            totPortionsTextView.setText(String.valueOf(item.getTotPortions()));
+
+            TextView noteTextView = view.findViewById(R.id.note);
+            noteTextView.setText(item.getNote());
         }
 
         ItemDetailDto itemDetail = itemWithDetailAndProviderAndQuantityTypeDto.getItemDetail();
@@ -363,17 +525,44 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
 
             EditText maxPortionsSold = view.findViewById(R.id.max_portions_sold);
             maxPortionsSold.setText(String.valueOf(itemDetail.getMaxPortionsSold()));
+
+            CalendarView deliveryDateCalendarView = view.findViewById(R.id.delivery_date);
+            LocalDateTime deliveryDate = itemDetail.getDeliveryDate();
+            if (deliveryDate != null) {
+                deliveryDateCalendarView.setDate(deliveryDate.toInstant(ZoneOffset.UTC).toEpochMilli());
+            }
+
         }
 
-        List<QuantityTypeDto> quantityTypeAvailable = itemWithDetailAndProviderAndQuantityTypeDto.getQuantityTypes().stream()
-                .filter(quantityType -> QuantityPurpose.AVAILABLE.equals(quantityType.getPurpose()))
-                .collect(Collectors.toList());
+        List<QuantityTypeDto> quantityTypes = itemWithDetailAndProviderAndQuantityTypeDto.getQuantityTypes();
+        if(quantityTypes != null) {
+            List<QuantityTypeDto> quantityTypeAvailable = quantityTypes.stream()
+                    .filter(quantityType -> QuantityPurpose.AVAILABLE.equals(quantityType.getPurpose()))
+                    .collect(Collectors.toList());
 
-        if (!quantityTypeAvailable.isEmpty()) {
-            Integer totPortions = calculateTotPortions(quantityTypeAvailable, QuantityPurpose.AVAILABLE);
-            TextView totPortionsTextView = view.findViewById(R.id.tot_portions_detail);
-            totPortionsTextView.setText(String.valueOf(totPortions));
+            List<QuantityTypeDto> quantityTypeToBeOrdered = quantityTypes.stream()
+                    .filter(quantityType -> QuantityPurpose.TO_BE_ORDERED.equals(quantityType.getPurpose()))
+                    .collect(Collectors.toList());
+
+            EnumAdapter adapterAvailable = (EnumAdapter) quantityTypesAvailable.getAdapter();
+            if(adapterAvailable != null) {
+                adapterAvailable.setQuantityTypes(quantityTypeAvailable);
+            }
+
+            EnumAdapter adapterToBeOrdered = (EnumAdapter) quantityTypesToBeOrdered.getAdapter();
+            if(adapterToBeOrdered != null) {
+                adapterToBeOrdered.setQuantityTypes(quantityTypeToBeOrdered);
+            }
+
         }
+
+        ItemWithDetailAndProviderAndQuantityTypeDto itemWithDetailAndProviderAndQuantityTypeDtoPrefilled = new ItemWithDetailAndProviderAndQuantityTypeDto();
+        itemWithDetailAndProviderAndQuantityTypeDtoPrefilled.setItem(item);
+        itemWithDetailAndProviderAndQuantityTypeDtoPrefilled.setItemDetail(itemDetail);
+        itemWithDetailAndProviderAndQuantityTypeDtoPrefilled.setProvider(provider);
+        itemWithDetailAndProviderAndQuantityTypeDtoPrefilled.setQuantityTypes(quantityTypes);
+
+        return itemWithDetailAndProviderAndQuantityTypeDtoPrefilled;
     }
 
     @Override
@@ -400,5 +589,19 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         Integer totPortionsAvailable = calculateTotPortions(quantityTypeDtos, QuantityPurpose.AVAILABLE);
         TextView totPortionsTextView = requireView().findViewById(R.id.tot_portions_detail);
         totPortionsTextView.setText(String.valueOf(totPortionsAvailable));
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        executorService.shutdown();
+    }
+
+    private Integer parseIntegerValueToTextView(TextView portionsPerWeekendTextView) {
+        if (portionsPerWeekendTextView.getText() != null && portionsPerWeekendTextView.getText().toString().isEmpty()) {
+            return 0;
+        } else {
+            return Integer.parseInt(portionsPerWeekendTextView.getText().toString());
+        }
     }
 }

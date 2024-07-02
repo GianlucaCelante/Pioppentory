@@ -8,7 +8,6 @@ import it.pioppi.database.model.QuantityType;
 public class ItemDetailDto {
 
     private UUID id;
-    private QuantityTypeDto quantityType;
     private Integer quantityToBeOrdered;
     private Integer orderedQuantity;
     private Integer portionsRequiredOnSaturday;
@@ -21,9 +20,8 @@ public class ItemDetailDto {
     private LocalDateTime lastUpdateDate;
     private UUID itemId;
 
-    public ItemDetailDto(UUID id, QuantityTypeDto quantityType, Integer quantityToBeOrdered, Integer orderedQuantity, Integer portionsRequiredOnSaturday, Integer portionsRequiredOnSunday, Integer portionsPerWeekend, Integer portionsOnHoliday, Integer maxPortionsSold, LocalDateTime deliveryDate, LocalDateTime creationDate, LocalDateTime lastUpdateDate, UUID itemId) {
+    public ItemDetailDto(UUID id, Integer quantityToBeOrdered, Integer orderedQuantity, Integer portionsRequiredOnSaturday, Integer portionsRequiredOnSunday, Integer portionsPerWeekend, Integer portionsOnHoliday, Integer maxPortionsSold, LocalDateTime deliveryDate, LocalDateTime creationDate, LocalDateTime lastUpdateDate, UUID itemId) {
         this.id = id;
-        this.quantityType = quantityType;
         this.quantityToBeOrdered = quantityToBeOrdered;
         this.orderedQuantity = orderedQuantity;
         this.portionsRequiredOnSaturday = portionsRequiredOnSaturday;
@@ -45,14 +43,6 @@ public class ItemDetailDto {
 
     public void setId(UUID id) {
         this.id = id;
-    }
-
-    public QuantityTypeDto getQuantityType() {
-        return quantityType;
-    }
-
-    public void setQuantityType(QuantityTypeDto quantityType) {
-        this.quantityType = quantityType;
     }
 
     public Integer getQuantityToBeOrdered() {

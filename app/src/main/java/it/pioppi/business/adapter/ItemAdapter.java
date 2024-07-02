@@ -30,7 +30,6 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
 
     private final List<ItemDto> itemList;
     private final OnItemClickListener listener;
-
     private final Context context;
 
 

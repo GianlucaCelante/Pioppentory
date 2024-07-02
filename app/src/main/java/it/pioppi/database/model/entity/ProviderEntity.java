@@ -55,12 +55,11 @@ import it.pioppi.ConstantUtils;
         this.itemId = itemId;
     }
 
-    @NotNull
     public UUID getId() {
         return id;
     }
 
-    public void setId(@NotNull UUID id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 

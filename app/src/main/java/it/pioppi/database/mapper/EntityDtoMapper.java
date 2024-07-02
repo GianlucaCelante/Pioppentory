@@ -16,7 +16,9 @@ import it.pioppi.database.model.entity.QuantityTypeEntity;
 public class EntityDtoMapper {
 
     public static ItemEntity dtoToEntity(ItemDto itemDto) {
-
+        if(itemDto == null) {
+            return null;
+        }
         ItemEntity itemEntity = new ItemEntity();
         itemEntity.setId(itemDto.getId());
         itemEntity.setName(itemDto.getName());
@@ -31,6 +33,9 @@ public class EntityDtoMapper {
     }
 
     public static List<ItemEntity> dtoToEntity(List<ItemDto> itemDtos) {
+        if(itemDtos == null) {
+            return new ArrayList<>();
+        }
         List<ItemEntity> itemEntities = new ArrayList<>();
         for (ItemDto itemDto : itemDtos) {
             itemEntities.add(dtoToEntity(itemDto));
@@ -39,6 +44,9 @@ public class EntityDtoMapper {
     }
 
     public static ItemDto entityToDto(ItemEntity itemEntity) {
+        if(itemEntity == null) {
+            return null;
+        }
         ItemDto itemDto = new ItemDto();
         itemDto.setId(itemEntity.getId());
         itemDto.setName(itemEntity.getName());
@@ -53,6 +61,9 @@ public class EntityDtoMapper {
     }
 
     public static List<ItemDto> entityToDto(List<ItemEntity> itemEntities) {
+        if(itemEntities == null) {
+            return new ArrayList<>();
+        }
         List<ItemDto> itemDtos = new ArrayList<>();
         for (ItemEntity itemEntity : itemEntities) {
             itemDtos.add(entityToDto(itemEntity));
@@ -60,10 +71,13 @@ public class EntityDtoMapper {
         return itemDtos;
     }
 
-    public static ItemDetailEntity detailDtoToEntity(ItemDetailDto itemDetailDto, UUID itemId) {
+    public static ItemDetailEntity detailDtoToEntity(ItemDetailDto itemDetailDto) {
+        if(itemDetailDto == null) {
+            return null;
+        }
         ItemDetailEntity itemDetailEntity = new ItemDetailEntity();
         itemDetailEntity.setId(itemDetailDto.getId());
-        itemDetailEntity.setItemId(itemId);
+        itemDetailEntity.setItemId(itemDetailDto.getItemId());
         itemDetailEntity.setQuantityToBeOrdered(itemDetailDto.getQuantityToBeOrdered());
         itemDetailEntity.setOrderedQuantity(itemDetailDto.getOrderedQuantity());
         itemDetailEntity.setPortionsRequiredOnSaturday(itemDetailDto.getPortionsRequiredOnSaturday());
@@ -77,10 +91,13 @@ public class EntityDtoMapper {
         return itemDetailEntity;
     }
 
-    public static ItemDetailDto detailEntityToDto(ItemDetailEntity itemDetailEntity, UUID itemId) {
+    public static ItemDetailDto detailEntityToDto(ItemDetailEntity itemDetailEntity) {
+        if(itemDetailEntity == null) {
+            return null;
+        }
         ItemDetailDto itemDetailDto = new ItemDetailDto();
         itemDetailDto.setId(itemDetailEntity.getId());
-        itemDetailDto.setItemId(itemId);
+        itemDetailDto.setItemId(itemDetailEntity.getItemId());
         itemDetailDto.setQuantityToBeOrdered(itemDetailEntity.getQuantityToBeOrdered());
         itemDetailDto.setOrderedQuantity(itemDetailEntity.getOrderedQuantity());
         itemDetailDto.setPortionsRequiredOnSaturday(itemDetailEntity.getPortionsRequiredOnSaturday());
@@ -95,6 +112,9 @@ public class EntityDtoMapper {
     }
 
     public static ProviderDto entityToDto(ProviderEntity providerEntity) {
+        if(providerEntity == null) {
+            return null;
+        }
         ProviderDto providerDto = new ProviderDto();
         providerDto.setId(providerEntity.getId());
         providerDto.setName(providerEntity.getName());
@@ -107,6 +127,9 @@ public class EntityDtoMapper {
     }
 
     public static ProviderEntity dtoToEntity(ProviderDto providerDto) {
+        if(providerDto == null) {
+            return null;
+        }
         ProviderEntity providerEntity = new ProviderEntity();
         providerEntity.setId(providerDto.getId());
         providerEntity.setName(providerDto.getName());
@@ -120,6 +143,9 @@ public class EntityDtoMapper {
     }
 
     public static QuantityTypeDto entityToDto(QuantityTypeEntity quantityTypeEntity) {
+        if(quantityTypeEntity == null) {
+            return null;
+        }
         QuantityTypeDto quantityItemDto = new QuantityTypeDto();
         quantityItemDto.setId(quantityTypeEntity.getId());
         quantityItemDto.setItemId(quantityTypeEntity.getItemId());
@@ -133,6 +159,9 @@ public class EntityDtoMapper {
     }
 
     public static List<QuantityTypeDto> entitiesToDtos(List<QuantityTypeEntity> quantityTypeEntities) {
+        if (quantityTypeEntities == null) {
+            return new ArrayList<>();
+        }
         List<QuantityTypeDto> quantityTypeDtos = new ArrayList<>();
         for (QuantityTypeEntity quantityTypeEntity : quantityTypeEntities) {
             quantityTypeDtos.add(entityToDto(quantityTypeEntity));
@@ -141,6 +170,9 @@ public class EntityDtoMapper {
     }
 
     public static QuantityTypeEntity dtoToEntity(QuantityTypeDto quantityItemDto) {
+        if(quantityItemDto == null) {
+            return null;
+        }
         QuantityTypeEntity quantityTypeEntity = new QuantityTypeEntity();
         quantityTypeEntity.setId(quantityItemDto.getId());
         quantityTypeEntity.setItemId(quantityItemDto.getItemId());
@@ -154,6 +186,9 @@ public class EntityDtoMapper {
     }
 
     public static List<QuantityTypeEntity> dtosToEntities(List<QuantityTypeDto> quantityTypeDtos) {
+        if(quantityTypeDtos == null) {
+            return new ArrayList<>();
+        }
         List<QuantityTypeEntity> quantityTypeEntities = new ArrayList<>();
         for (QuantityTypeDto quantityTypeDto : quantityTypeDtos) {
             quantityTypeEntities.add(dtoToEntity(quantityTypeDto));
