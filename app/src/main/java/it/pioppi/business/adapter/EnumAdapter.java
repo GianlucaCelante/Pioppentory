@@ -1,7 +1,5 @@
 package it.pioppi.business.adapter;
 
-import static it.pioppi.business.manager.ItemDetailFragmentManager.calculateTotPortions;
-import static it.pioppi.business.manager.ItemDetailFragmentManager.clearFocusAndHideKeyboard;
 
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -72,13 +70,6 @@ public class EnumAdapter extends RecyclerView.Adapter<EnumAdapter.EnumViewHolder
             }
             return false;
         }));
-
-        holder.enumTotPortions.setOnFocusChangeListener((v, hasFocus) -> {
-            if (!hasFocus) {
-                clearFocusAndHideKeyboard(holder.enumTotPortions.getContext(), v);
-                // Call any method to update the data if needed
-            }
-        });
 
         if (holder.currentTextWatcher != null) {
             holder.enumTotPortions.removeTextChangedListener(holder.currentTextWatcher);
