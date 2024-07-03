@@ -8,6 +8,7 @@ import androidx.room.Transaction;
 import androidx.room.Update;
 import androidx.room.Upsert;
 
+import java.util.List;
 import java.util.UUID;
 
 import it.pioppi.database.model.entity.ProviderEntity;
@@ -17,18 +18,20 @@ public interface ProviderEntityDao extends BaseDao<ProviderEntity> {
 
     @Override
     @Update
-    public void update(ProviderEntity entity);
+    void update(ProviderEntity entity);
 
     @Override
     @Delete
-    public void delete(ProviderEntity entity);
+    void delete(ProviderEntity entity);
 
     @Override
     @Insert
-    public void insert(ProviderEntity entity);
+    void insert(ProviderEntity entity);
 
     @Override
     @Upsert
-    public void upsert(ProviderEntity entity);
+    void upsert(ProviderEntity entity);
 
+    @Query("SELECT DISTINCT name FROM provider")
+    List<String> getProviderNames();
 }

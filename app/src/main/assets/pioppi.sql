@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS `ITEM_DETAIL` (
     `last_update` TEXT,
     `item_id` TEXT,
     PRIMARY KEY(`id`),
-    FOREIGN KEY(`item_id`) REFERENCES `ITEM`(`id`)
+    FOREIGN KEY(`item_id`) REFERENCES `ITEM`(`id`) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS `PROVIDER` (
@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS `PROVIDER` (
     `last_update` TEXT,
     `item_id` TEXT,
     PRIMARY KEY(`id`),
-    FOREIGN KEY(`item_id`) REFERENCES `ITEM`(`id`)
+    FOREIGN KEY(`item_id`) REFERENCES `ITEM`(`id`) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS `QUANTITY_TYPE` (
@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS `QUANTITY_TYPE` (
     `last_update` TEXT,
     `item_id` TEXT,
     PRIMARY KEY(`id`),
-    FOREIGN KEY(`item_id`) REFERENCES `ITEM`(`id`)
+    FOREIGN KEY(`item_id`) REFERENCES `ITEM`(`id`) ON DELETE CASCADE
 );
 
 INSERT INTO ITEM (id, name, tot_portions, status, barcode, note, check_date, creation_date, last_update) VALUES

@@ -1,4 +1,4 @@
-package it.pioppi.business;
+package it.pioppi.business.activity;
 
 import android.os.Bundle;
 

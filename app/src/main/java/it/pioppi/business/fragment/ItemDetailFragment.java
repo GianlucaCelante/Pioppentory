@@ -1,4 +1,4 @@
-package it.pioppi.business;
+package it.pioppi.business.fragment;
 
 import static it.pioppi.business.manager.ItemDetailFragmentManager.calculateTotPortions;
 
@@ -8,7 +8,6 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
@@ -30,15 +29,11 @@ import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.GregorianCalendar;
 import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -435,10 +430,10 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
                         itemWithDetailAndProviderAndQuantityTypeDto.getQuantityTypes().add(quantityTypeDto);
                         recyclerView.smoothScrollToPosition(adapter.getItemCount() - 1);
                     } else {
-                        Toast.makeText(requireContext(), "Item already exists", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(requireContext(), "Elemento già presente", Toast.LENGTH_SHORT).show();
                     }
                 })
-                .setNegativeButton("Cancel", (dialog, id) -> dialog.cancel());
+                .setNegativeButton("Indietro", (dialog, id) -> dialog.cancel());
 
         builder.show();
     }
@@ -508,11 +503,11 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         ItemDetailDto itemDetail = itemWithDetailAndProviderAndQuantityTypeDto.getItemDetail();
         if (itemDetail != null) {
             EditText portionsRequiredOnSaturdayEditText = view.findViewById(R.id.portions_required_on_saturday);
-            Integer portionsRequiredOnSaturday = itemDetail.getPortionsRequiredOnSaturday();
+            Integer portionsRequiredOnSaturday = itemDetail.getPortionsRequiredOnSaturday() != null ? itemDetail.getPortionsRequiredOnSaturday() : 0;
             portionsRequiredOnSaturdayEditText.setText(String.valueOf(portionsRequiredOnSaturday));
 
             EditText portionsRequiredOnSundayEditText = view.findViewById(R.id.portions_required_on_sunday);
-            Integer portionsRequiredOnSunday = itemDetail.getPortionsRequiredOnSunday();
+            Integer portionsRequiredOnSunday = itemDetail.getPortionsRequiredOnSunday() != null ? itemDetail.getPortionsRequiredOnSunday() : 0;
             portionsRequiredOnSundayEditText.setText(String.valueOf(portionsRequiredOnSunday));
 
             TextView portionsPerWeekendTextView = view.findViewById(R.id.portions_per_weekend);
@@ -521,10 +516,10 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
             itemDetail.setPortionsPerWeekend(portionsPerWeekend);
 
             EditText portionsOnHoliday = view.findViewById(R.id.portions_on_holiday);
-            portionsOnHoliday.setText(String.valueOf(itemDetail.getPortionsOnHoliday()));
+            portionsOnHoliday.setText(String.valueOf(itemDetail.getPortionsOnHoliday() != null ? itemDetail.getPortionsOnHoliday() : 0));
 
             EditText maxPortionsSold = view.findViewById(R.id.max_portions_sold);
-            maxPortionsSold.setText(String.valueOf(itemDetail.getMaxPortionsSold()));
+            maxPortionsSold.setText(String.valueOf(itemDetail.getMaxPortionsSold() != null ? itemDetail.getMaxPortionsSold() : 0));
 
             CalendarView deliveryDateCalendarView = view.findViewById(R.id.delivery_date);
             LocalDateTime deliveryDate = itemDetail.getDeliveryDate();

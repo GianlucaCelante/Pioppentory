@@ -23,7 +23,8 @@ import it.pioppi.database.model.QuantityType;
                 @ForeignKey(
                         entity = ItemEntity.class,
                         parentColumns = "id",
-                        childColumns = "item_id"
+                        childColumns = "item_id",
+                        onDelete = ForeignKey.CASCADE
                 )}
 )
 public class QuantityTypeEntity extends BaseEntity {

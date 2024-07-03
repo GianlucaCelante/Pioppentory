@@ -22,7 +22,8 @@ import it.pioppi.ConstantUtils;
                 @ForeignKey(
                         entity = ItemEntity.class,
                         parentColumns = "id",
-                        childColumns = "item_id"
+                        childColumns = "item_id",
+                        onDelete = ForeignKey.CASCADE
                 )
         }
 )public class ProviderEntity extends BaseEntity{
