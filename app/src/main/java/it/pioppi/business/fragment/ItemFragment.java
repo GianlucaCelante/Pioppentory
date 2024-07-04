@@ -1,9 +1,13 @@
 package it.pioppi.business.fragment;
 
+import static androidx.core.content.ContextCompat.getSystemService;
+
+import android.content.Context;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -85,6 +89,8 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
         View dialogView = inflater.inflate(R.layout.new_provider_spinner, null);
 
         EditText newProviderNameEditText = dialogView.findViewById(R.id.new_item_name);
+        newProviderNameEditText.requestFocus();
+        openKeyboard(newProviderNameEditText);
 
         AlertDialog.Builder builder = new AlertDialog.Builder(requireActivity());
         builder.setView(dialogView)
@@ -142,6 +148,8 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
 
         Spinner providerSpinner = dialogView.findViewById(R.id.provider_spinner);
         EditText newItemNameEditText = dialogView.findViewById(R.id.new_item_name);
+        newItemNameEditText.requestFocus();
+        openKeyboard(newItemNameEditText);
 
         AtomicReference<List<String>> providerNames = new AtomicReference<>(new ArrayList<>());
         Future<?> future = executorService.submit(() -> providerNames.set(appDatabase.providerEntityDao().getProviderNames()));
@@ -284,4 +292,18 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
         return itemDto.getId();
     }
 
+
+    private void hideKeyboard(View view) {
+        InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+        }
+    }
+
+    private void openKeyboard(View view) {
+        InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            imm.showSoftInput(view, InputMethodManager.SHOW_FORCED);
+        }
+    }
 }

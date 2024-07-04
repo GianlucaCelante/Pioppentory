@@ -35,33 +35,88 @@
                     android:textStyle="bold" />
 
                 <LinearLayout
-                    android:layout_width="match_parent"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:padding="16dp"
-                    android:weightSum="2">
+                    android:layout_gravity="center"
+                    android:padding="8dp"
+                    android:weightSum="3">
 
                     <TextView
-                        android:id="@+id/tot_portions_string"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginEnd="16dp"
-                        android:layout_weight="1"
-                        android:text="tot porzioni:"
-                        android:textAlignment="textEnd"
+                        android:layout_weight="2"
+                        android:text="tot porzioni disponibili:"
                         android:textAllCaps="true"
                         android:textSize="18sp" />
 
                     <TextView
-                        android:id="@+id/tot_portions_detail"
+                        android:id="@+id/tot_portions_avalaible"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
+                        android:layout_marginStart="3dp"
+                        android:textStyle="bold"
+                        android:textSize="24sp" />
+
+                </LinearLayout>
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_gravity="center"
+                    android:padding="8dp"
+                    android:weightSum="3">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="tot porzioni da ordinare:"
+                        android:textAllCaps="true"
                         android:textSize="18sp" />
+
+                    <TextView
+                        android:id="@+id/tot_portions_to_be_ordered"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="3dp"
+                        android:textStyle="bold"
+                        android:textSize="24sp" />
+
+
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_gravity="center"
+                    android:padding="8dp"
+                    android:weightSum="3">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Tot porzioni disponibili + tot porzioni da ordinare:"
+                        android:textAllCaps="true"
+                        android:textSize="18sp" />
+
+                    <TextView
+                        android:id="@+id/tot_portions_avalaible_plus_ordered"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="3dp"
+                        android:textStyle="bold"
+                        android:textSize="24sp" />
+
                 </LinearLayout>
             </LinearLayout>
         </androidx.cardview.widget.CardView>
-
 
         <TextView
             android:id="@+id/provider_name"
@@ -160,31 +215,14 @@
 
         </LinearLayout>
 
-        <LinearLayout
-            android:layout_width="match_parent"
+        <Button
+            android:id="@+id/calculate_quantity_to_be_ordered"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:gravity="center_horizontal"
-            android:orientation="horizontal"
-            android:padding="16dp">
-
-            <Button
-                android:id="@+id/calculate_quantity_to_be_ordered"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:padding="8dp"
-                android:layout_marginEnd="15dp"
-                android:text="CALCOLA QUANTITA'"
-                />
-
-            <Button
-                android:id="@+id/reset_quantity_to_be_ordered"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:padding="8dp"
-                android:layout_marginStart="15dp"
-                android:text="RESET CALCOLO"
-                />
-        </LinearLayout>
+            android:padding="8dp"
+            android:layout_marginEnd="15dp"
+            android:text="CALCOLA QUANTITA'"
+            />
 
         <View
             android:layout_width="match_parent"

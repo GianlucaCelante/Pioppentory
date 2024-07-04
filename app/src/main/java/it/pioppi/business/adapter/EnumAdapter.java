@@ -10,6 +10,8 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.cardview.widget.CardView;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
@@ -20,6 +22,7 @@ import java.util.concurrent.ExecutionException;
 
 import it.pioppi.R;
 import it.pioppi.business.dto.QuantityTypeDto;
+import it.pioppi.business.manager.ItemDetailFragmentManager;
 import it.pioppi.database.model.QuantityType;
 
 public class EnumAdapter extends RecyclerView.Adapter<EnumAdapter.EnumViewHolder> {
@@ -74,6 +77,7 @@ public class EnumAdapter extends RecyclerView.Adapter<EnumAdapter.EnumViewHolder
         if (holder.currentTextWatcher != null) {
             holder.enumTotPortions.removeTextChangedListener(holder.currentTextWatcher);
         }
+
         TextWatcher textWatcher = new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -82,24 +86,41 @@ public class EnumAdapter extends RecyclerView.Adapter<EnumAdapter.EnumViewHolder
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                // Update the quantity in the QuantityTypeDto
+                String normalizedText = ItemDetailFragmentManager.normalizeText(s.toString());
 
-                if (!s.toString().isEmpty()) {
-                    quantityTypesDto.get(holder.getBindingAdapterPosition()).setQuantity(Integer.parseInt(s.toString()));
+                if (!normalizedText.equals(s.toString())) {
+                    // Save the cursor position
+                    int selectionStart = holder.enumTotPortions.getSelectionStart();
+                    int selectionEnd = holder.enumTotPortions.getSelectionEnd();
+
+                    holder.enumTotPortions.removeTextChangedListener(this);
+                    holder.enumTotPortions.setText(normalizedText);
+                    holder.enumTotPortions.setSelection(Math.min(selectionStart, normalizedText.length()), Math.min(selectionEnd, normalizedText.length()));
+                    holder.enumTotPortions.addTextChangedListener(this);
+                }
+
+                // Update the quantity in the QuantityTypeDto
+                if (!normalizedText.isEmpty()) {
+                    quantityTypesDto.get(holder.getBindingAdapterPosition()).setQuantity(Integer.parseInt(normalizedText));
                 } else {
                     quantityTypesDto.get(holder.getBindingAdapterPosition()).setQuantity(0);
                 }
+
+                // Call the text change listener
                 textChangeListener.onTextChanged();
             }
 
             @Override
             public void afterTextChanged(Editable s) {
+                // Nothing needed here
             }
         };
 
         holder.enumTotPortions.addTextChangedListener(textWatcher);
         holder.currentTextWatcher = textWatcher;
     }
+
+
 
     @Override
     public int getItemCount() {
@@ -120,6 +141,7 @@ public class EnumAdapter extends RecyclerView.Adapter<EnumAdapter.EnumViewHolder
         TextView enumQuantityType;
         EditText enumTotPortions;
         TextWatcher currentTextWatcher;
+
 
         EnumViewHolder(View itemView) {
             super(itemView);

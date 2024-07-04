@@ -17,4 +17,9 @@ public class ItemDetailFragmentManager {
         return totPortions.get();
     }
 
+    public static String normalizeText(String text) {
+        return text.replaceFirst("^0+(?!$)", "");
+    }
+
+
 }
