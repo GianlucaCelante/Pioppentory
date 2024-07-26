@@ -88,5 +88,11 @@ dependencies {
     implementation ("androidx.navigation:navigation-compose:$nav_version")
     implementation ("de.mindpipe.android:android-logging-log4j:1.0.3")
 
+    // Required -- JUnit 4 framework
+    testImplementation ("junit:junit:4.13.2")
+    // Optional -- Mockito framework
+    testImplementation ("org.mockito:mockito-core:4.0.0")
+    // Optional -- Mockk framework
+    testImplementation ("io.mockk:mockk:1.12.0")
 
 }

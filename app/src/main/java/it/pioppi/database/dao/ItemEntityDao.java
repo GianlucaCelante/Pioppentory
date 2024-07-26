@@ -16,6 +16,7 @@ import it.pioppi.database.model.entity.ItemWithDetailAndProviderAndQuantityTypeE
 import it.pioppi.database.model.entity.ItemEntity;
 import it.pioppi.database.model.entity.ItemWithDetailAndProviderEntity;
 import it.pioppi.database.model.entity.ItemWithDetailEntity;
+import it.pioppi.database.model.entity.ItemWithProviderEntity;
 
 @Dao
 public interface ItemEntityDao extends BaseDao<ItemEntity> {
@@ -52,6 +53,10 @@ public interface ItemEntityDao extends BaseDao<ItemEntity> {
     @Transaction
     @Query("SELECT * FROM item WHERE id = :itemId")
     ItemWithDetailEntity getItemWithDetail(UUID itemId);
+
+    @Transaction
+    @Query("SELECT item.*, provider.* FROM item JOIN provider ON item.id = provider.item_id ORDER BY provider.name")
+    List<ItemWithProviderEntity> getItemsWithProvidersOrderedByProvider();
 
     @Transaction
     @Query("SELECT * FROM item WHERE id = :itemId")

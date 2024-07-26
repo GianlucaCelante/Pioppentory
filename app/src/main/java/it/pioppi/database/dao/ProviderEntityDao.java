@@ -34,4 +34,5 @@ public interface ProviderEntityDao extends BaseDao<ProviderEntity> {
 
     @Query("SELECT DISTINCT name FROM provider")
     List<String> getProviderNames();
+
 }

@@ -1,10 +1,6 @@
 package it.pioppi.business.adapter;
 
-import static java.security.AccessController.getContext;
-
 import android.content.Context;
-import android.content.res.ColorStateList;
-import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,9 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.card.MaterialCardView;
 
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -43,7 +37,6 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
     private final OnLongItemClickListener longListener;
     private final Context context;
 
-
     public ItemAdapter(List<ItemDto> itemList, OnItemClickListener listener, OnLongItemClickListener longListener, Context context) {
         this.itemList = itemList;
         this.listener = listener;
@@ -54,8 +47,7 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
     @NonNull
     @Override
     public ItemViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.card_item, parent, false);
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.card_item, parent, false);
         return new ItemViewHolder(view);
     }
 
@@ -85,23 +77,18 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
                 case WHITE:
                     holder.status.setCardBackgroundColor(ContextCompat.getColor(context, R.color.white));
                     break;
-
                 case BLUE:
                     holder.status.setCardBackgroundColor(ContextCompat.getColor(context, R.color.blue));
                     break;
-
                 case GREEN:
                     holder.status.setCardBackgroundColor(ContextCompat.getColor(context, R.color.green));
                     break;
-
                 case RED:
                     holder.status.setCardBackgroundColor(ContextCompat.getColor(context, R.color.red));
                     break;
-
                 default:
             }
         }
-
     }
 
     @Override
@@ -109,20 +96,13 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
         return this.itemList.size();
     }
 
-    public List<ItemDto> getItemList() {
-        return itemList;
-    }
-
     public void setItemList(List<ItemDto> itemList) {
         this.itemList = new ArrayList<>(itemList);
         notifyDataSetChanged();
     }
 
-
-
     public static class ItemViewHolder extends RecyclerView.ViewHolder {
         public TextView itemName;
-        public TextView itemCountString;
         public TextView totPortions;
         public TextView checkDate;
         public ImageView hasNote;
@@ -130,23 +110,11 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
 
         public ItemViewHolder(View itemView) {
             super(itemView);
-            itemName = itemView.findViewById(R.id.item_name);
-            itemCountString = itemView.findViewById(R.id.item_count_string);
+            itemName = itemView.findViewById(R.id.item_name_card);
             totPortions = itemView.findViewById(R.id.tot_portions);
             checkDate = itemView.findViewById(R.id.check_date);
             hasNote = itemView.findViewById(R.id.has_note);
             status = itemView.findViewById(R.id.card_item);
-
         }
-    }
-
-    private int getItemPositionById(UUID id) {
-        for (int i = 0; i < itemList.size(); i++) {
-            if (itemList.get(i).getId().equals(id)) {
-                return i;
-            }
-        }
-        return RecyclerView.NO_POSITION;
     }
 }
-

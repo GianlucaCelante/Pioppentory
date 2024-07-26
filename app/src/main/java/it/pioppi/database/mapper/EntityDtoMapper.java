@@ -6,10 +6,12 @@ import java.util.UUID;
 
 import it.pioppi.business.dto.ItemDetailDto;
 import it.pioppi.business.dto.ItemDto;
+import it.pioppi.business.dto.ItemWithProviderDto;
 import it.pioppi.business.dto.ProviderDto;
 import it.pioppi.business.dto.QuantityTypeDto;
 import it.pioppi.database.model.entity.ItemDetailEntity;
 import it.pioppi.database.model.entity.ItemEntity;
+import it.pioppi.database.model.entity.ItemWithProviderEntity;
 import it.pioppi.database.model.entity.ProviderEntity;
 import it.pioppi.database.model.entity.QuantityTypeEntity;
 
@@ -195,4 +197,70 @@ public class EntityDtoMapper {
         }
         return quantityTypeEntities;
     }
+
+
+    public static ItemWithProviderEntity dtoToEntity(ItemWithProviderDto itemWithProviderDto) {
+        if (itemWithProviderDto == null) {
+            return null;
+        }
+        ItemWithProviderEntity itemWithProviderEntity = new ItemWithProviderEntity();
+        itemWithProviderEntity.itemEntity = dtoToEntity(itemWithProviderDto.getItem());
+        itemWithProviderEntity.providers = dtosToEntitiesProviders(itemWithProviderDto.getProviders());
+        return itemWithProviderEntity;
+    }
+
+    public static List<ProviderEntity> dtosToEntitiesProviders(List<ProviderDto> providerDtos) {
+        if (providerDtos == null) {
+            return new ArrayList<>();
+        }
+        List<ProviderEntity> providerEntities = new ArrayList<>();
+        for (ProviderDto providerDto : providerDtos) {
+            providerEntities.add(dtoToEntity(providerDto));
+        }
+        return providerEntities;
+    }
+
+    public static ItemWithProviderDto entityToDto(ItemWithProviderEntity itemWithProviderEntity) {
+        if (itemWithProviderEntity == null) {
+            return null;
+        }
+        ItemWithProviderDto itemWithProviderDto = new ItemWithProviderDto();
+        itemWithProviderDto.setItem(entityToDto(itemWithProviderEntity.itemEntity));
+        itemWithProviderDto.setProviders(entitiesToDtosProviders(itemWithProviderEntity.providers));
+        return itemWithProviderDto;
+    }
+
+    public static List<ProviderDto> entitiesToDtosProviders(List<ProviderEntity> providerEntities) {
+        if (providerEntities == null) {
+            return new ArrayList<>();
+        }
+        List<ProviderDto> providerDtos = new ArrayList<>();
+        for (ProviderEntity providerEntity : providerEntities) {
+            providerDtos.add(entityToDto(providerEntity));
+        }
+        return providerDtos;
+    }
+
+    public static List<ItemWithProviderDto> entitiesToDtosItemWithProviders(List<ItemWithProviderEntity> itemWithProviderEntities) {
+        if (itemWithProviderEntities == null) {
+            return new ArrayList<>();
+        }
+        List<ItemWithProviderDto> itemWithProviderDtos = new ArrayList<>();
+        for (ItemWithProviderEntity itemWithProviderEntity : itemWithProviderEntities) {
+            itemWithProviderDtos.add(entityToDto(itemWithProviderEntity));
+        }
+        return itemWithProviderDtos;
+    }
+
+    public static List<ItemWithProviderEntity> dtosToEntitiesItemWithProviders(List<ItemWithProviderDto> itemWithProviderDtos) {
+        if (itemWithProviderDtos == null) {
+            return new ArrayList<>();
+        }
+        List<ItemWithProviderEntity> itemWithProviderEntities = new ArrayList<>();
+        for (ItemWithProviderDto itemWithProviderDto : itemWithProviderDtos) {
+            itemWithProviderEntities.add(dtoToEntity(itemWithProviderDto));
+        }
+        return itemWithProviderEntities;
+    }
+
 }

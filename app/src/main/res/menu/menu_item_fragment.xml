@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/action_filter"
+        android:title="Filter"
+        android:icon="@drawable/filter_descending"
+        app:showAsAction="always">
+        <menu>
+            <item
+                android:id="@+id/filter_by_A_to_Z"
+                android:title="A - Z" />
+            <item
+                android:id="@+id/filter_by_Z_to_A"
+                android:title="Z - A" />
+            <item
+                android:id="@+id/filter_by_provider"
+                android:title="Fornitori" />
+            <item
+                android:id="@+id/filter_by_provider_and_status"
+                android:title="Fornitori e " />
+            <item
+                android:id="@+id/filter_by_status_white"
+                android:title="Non controllati - BIANCHI"
+                />
+            <item
+                android:id="@+id/filter_by_status_blue"
+                android:title="Controllati - BLU" />
+            <item
+                android:id="@+id/filter_by_status_red"
+                android:title="Confermati e fabbisogno insufficiente - ROSSO" />
+            <item
+                android:id="@+id/filter_by_status_green"
+                android:title="Confermati e fabbisogno sufficiente - VERDE" />
+
+        </menu>
+    </item>
+
+</menu>

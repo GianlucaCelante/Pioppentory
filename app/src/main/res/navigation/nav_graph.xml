@@ -8,7 +8,7 @@
     <fragment
         android:id="@+id/itemFragment"
         android:name="it.pioppi.business.fragment.ItemFragment"
-        android:label="fragment_item"
+        android:label="Prodotti"
         tools:layout="@layout/fragment_item" >
         <action
             android:id="@+id/action_itemFragment_to_itemDetailFragment"
@@ -18,6 +18,6 @@
     <fragment
         android:id="@+id/itemDetailFragment"
         android:name="it.pioppi.business.fragment.ItemDetailFragment"
-        android:label="fragment_item_detail"
+        android:label="Dettagli prodotto"
         tools:layout="@layout/fragment_item_detail" />
 </navigation>

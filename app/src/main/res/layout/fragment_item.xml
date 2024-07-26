@@ -27,7 +27,7 @@
         android:layout_margin="16dp"
         android:src="@drawable/plus_icon"
 
-        android:contentDescription="Nuovo"
+        android:contentDescription="CREA"
         />
 
 

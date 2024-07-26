@@ -1,10 +1,11 @@
 package it.pioppi.business.fragment;
 
-import static androidx.core.content.ContextCompat.getSystemService;
-
 import android.content.Context;
 import android.os.Bundle;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
@@ -17,7 +18,10 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.view.MenuProvider;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.Lifecycle;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.GridLayoutManager;
@@ -27,21 +31,23 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import it.pioppi.R;
+import it.pioppi.business.viewmodel.ItemViewModel;
 import it.pioppi.business.adapter.ItemAdapter;
 import it.pioppi.business.dto.ItemDto;
-import it.pioppi.business.dto.ProviderDto;
+import it.pioppi.business.viewmodel.ItemWithProviderViewModel;
 import it.pioppi.database.AppDatabase;
-import it.pioppi.database.dao.ItemEntityDao;
-import it.pioppi.database.dao.QuantityTypeEntityDao;
 import it.pioppi.database.mapper.EntityDtoMapper;
 import it.pioppi.database.model.entity.ItemDetailEntity;
 import it.pioppi.database.model.entity.ItemEntity;
@@ -54,35 +60,87 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
     private AppDatabase appDatabase;
     private ItemAdapter itemAdapter;
     private ExecutorService executorService;
-    private List<ItemDto> itemDtos;
+    private ItemViewModel itemViewModel;
+    private RecyclerView recyclerView;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         appDatabase = AppDatabase.getInstance(getContext());
         executorService = Executors.newSingleThreadExecutor();
+        itemViewModel = new ViewModelProvider(requireActivity()).get(ItemViewModel.class);
+
+        try {
+            List<ItemDto> itemDtoList = loadItems();
+            itemViewModel.setItems(itemDtoList);
+
+        } catch (ExecutionException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_item, container, false);
-        RecyclerView recyclerView = view.findViewById(R.id.recycler_view);
-        RecyclerView.LayoutManager mLayoutManager = new GridLayoutManager(getContext(), 4);
-        recyclerView.setLayoutManager(mLayoutManager);
 
-        try {
-            itemDtos = loadItems();
-        } catch (ExecutionException | InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-        itemAdapter = new ItemAdapter(itemDtos, this, this, getContext());
-        recyclerView.setAdapter(itemAdapter);
+        recyclerView = view.findViewById(R.id.recycler_view);
+        itemAdapter = new ItemAdapter(new ArrayList<>(), this, this, getContext());
+
+        itemViewModel.getItems().observe(getViewLifecycleOwner(), itemList -> {
+            itemAdapter.setItemList(itemList);
+            recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 4));
+            recyclerView.setAdapter(itemAdapter);
+
+        });
+
+
+        setupMenuToolbar();
 
         FloatingActionButton fab = view.findViewById(R.id.new_item_fab);
-        fab.setOnClickListener(v -> addNewItem(inflater, itemDtos));
+        fab.setOnClickListener(v -> addNewItem(inflater, itemViewModel.getItems().getValue()));
 
         return view;
+    }
 
+
+    private void setupMenuToolbar() {
+        requireActivity().addMenuProvider(new MenuProvider() {
+            @Override
+            public void onCreateMenu(@NonNull Menu menu, @NonNull MenuInflater menuInflater) {
+                menuInflater.inflate(R.menu.menu_item_fragment, menu);
+            }
+
+            @Override
+            public boolean onMenuItemSelected(@NonNull MenuItem menuItem) {
+                int itemId = menuItem.getItemId();
+                if (itemId == R.id.filter_by_A_to_Z) {
+                    filterItemsByNameAscending();
+                    return true;
+                } else if (itemId == R.id.filter_by_Z_to_A) {
+                    filterItemsByNameDescending();
+                    return true;
+                } else if (itemId == R.id.filter_by_provider) {
+                    filterItemsByProvider();
+                    return true;
+                } else if (itemId == R.id.filter_by_status_white) {
+                    filterItemsByStatus(ItemStatus.WHITE);
+                    return true;
+                } else if (itemId == R.id.filter_by_status_blue) {
+                    filterItemsByStatus(ItemStatus.BLUE);
+                    return true;
+                } else if (itemId == R.id.filter_by_status_red) {
+                    filterItemsByStatus(ItemStatus.RED);
+                    return true;
+                } else if (itemId == R.id.filter_by_status_green) {
+                    filterItemsByStatus(ItemStatus.GREEN);
+                    return true;
+                } else if (itemId == R.id.filter_by_provider_and_status) {
+                    filterItemsByProviderAndStatus();
+                    return true;
+                }
+                return false;
+            }
+        }, getViewLifecycleOwner(), Lifecycle.State.RESUMED);
     }
 
     private void addProviderItem(LayoutInflater inflater, ArrayAdapter<String> spinnerAdapter, Spinner providerSpinner) {
@@ -94,54 +152,56 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
 
         AlertDialog.Builder builder = new AlertDialog.Builder(requireActivity());
         builder.setView(dialogView)
-                .setPositiveButton("Aggiungi", (dialog, id) -> {
-                    String newProviderName = newProviderNameEditText.getText().toString().trim();
-
-                    if (newProviderName.isEmpty()) {
-                        Toast.makeText(getContext(), "Inserisci un nome per il nuovo fornitore", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-
-                    AtomicReference<List<String>> providerNames = new AtomicReference<>(new ArrayList<>());
-                    Future<?> future = executorService.submit(() -> providerNames.set(appDatabase.providerEntityDao().getProviderNames()));
-
-                    try {
-                        future.get();
-                    } catch (ExecutionException | InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-
-                    List<String> providers = providerNames.get();
-                    providers.remove(null);
-                    boolean isUnique = providers.stream().noneMatch(provider -> provider.equalsIgnoreCase(newProviderName));
-
-                    if (!isUnique) {
-                        Toast.makeText(getContext(), "Esiste già un fornitore con questo nome", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-
-                    LocalDateTime now = LocalDateTime.now();
-
-                    ProviderEntity newProvider = new ProviderEntity();
-                    newProvider.setId(UUID.randomUUID());
-                    newProvider.setName(newProviderName);
-                    newProvider.setCreationDate(now);
-
-                    executorService.execute(() -> {
-                        appDatabase.providerEntityDao().insert(newProvider);
-
-                        requireActivity().runOnUiThread(() -> {
-                            spinnerAdapter.add(newProviderName);
-                            spinnerAdapter.notifyDataSetChanged();
-                            providerSpinner.setSelection(spinnerAdapter.getPosition(newProviderName));
-                        });
-                    });
-                })
+                .setPositiveButton("Aggiungi", null)
                 .setNegativeButton("Indietro", (dialog, id) -> dialog.cancel());
 
-        builder.show();
-    }
+        AlertDialog dialog = builder.create();
+        dialog.setOnShowListener(dlg -> {
+            Button positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+            positiveButton.setOnClickListener(v -> {
+                String newProviderName = newProviderNameEditText.getText().toString().trim();
 
+                if (newProviderName.isEmpty()) {
+                    Toast.makeText(getContext(), "Inserisci un nome per il nuovo fornitore", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                List<String> providerNames;
+                try {
+                    providerNames = executorService.submit(() -> appDatabase.providerEntityDao().getProviderNames()).get();
+                } catch (ExecutionException | InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+
+                providerNames.remove(null);
+                boolean isUnique = providerNames.stream().noneMatch(provider -> provider.equalsIgnoreCase(newProviderName));
+
+                if (!isUnique) {
+                    Toast.makeText(getContext(), "Esiste già un fornitore con questo nome", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                LocalDateTime now = LocalDateTime.now();
+
+                ProviderEntity newProvider = new ProviderEntity();
+                newProvider.setId(UUID.randomUUID());
+                newProvider.setName(newProviderName);
+                newProvider.setCreationDate(now);
+
+                executorService.execute(() -> {
+                    appDatabase.providerEntityDao().insert(newProvider);
+
+                    requireActivity().runOnUiThread(() -> {
+                        spinnerAdapter.add(newProviderName);
+                        spinnerAdapter.notifyDataSetChanged();
+                        providerSpinner.setSelection(spinnerAdapter.getPosition(newProviderName));
+                        dialog.dismiss();
+                    });
+                });
+            });
+        });
+        dialog.show();
+    }
 
     private void addNewItem(@NonNull LayoutInflater inflater, List<ItemDto> itemDtos) {
         View dialogView = inflater.inflate(R.layout.new_item_spinner, null);
@@ -151,16 +211,14 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
         newItemNameEditText.requestFocus();
         openKeyboard(newItemNameEditText);
 
-        AtomicReference<List<String>> providerNames = new AtomicReference<>(new ArrayList<>());
-        Future<?> future = executorService.submit(() -> providerNames.set(appDatabase.providerEntityDao().getProviderNames()));
-
+        // Caricamento dei nomi dei fornitori in modo asincrono
+        List<String> providers;
         try {
-            future.get();
+            providers = executorService.submit(() -> appDatabase.providerEntityDao().getProviderNames()).get();
         } catch (ExecutionException | InterruptedException e) {
             throw new RuntimeException(e);
         }
 
-        List<String> providers = providerNames.get();
         providers.remove(null);
         ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, providers);
         spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -169,88 +227,96 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
         Button addProviderButton = dialogView.findViewById(R.id.add_provider_button);
         addProviderButton.setOnClickListener(v -> addProviderItem(inflater, spinnerAdapter, providerSpinner));
 
-        AtomicReference<ItemDto> newItemDto = new AtomicReference<>(new ItemDto());
-        // Build and show the dialog
         AlertDialog.Builder builder = new AlertDialog.Builder(requireActivity());
         builder.setView(dialogView)
-                .setPositiveButton("Aggiungi", (dialog, id) -> {
-                    String provider = providerSpinner.getSelectedItem() != null ? providerSpinner.getSelectedItem().toString() : null;
-                    String newItemName = newItemNameEditText.getText().toString();
+                .setPositiveButton("Aggiungi", null)
+                .setNegativeButton("Indietro", (dialog, id) -> dialog.cancel());
 
-                    if (newItemName.isEmpty()) {
-                        Toast.makeText(getContext(), "Inserisci un nome per il nuovo prodotto", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
+        AlertDialog dialog = builder.create();
+        dialog.setOnShowListener(dlg -> {
+            Button positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+            positiveButton.setOnClickListener(v -> {
+                String provider = providerSpinner.getSelectedItem() != null ? providerSpinner.getSelectedItem().toString() : null;
+                String newItemName = newItemNameEditText.getText().toString();
 
-                    if (provider == null || provider.isEmpty()) {
-                        Toast.makeText(getContext(), "Seleziona un fornitore", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
+                if (newItemName.isEmpty()) {
+                    Toast.makeText(getContext(), "Inserisci un nome per il nuovo prodotto", Toast.LENGTH_SHORT).show();
+                    return;
+                }
 
-                    LocalDateTime now = LocalDateTime.now();
+                if (provider == null || provider.isEmpty()) {
+                    Toast.makeText(getContext(), "Seleziona un fornitore", Toast.LENGTH_SHORT).show();
+                    return;
+                }
 
-                    ItemEntity newItem = new ItemEntity();
-                    newItem.setId(UUID.randomUUID());
-                    newItem.setName(newItemName);
-                    newItem.setTotPortions(0);
-                    newItem.setStatus(ItemStatus.WHITE);
-                    newItem.setCreationDate(now);
+                LocalDateTime now = LocalDateTime.now();
 
-                    ProviderEntity providerEntity = new ProviderEntity();
-                    providerEntity.setId(UUID.randomUUID());
-                    providerEntity.setItemId(newItem.getId());
-                    providerEntity.setName(provider);
-                    providerEntity.setCreationDate(now);
+                ItemEntity newItem = new ItemEntity();
+                newItem.setId(UUID.randomUUID());
+                newItem.setName(newItemName);
+                newItem.setTotPortions(0);
+                newItem.setStatus(ItemStatus.WHITE);
+                newItem.setCreationDate(now);
 
-                    ItemDetailEntity itemDetailEntity = new ItemDetailEntity();
-                    itemDetailEntity.setId(UUID.randomUUID());
-                    itemDetailEntity.setItemId(newItem.getId());
-                    itemDetailEntity.setCreationDate(now);
+                ProviderEntity providerEntity = new ProviderEntity();
+                providerEntity.setId(UUID.randomUUID());
+                providerEntity.setItemId(newItem.getId());
+                providerEntity.setName(provider);
+                providerEntity.setCreationDate(now);
 
-                    QuantityTypeEntity quantityTypeEntity = new QuantityTypeEntity();
-                    quantityTypeEntity.setId(UUID.randomUUID());
-                    quantityTypeEntity.setItemId(newItem.getId());
-                    quantityTypeEntity.setCreationDate(now);
+                ItemDetailEntity itemDetailEntity = new ItemDetailEntity();
+                itemDetailEntity.setId(UUID.randomUUID());
+                itemDetailEntity.setItemId(newItem.getId());
+                itemDetailEntity.setCreationDate(now);
 
-                    executorService.execute(() -> {
+                QuantityTypeEntity quantityTypeEntity = new QuantityTypeEntity();
+                quantityTypeEntity.setId(UUID.randomUUID());
+                quantityTypeEntity.setItemId(newItem.getId());
+                quantityTypeEntity.setCreationDate(now);
+
+                executorService.execute(() -> {
+                    appDatabase.runInTransaction(() -> {
                         appDatabase.itemEntityDao().insert(newItem);
                         appDatabase.providerEntityDao().insert(providerEntity);
                         appDatabase.itemDetailEntityDao().insert(itemDetailEntity);
                         appDatabase.quantityTypeEntityDao().insert(quantityTypeEntity);
                     });
 
-                    newItemDto.set(EntityDtoMapper.entityToDto(newItem));
-                    itemDtos.add(newItemDto.get());
-                    itemAdapter.setItemList(itemDtos);
-                })
-                .setNegativeButton("Indietro", (dialog, id) -> dialog.cancel());
-
-        builder.show();
+                    itemDtos.add(EntityDtoMapper.entityToDto(newItem));
+                    requireActivity().runOnUiThread(() -> {
+                        itemAdapter.setItemList(itemDtos);
+                        dialog.dismiss();
+                    });
+                });
+            });
+        });
+        dialog.show();
     }
 
     private List<ItemDto> loadItems() throws ExecutionException, InterruptedException {
-    AtomicReference<List<ItemDto>> itemDtos = new AtomicReference<>(new ArrayList<>());
+        List<ItemDto> itemDtos = new ArrayList<>();
+        Future<?> future = executorService.submit(() -> {
+            List<ItemEntity> itemEntities = appDatabase.itemEntityDao().getAllItems();
 
-    Future<?> future = executorService.submit(() -> {
-
-            ItemEntityDao entityDao = appDatabase.itemEntityDao();
-            List<ItemEntity> allItems = entityDao.getAllItems();
-            itemDtos.set(EntityDtoMapper.entityToDto(allItems));
-
+            itemEntities.forEach(itemEntity -> {
+                ItemDto itemDto = EntityDtoMapper.entityToDto(itemEntity);
+                itemDtos.add(itemDto);
+            });
         });
         future.get();
-        return itemDtos.get();
+        return itemDtos;
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        executorService.shutdown();
+        if (!executorService.isShutdown()) {
+            executorService.shutdown();
+        }
     }
 
     @Override
     public void onItemClick(ItemDto item) {
-
         if (item == null || item.getId() == null) {
             return;
         }
@@ -258,8 +324,8 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
         Bundle bundle = new Bundle();
         bundle.putString("itemId", item.getId().toString());
         navController.navigate(R.id.action_itemFragment_to_itemDetailFragment, bundle);
-
     }
+
 
     @Override
     public UUID onLongItemClick(ItemDto itemDto) {
@@ -271,11 +337,10 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                         ItemEntity itemEntity = EntityDtoMapper.dtoToEntity(itemDto);
                         appDatabase.itemEntityDao().delete(itemEntity);
 
-                        // Aggiorna la lista degli item nel thread principale
                         requireActivity().runOnUiThread(() -> {
-                            int index = itemDtos.indexOf(itemDto);
+                            int index = Objects.requireNonNull(itemViewModel.getItems().getValue()).indexOf(itemDto);
                             if (index != RecyclerView.NO_POSITION) {
-                                itemDtos.remove(index);
+                                itemViewModel.getItems().getValue().remove(index);
                                 itemAdapter.notifyItemRemoved(index);
                                 Toast.makeText(getContext(), "Elemento eliminato", Toast.LENGTH_SHORT).show();
                             }
@@ -290,6 +355,39 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                 .show();
 
         return itemDto.getId();
+    }
+
+    private void filterItemsByNameAscending() {
+        Objects.requireNonNull(itemViewModel.getItems().getValue()).sort(Comparator.comparing(ItemDto::getName, String.CASE_INSENSITIVE_ORDER));
+        itemAdapter.setItemList(itemViewModel.getItems().getValue());
+        recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 4));
+        recyclerView.setAdapter(itemAdapter);
+
+    }
+
+    private void filterItemsByNameDescending() {
+        Objects.requireNonNull(itemViewModel.getItems().getValue()).sort(Comparator.comparing(ItemDto::getName, String.CASE_INSENSITIVE_ORDER).reversed());
+        itemAdapter.setItemList(itemViewModel.getItems().getValue());
+        recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 4));
+        recyclerView.setAdapter(itemAdapter);
+
+    }
+
+    private void filterItemsByProvider() {
+
+    }
+
+    private void filterItemsByStatus(ItemStatus status) {
+        List<ItemDto> itemDtoList = Objects.requireNonNull(itemViewModel.getItems().getValue()).stream()
+                .filter(item -> item.getStatus().equals(status))
+                .collect(Collectors.toList());
+        itemAdapter.setItemList(itemDtoList);
+        recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 4));
+        recyclerView.setAdapter(itemAdapter);
+    }
+
+    private void filterItemsByProviderAndStatus() {
+        // Implementa la logica per filtrare gli item per provider e status
     }
 
 
