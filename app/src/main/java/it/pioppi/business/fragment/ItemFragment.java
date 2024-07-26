@@ -338,13 +338,20 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                         appDatabase.itemEntityDao().delete(itemEntity);
 
                         requireActivity().runOnUiThread(() -> {
-                            int index = Objects.requireNonNull(itemViewModel.getItems().getValue()).indexOf(itemDto);
-                            if (index != RecyclerView.NO_POSITION) {
-                                itemViewModel.getItems().getValue().remove(index);
-                                itemAdapter.notifyItemRemoved(index);
-                                Toast.makeText(getContext(), "Elemento eliminato", Toast.LENGTH_SHORT).show();
+                            List<ItemDto> currentList = itemViewModel.getItems().getValue();
+                            if (currentList != null) {
+                                List<ItemDto> updatedList = new ArrayList<>(currentList);
+                                int index = updatedList.indexOf(itemDto);
+                                if (index != RecyclerView.NO_POSITION) {
+                                    updatedList.remove(index);
+                                    itemViewModel.setItems(updatedList);
+                                    itemAdapter.setItemList(updatedList);
+                                    recyclerView.setAdapter(itemAdapter);
+                                    Toast.makeText(getContext(), "Elemento eliminato", Toast.LENGTH_SHORT).show();
+                                }
                             }
                         });
+
                     } catch (Exception e) {
                         requireActivity().runOnUiThread(() -> {
                             Toast.makeText(getContext(), "Errore durante l'eliminazione", Toast.LENGTH_SHORT).show();
@@ -356,6 +363,8 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
 
         return itemDto.getId();
     }
+
+
 
     private void filterItemsByNameAscending() {
         Objects.requireNonNull(itemViewModel.getItems().getValue()).sort(Comparator.comparing(ItemDto::getName, String.CASE_INSENSITIVE_ORDER));

@@ -15,8 +15,8 @@ public class ItemViewModel extends ViewModel {
         return items;
     }
 
-    public void setItems(List<ItemDto> itemList) {
-        items.setValue(itemList);
+    public void setItems(List<ItemDto> items) {
+        this.items.setValue(items);
     }
 
     public void updateItem(ItemDto updatedItem) {
