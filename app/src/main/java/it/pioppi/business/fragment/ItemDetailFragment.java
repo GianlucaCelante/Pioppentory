@@ -80,7 +80,6 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
     private RecyclerView quantityTypesAvailable;
     private RecyclerView quantityTypesToBeOrdered;
     private ItemViewModel itemViewModel;
-    private List<ItemTagDto> itemTagsDtos;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -104,7 +103,6 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
 
             try {
                 itemWithDetailAndProviderAndQuantityTypeDto = fetchItemWithDetailAndProviderAndQuantityTypeById(itemId);
-                itemTagsDtos = fetchItemTagsById(itemId);
             } catch (ExecutionException | InterruptedException e) {
                 throw new RuntimeException(e);
             }
@@ -143,22 +141,24 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
 
         });
 
-        return view;
-    }
+        EditText itemNameTextView = view.findViewById(R.id.item_name_card_detail);
+        itemNameTextView.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
 
-    private List<ItemTagDto> fetchItemTagsById(UUID itemId) throws ExecutionException, InterruptedException {
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            }
 
-        List<ItemTagDto> itemTagsDtos = new ArrayList<>();
-
-        Future<?> future = executorService.submit(() -> {
-            ItemTagEntityDao itemTagEntityDao = appDatabase.itemTagEntityDao();
-            List<ItemTagEntity> itemTagEntities = itemTagEntityDao.getItemTagsForItem(itemId);
-            itemTagsDtos.addAll(EntityDtoMapper.entitiesToDtosItemTags(itemTagEntities));
+            @Override
+            public void afterTextChanged(Editable s) {
+                String newItemName = s.toString().trim();
+                checkIfItemNameExists(newItemName, saveButton);
+            }
         });
 
-        future.get();
-
-        return itemTagsDtos;
+        return view;
     }
 
     @Override
@@ -184,6 +184,11 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         TextView portionsOnHolidayTextView = view.findViewById(R.id.portions_on_holiday);
         TextView maxPortionsSoldTextView = view.findViewById(R.id.max_portions_sold);
         EditText notesEditText = view.findViewById(R.id.note);
+        EditText itemNameTextView = view.findViewById(R.id.item_name_card_detail);
+        EditText providerNameTextView = view.findViewById(R.id.provider_name);
+
+        // PROVIDER
+        provider.setName(providerNameTextView.getText().toString());
 
         // ITEM_DETAIL
         Integer portionsPerWeekend = parseIntegerValueToTextView(portionsPerWeekendTextView);
@@ -209,10 +214,11 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         Integer totPortionsToBeOrdered = calculateTotPortions(quantityTypesToBeOrdered, QuantityPurpose.TO_BE_ORDERED);
 
         String note = notesEditText.getText().toString();
+        String itemName = itemNameTextView.getText().toString();
 
         ItemDto finalItem = new ItemDto();
         finalItem.setId(item.getId());
-        finalItem.setName(item.getName());
+        finalItem.setName(itemName);
         finalItem.setCreationDate(item.getCreationDate());
         finalItem.setLastUpdateDate(LocalDateTime.now());
         finalItem.setCheckDate(LocalDateTime.now());
@@ -253,7 +259,6 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
             ItemEntity itemEntity = EntityDtoMapper.dtoToEntity(finalItem);
             if(itemEntity.getId() != null) {
                 itemEntityDao.upsert(itemEntity);
-
             } else {
                 itemEntity.setId(UUID.randomUUID());
                 itemEntityDao.upsert(itemEntity);
@@ -276,7 +281,6 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
             }
 
             finalQuantityTypes.forEach(quantityTypeDto -> {
-
                 QuantityTypeEntity quantityTypeEntity = EntityDtoMapper.dtoToEntity(quantityTypeDto);
                 if(quantityTypeEntity.getId() != null) {
                     quantityTypeEntityDao.upsert(quantityTypeEntity);
@@ -290,11 +294,44 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
 
         future.get();
 
-        // Aggiorna l'item nella ViewModel
         itemViewModel.updateItem(finalItem);
 
-        Toast.makeText(requireContext(), "Salvato", Toast.LENGTH_SHORT).show();
+        Toast.makeText(requireContext(), "Prodotto salvato", Toast.LENGTH_SHORT).show();
         NavHostFragment.findNavController(this).popBackStack();
+    }
+
+    private void checkIfItemNameExists(String newItemName, FloatingActionButton saveButton) {
+        executorService.execute(() -> {
+            List<String> existingItems = appDatabase.itemEntityDao().getUniqueItemNames();
+            boolean itemNameExists = existingItems.stream()
+                    .anyMatch(item -> item.equalsIgnoreCase(newItemName));
+
+            requireActivity().runOnUiThread(() -> {
+                if (itemNameExists) {
+                    saveButton.setEnabled(false);
+                    Toast.makeText(getContext(), "Esiste già un prodotto con questo nome", Toast.LENGTH_SHORT).show();
+                } else {
+                    saveButton.setEnabled(true);
+                }
+            });
+        });
+    }
+
+    private void checkIfItemProviderExists(String providerName, FloatingActionButton saveButton) {
+        executorService.execute(() -> {
+            List<String> providerNames = appDatabase.providerEntityDao().getProviderNames();
+            boolean providerNameExists = providerNames.stream()
+                    .anyMatch(prov -> prov.equalsIgnoreCase(providerName));
+
+            requireActivity().runOnUiThread(() -> {
+                if (providerNameExists) {
+                    saveButton.setEnabled(false);
+                    Toast.makeText(getContext(), "Esiste già un fornitore con questo nome", Toast.LENGTH_SHORT).show();
+                } else {
+                    saveButton.setEnabled(true);
+                }
+            });
+        });
     }
 
     private void updatePortionsNeededForWeekendWhenPortionsRequiredOnSaturdayAndOnSundayChanged(View view) {
@@ -305,7 +342,6 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         TextWatcher portionsTextWatcher = new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-                // Niente da fare qui
             }
 
             @Override
@@ -460,16 +496,13 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
 
         View dialogView = inflater.inflate(R.layout.dialog_add_quantity_type, null);
 
-        // Access the Spinner and EditText from the inflated layout
         Spinner spinner = dialogView.findViewById(R.id.quantity_type_spinner);
         EditText quantityAvailable = dialogView.findViewById(R.id.quantity_type_available);
 
-        // Set up the Spinner with an adapter
         ArrayAdapter<QuantityType> spinnerAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, availableQuantityTypes);
         spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinner.setAdapter(spinnerAdapter);
 
-        // Build and show the dialog
         AlertDialog.Builder builder = new AlertDialog.Builder(requireActivity());
         builder.setView(dialogView)
                 .setPositiveButton("Aggiungi", (dialog, id) -> {
@@ -561,7 +594,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
     }
 
     protected ItemWithDetailAndProviderAndQuantityTypeDto prefillFields(View view) {
-        TextView providerNameTextView = view.findViewById(R.id.provider_name);
+        EditText providerNameTextView = view.findViewById(R.id.provider_name);
         ProviderDto provider = itemWithDetailAndProviderAndQuantityTypeDto.getProvider();
         if (provider != null) {
             providerNameTextView.setText(provider.getName());
@@ -569,7 +602,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
 
         ItemDto item = itemWithDetailAndProviderAndQuantityTypeDto.getItem();
         if (item != null) {
-            TextView itemNameTextView = view.findViewById(R.id.item_name_card_detail);
+            EditText itemNameTextView = view.findViewById(R.id.item_name_card_detail);
             TextView totPortionsAvailableTextView = view.findViewById(R.id.tot_portions_avalaible);
 
             itemNameTextView.setText(item.getName());

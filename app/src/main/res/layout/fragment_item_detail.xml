@@ -33,12 +33,15 @@
                     android:orientation="vertical"
                     android:padding="16dp">
 
-                    <TextView
+                    <EditText
                         android:id="@+id/item_name_card_detail"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center"
                         android:textSize="30sp"
+                        android:padding="8dp"
+                        android:autofillHints="Nome del prodotto"
+                        android:inputType="text"
                         android:textStyle="bold" />
 
                     <LinearLayout
@@ -121,13 +124,15 @@
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
-            <TextView
+            <EditText
                 android:id="@+id/provider_name"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:gravity="center"
                 android:textSize="20sp"
+                android:inputType="text"
+                android:autofillHints="Nome del fornitore"
                 android:padding="8dp" />
 
             <View

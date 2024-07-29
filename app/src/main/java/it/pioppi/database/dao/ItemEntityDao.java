@@ -68,4 +68,7 @@ public interface ItemEntityDao extends BaseDao<ItemEntity> {
 
     @Query("SELECT id FROM item WHERE name = :name COLLATE NOCASE")
     UUID getItemByName(String name);
+
+    @Query("SELECT DISTINCT name FROM item")
+    List<String> getUniqueItemNames();
 }
