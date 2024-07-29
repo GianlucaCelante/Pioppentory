@@ -3,12 +3,12 @@ package it.pioppi.business.dto;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import it.pioppi.database.model.QuantityType;
 import it.pioppi.database.model.entity.ItemStatus;
 
 public class ItemDto {
 
     private UUID id;
+    private Integer ftsId;
     private String name;
     private Integer totPortions;
     private ItemStatus status;
@@ -18,8 +18,9 @@ public class ItemDto {
     private LocalDateTime creationDate;
     private LocalDateTime lastUpdateDate;
 
-    public ItemDto(UUID id, String name, Integer totPortions, ItemStatus status, String barcode, LocalDateTime checkDate, String note, LocalDateTime creationDate, LocalDateTime lastUpdateDate) {
+    public ItemDto(UUID id, Integer ftsId, String name, Integer totPortions, ItemStatus status, String barcode, LocalDateTime checkDate, String note, LocalDateTime creationDate, LocalDateTime lastUpdateDate) {
         this.id = id;
+        this.ftsId = ftsId;
         this.name = name;
         this.totPortions = totPortions;
         this.status = status;
@@ -38,6 +39,14 @@ public class ItemDto {
 
     public void setId(UUID id) {
         this.id = id;
+    }
+
+    public Integer getFtsId() {
+        return ftsId;
+    }
+
+    public void setFtsId(Integer ftsId) {
+        this.ftsId = ftsId;
     }
 
     public String getName() {

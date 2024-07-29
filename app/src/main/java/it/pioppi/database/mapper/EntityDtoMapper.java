@@ -6,12 +6,14 @@ import java.util.UUID;
 
 import it.pioppi.business.dto.ItemDetailDto;
 import it.pioppi.business.dto.ItemDto;
+import it.pioppi.business.dto.ItemFTSDto;
 import it.pioppi.business.dto.ItemTagDto;
 import it.pioppi.business.dto.ItemWithProviderDto;
 import it.pioppi.business.dto.ProviderDto;
 import it.pioppi.business.dto.QuantityTypeDto;
 import it.pioppi.database.model.entity.ItemDetailEntity;
 import it.pioppi.database.model.entity.ItemEntity;
+import it.pioppi.database.model.entity.ItemFTSEntity;
 import it.pioppi.database.model.entity.ItemTagEntity;
 import it.pioppi.database.model.entity.ItemWithProviderEntity;
 import it.pioppi.database.model.entity.ProviderEntity;
@@ -25,6 +27,7 @@ public class EntityDtoMapper {
         }
         ItemEntity itemEntity = new ItemEntity();
         itemEntity.setId(itemDto.getId());
+        itemEntity.setFtsId(itemDto.getFtsId());
         itemEntity.setName(itemDto.getName());
         itemEntity.setTotPortions(itemDto.getTotPortions());
         itemEntity.setStatus(itemDto.getStatus());
@@ -53,6 +56,7 @@ public class EntityDtoMapper {
         }
         ItemDto itemDto = new ItemDto();
         itemDto.setId(itemEntity.getId());
+        itemDto.setFtsId(itemEntity.getFtsId());
         itemDto.setName(itemEntity.getName());
         itemDto.setTotPortions(itemEntity.getTotPortions());
         itemDto.setStatus(itemEntity.getStatus());
@@ -309,6 +313,46 @@ public class EntityDtoMapper {
             itemTagDtos.add(entityToDto(itemTagEntity));
         }
         return itemTagDtos;
+    }
+
+    public static ItemFTSEntity dtoToEntity(ItemFTSDto itemFTSDto) {
+        if(itemFTSDto == null) {
+            return null;
+        }
+        ItemFTSEntity itemFTSEntity = new ItemFTSEntity();
+        itemFTSEntity.setId(itemFTSDto.getId());
+        itemFTSEntity.setName(itemFTSDto.getName());
+        itemFTSEntity.setBarcode(itemFTSDto.getBarcode());
+        return itemFTSEntity;
+    }
+
+    public static ItemFTSDto entityToDto(ItemFTSEntity itemFTSEntity) {
+        if(itemFTSEntity == null) {
+            return null;
+        }
+        return new ItemFTSDto(itemFTSEntity.getId(), itemFTSEntity.getName(), itemFTSEntity.getBarcode());
+    }
+
+    public static List<ItemFTSEntity> dtosToEntitiesItemFTS(List<ItemFTSDto> itemFTSDtos) {
+        if(itemFTSDtos == null) {
+            return new ArrayList<>();
+        }
+        List<ItemFTSEntity> itemFTSEntities = new ArrayList<>();
+        for (ItemFTSDto itemFTSDto : itemFTSDtos) {
+            itemFTSEntities.add(dtoToEntity(itemFTSDto));
+        }
+        return itemFTSEntities;
+    }
+
+    public static List<ItemFTSDto> entitiesToDtosItemFTS(List<ItemFTSEntity> itemFTSEntities) {
+        if(itemFTSEntities == null) {
+            return new ArrayList<>();
+        }
+        List<ItemFTSDto> itemFTSDtos = new ArrayList<>();
+        for (ItemFTSEntity itemFTSEntity : itemFTSEntities) {
+            itemFTSDtos.add(entityToDto(itemFTSEntity));
+        }
+        return itemFTSDtos;
     }
 
 }

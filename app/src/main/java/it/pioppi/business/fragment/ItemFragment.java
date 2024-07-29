@@ -18,6 +18,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.widget.SearchView;
 import androidx.core.view.MenuProvider;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.Lifecycle;
@@ -42,6 +43,7 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import it.pioppi.R;
+import it.pioppi.business.dto.ItemFTSDto;
 import it.pioppi.business.viewmodel.ItemViewModel;
 import it.pioppi.business.adapter.ItemAdapter;
 import it.pioppi.business.dto.ItemDto;
@@ -49,9 +51,11 @@ import it.pioppi.database.AppDatabase;
 import it.pioppi.database.mapper.EntityDtoMapper;
 import it.pioppi.database.model.entity.ItemDetailEntity;
 import it.pioppi.database.model.entity.ItemEntity;
+import it.pioppi.database.model.entity.ItemFTSEntity;
 import it.pioppi.database.model.entity.ItemStatus;
 import it.pioppi.database.model.entity.ProviderEntity;
 import it.pioppi.database.model.entity.QuantityTypeEntity;
+import it.pioppi.database.repository.ItemEntityRepository;
 
 public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickListener, ItemAdapter.OnLongItemClickListener {
 
@@ -60,12 +64,16 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
     private ExecutorService executorService;
     private ItemViewModel itemViewModel;
     private RecyclerView recyclerView;
+    private ItemEntityRepository itemEntityRepository;
+    private AlertDialog newItemDialog;
+
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         appDatabase = AppDatabase.getInstance(getContext());
         executorService = Executors.newSingleThreadExecutor();
+        itemEntityRepository = new ItemEntityRepository(requireActivity().getApplication());
         itemViewModel = new ViewModelProvider(requireActivity()).get(ItemViewModel.class);
 
         try {
@@ -96,6 +104,37 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
         fab.setOnClickListener(v -> addNewItem(inflater, itemViewModel.getItems().getValue()));
 
         return view;
+    }
+
+    @Override
+    public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
+        inflater.inflate(R.menu.menu_item_fragment, menu);
+        MenuItem searchItem = menu.findItem(R.id.search);
+        SearchView searchView = (SearchView) searchItem.getActionView();
+
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                searchItems(query);
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                searchItems(newText);
+                return true;
+            }
+        });
+
+        super.onCreateOptionsMenu(menu, inflater);
+    }
+
+    private void searchItems(String query) {
+        executorService.execute(() -> {
+            List<ItemFTSEntity> filteredList = appDatabase.itemFTSEntityDao().searchForNameAndBarcode(query);
+            List<ItemFTSDto> itemDtos = EntityDtoMapper.entitiesToDtosItemFTS(filteredList);
+            //requireActivity().runOnUiThread(() -> itemAdapter.setItemList(itemDtos));
+        });
     }
 
 
@@ -152,9 +191,9 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                 .setPositiveButton("Aggiungi", null)
                 .setNegativeButton("Indietro", (dialog, id) -> dialog.cancel());
 
-        AlertDialog dialog = builder.create();
-        dialog.setOnShowListener(dlg -> {
-            Button positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+        newItemDialog = builder.create();
+        newItemDialog.setOnShowListener(dlg -> {
+            Button positiveButton = newItemDialog.getButton(AlertDialog.BUTTON_POSITIVE);
             positiveButton.setOnClickListener(v -> {
                 String newProviderName = newProviderNameEditText.getText().toString().trim();
 
@@ -192,12 +231,12 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                         spinnerAdapter.add(newProviderName);
                         spinnerAdapter.notifyDataSetChanged();
                         providerSpinner.setSelection(spinnerAdapter.getPosition(newProviderName));
-                        dialog.dismiss();
+                        newItemDialog.dismiss();
                     });
                 });
             });
         });
-        dialog.show();
+        newItemDialog.show();
     }
 
     private void addNewItem(@NonNull LayoutInflater inflater, List<ItemDto> itemDtos) {
@@ -228,9 +267,9 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                 .setPositiveButton("Aggiungi", null)
                 .setNegativeButton("Indietro", (dialog, id) -> dialog.cancel());
 
-        AlertDialog dialog = builder.create();
-        dialog.setOnShowListener(dlg -> {
-            Button positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+        newItemDialog = builder.create();
+        newItemDialog.setOnShowListener(dlg -> {
+            Button positiveButton = newItemDialog.getButton(AlertDialog.BUTTON_POSITIVE);
             positiveButton.setOnClickListener(v -> {
                 String provider = providerSpinner.getSelectedItem() != null ? providerSpinner.getSelectedItem().toString() : null;
                 String newItemName = newItemNameEditText.getText().toString();
@@ -248,6 +287,7 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                 executorService.execute(() -> {
                     try {
                         UUID existingItem = appDatabase.itemEntityDao().getItemByName(newItemName);
+                        Integer getMaxFtsId = appDatabase.itemFTSEntityDao().getNextId();
                         if (existingItem != null) {
                             requireActivity().runOnUiThread(() -> Toast.makeText(getContext(), "Esiste già un prodotto con questo nome", Toast.LENGTH_SHORT).show());
                             return;
@@ -257,6 +297,7 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
 
                         ItemEntity newItem = new ItemEntity();
                         newItem.setId(UUID.randomUUID());
+                        newItem.setFtsId(getMaxFtsId);
                         newItem.setName(newItemName);
                         newItem.setTotPortions(0);
                         newItem.setStatus(ItemStatus.WHITE);
@@ -279,7 +320,7 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                         quantityTypeEntity.setCreationDate(now);
 
                         appDatabase.runInTransaction(() -> {
-                            appDatabase.itemEntityDao().insert(newItem);
+                            itemEntityRepository.insert(newItem);
                             appDatabase.providerEntityDao().insert(providerEntity);
                             appDatabase.itemDetailEntityDao().insert(itemDetailEntity);
                             appDatabase.quantityTypeEntityDao().insert(quantityTypeEntity);
@@ -288,7 +329,7 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                         itemDtos.add(EntityDtoMapper.entityToDto(newItem));
                         requireActivity().runOnUiThread(() -> {
                             itemAdapter.setItemList(itemDtos);
-                            dialog.dismiss();
+                            newItemDialog.dismiss();
                         });
                     } catch (Exception e) {
                         requireActivity().runOnUiThread(() -> Toast.makeText(getContext(), "Errore durante la creazione del prodotto", Toast.LENGTH_SHORT).show());
@@ -296,7 +337,7 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                 });
             });
         });
-        dialog.show();
+        newItemDialog.show();
     }
 
 
@@ -320,6 +361,9 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
         if (!executorService.isShutdown()) {
             executorService.shutdown();
         }
+        if (newItemDialog != null && newItemDialog.isShowing()) {
+            newItemDialog.dismiss();
+        }
     }
 
     @Override
@@ -342,7 +386,7 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                 .setPositiveButton("Elimina", (dialog, which) -> executorService.execute(() -> {
                     try {
                         ItemEntity itemEntity = EntityDtoMapper.dtoToEntity(itemDto);
-                        appDatabase.itemEntityDao().delete(itemEntity);
+                        itemEntityRepository.delete(itemEntity);
 
                         requireActivity().runOnUiThread(() -> {
                             List<ItemDto> currentList = itemViewModel.getItems().getValue();

@@ -1,10 +1,8 @@
 package it.pioppi.database.model.entity;
 
-import android.text.BoringLayout;
-
+import androidx.annotation.NonNull;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
-import androidx.room.ForeignKey;
 import androidx.room.Ignore;
 import androidx.room.Index;
 import androidx.room.PrimaryKey;
@@ -29,6 +27,9 @@ public class ItemEntity extends BaseEntity {
     @PrimaryKey
     @ColumnInfo(name = "id")
     private UUID id;
+    @NotNull
+    @ColumnInfo(name = "fts_id")
+    private Integer ftsId;
     @ColumnInfo(name = "name")
     private String name;
     @ColumnInfo(name = "tot_portions")
@@ -47,9 +48,10 @@ public class ItemEntity extends BaseEntity {
     private List<ItemTagEntity> tags;
 
     @Ignore
-    public ItemEntity(@NotNull UUID id, String name, Integer totPortions, ItemStatus status, String barcode, LocalDateTime checkDate, String note) {
+    public ItemEntity(@NotNull UUID id, @NotNull Integer ftsId, String name, Integer totPortions, ItemStatus status, String barcode, LocalDateTime checkDate, String note) {
         super();
         this.id = id;
+        this.ftsId = ftsId;
         this.name = name;
         this.totPortions = totPortions;
         this.status = status;
@@ -60,12 +62,22 @@ public class ItemEntity extends BaseEntity {
 
     public ItemEntity() {}
 
+    @NonNull
     public UUID getId() {
         return id;
     }
 
-    public void setId(UUID id) {
+    public void setId(@NonNull UUID id) {
         this.id = id;
+    }
+
+    @NonNull
+    public Integer getFtsId() {
+        return ftsId;
+    }
+
+    public void setFtsId(@NonNull Integer ftsId) {
+        this.ftsId = ftsId;
     }
 
     public String getName() {

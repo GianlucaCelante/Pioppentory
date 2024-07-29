@@ -48,6 +48,7 @@ import it.pioppi.database.model.entity.ItemTagJoinEntity;
 import it.pioppi.database.model.entity.ProviderEntity;
 import it.pioppi.database.model.entity.QuantityTypeEntity;
 import it.pioppi.database.model.entity.ItemStatus;
+import it.pioppi.database.repository.ItemEntityRepository;
 
 public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItemClickListener {
     private AppDatabase appDatabase;
@@ -56,6 +57,7 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
     private ItemTagsViewModel itemTagsViewModel;
     private RecyclerView recyclerView;
     private UUID itemId;
+    private ItemEntityRepository itemEntityRepository;
 
     public ItemTagsFragment() {
         // Required empty public constructor
@@ -66,6 +68,7 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
         super.onCreate(savedInstanceState);
         appDatabase = AppDatabase.getInstance(getContext());
         executorService = Executors.newSingleThreadExecutor();
+        itemEntityRepository = new ItemEntityRepository(requireActivity().getApplication());
         itemTagsViewModel = new ViewModelProvider(requireActivity()).get(ItemTagsViewModel.class);
 
         Bundle bundle = getArguments();
@@ -204,10 +207,19 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
 
     private void createNewItemAndNavigate(String tagName) {
         executorService.execute(() -> {
+
+            Integer nextId;
+            try {
+                nextId = appDatabase.itemFTSEntityDao().getNextId();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+
             LocalDateTime now = LocalDateTime.now();
 
             ItemEntity newItem = new ItemEntity();
             newItem.setId(UUID.randomUUID());
+            newItem.setFtsId(nextId);
             newItem.setName(tagName);
             newItem.setTotPortions(0);
             newItem.setStatus(ItemStatus.WHITE);
@@ -232,7 +244,7 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
             quantityTypeEntity.setCreationDate(now);
 
             appDatabase.runInTransaction(() -> {
-                appDatabase.itemEntityDao().insert(newItem);
+                itemEntityRepository.insert(newItem);
                 appDatabase.providerEntityDao().insert(providerEntity);
                 appDatabase.itemDetailEntityDao().insert(itemDetailEntity);
                 appDatabase.quantityTypeEntityDao().insert(quantityTypeEntity);

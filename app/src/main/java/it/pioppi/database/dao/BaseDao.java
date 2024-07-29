@@ -8,7 +8,7 @@ import androidx.room.Upsert;
 import it.pioppi.database.model.entity.BaseEntity;
 
 
-public interface BaseDao<T extends BaseEntity> {
+public interface BaseDao<T> {
 
     @Update
     void update(T entity);

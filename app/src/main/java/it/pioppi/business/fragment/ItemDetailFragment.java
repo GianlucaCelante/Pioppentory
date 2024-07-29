@@ -47,18 +47,16 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import it.pioppi.R;
-import it.pioppi.business.dto.ItemTagDto;
-import it.pioppi.business.viewmodel.ItemViewModel;
 import it.pioppi.business.adapter.EnumAdapter;
 import it.pioppi.business.dto.ItemDetailDto;
 import it.pioppi.business.dto.ItemDto;
 import it.pioppi.business.dto.ItemWithDetailAndProviderAndQuantityTypeDto;
 import it.pioppi.business.dto.ProviderDto;
 import it.pioppi.business.dto.QuantityTypeDto;
+import it.pioppi.business.viewmodel.ItemViewModel;
 import it.pioppi.database.AppDatabase;
 import it.pioppi.database.dao.ItemDetailEntityDao;
 import it.pioppi.database.dao.ItemEntityDao;
-import it.pioppi.database.dao.ItemTagEntityDao;
 import it.pioppi.database.dao.ProviderEntityDao;
 import it.pioppi.database.dao.QuantityTypeEntityDao;
 import it.pioppi.database.mapper.EntityDtoMapper;
@@ -67,7 +65,6 @@ import it.pioppi.database.model.QuantityType;
 import it.pioppi.database.model.entity.ItemDetailEntity;
 import it.pioppi.database.model.entity.ItemEntity;
 import it.pioppi.database.model.entity.ItemStatus;
-import it.pioppi.database.model.entity.ItemTagEntity;
 import it.pioppi.database.model.entity.ItemWithDetailAndProviderAndQuantityTypeEntity;
 import it.pioppi.database.model.entity.ProviderEntity;
 import it.pioppi.database.model.entity.QuantityTypeEntity;
@@ -120,7 +117,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
 
         CalendarView deliveryDateCalendarView = view.findViewById(R.id.delivery_date);
         deliveryDateCalendarView.setOnDateChangeListener((deliveryDate, year, month, dayOfMonth) -> itemWithDetailAndProviderAndQuantityTypeDtoPrefilled.getItemDetail().setDeliveryDate(
-                        LocalDateTime.of(year, month + 1, dayOfMonth, 0, 0)));
+                LocalDateTime.of(year, month + 1, dayOfMonth, 0, 0)));
 
         updatePortionsNeededForWeekendWhenPortionsRequiredOnSaturdayAndOnSundayChanged(view);
 
@@ -142,6 +139,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         });
 
         EditText itemNameTextView = view.findViewById(R.id.item_name_card_detail);
+        String currentItemName = itemNameTextView.getText().toString();
         itemNameTextView.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -154,7 +152,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
             @Override
             public void afterTextChanged(Editable s) {
                 String newItemName = s.toString().trim();
-                checkIfItemNameExists(newItemName, saveButton);
+                checkIfItemNameExists(newItemName, currentItemName, saveButton);
             }
         });
 
@@ -186,6 +184,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         EditText notesEditText = view.findViewById(R.id.note);
         EditText itemNameTextView = view.findViewById(R.id.item_name_card_detail);
         EditText providerNameTextView = view.findViewById(R.id.provider_name);
+        EditText barcodeEditText = view.findViewById(R.id.barcode);
 
         // PROVIDER
         provider.setName(providerNameTextView.getText().toString());
@@ -215,16 +214,18 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
 
         String note = notesEditText.getText().toString();
         String itemName = itemNameTextView.getText().toString();
+        String barcode = barcodeEditText.getText().toString();
 
         ItemDto finalItem = new ItemDto();
         finalItem.setId(item.getId());
         finalItem.setName(itemName);
+        finalItem.setFtsId(item.getFtsId());
         finalItem.setCreationDate(item.getCreationDate());
         finalItem.setLastUpdateDate(LocalDateTime.now());
         finalItem.setCheckDate(LocalDateTime.now());
         finalItem.setStatus(ItemStatus.BLUE);
         finalItem.setTotPortions(totPortionsAvailable);
-        finalItem.setBarcode(item.getBarcode());
+        finalItem.setBarcode(barcode);
         finalItem.setNote(note);
 
         ItemDetailDto finalItemDetail = new ItemDetailDto();
@@ -257,12 +258,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
 
         Future<?> future = executorService.submit(() -> {
             ItemEntity itemEntity = EntityDtoMapper.dtoToEntity(finalItem);
-            if(itemEntity.getId() != null) {
-                itemEntityDao.upsert(itemEntity);
-            } else {
-                itemEntity.setId(UUID.randomUUID());
-                itemEntityDao.upsert(itemEntity);
-            }
+            itemEntityDao.upsert(itemEntity);
 
             ItemDetailEntity itemDetailEntity = EntityDtoMapper.detailDtoToEntity(finalItemDetail);
             if(itemDetailEntity.getId() != null) {
@@ -300,33 +296,16 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         NavHostFragment.findNavController(this).popBackStack();
     }
 
-    private void checkIfItemNameExists(String newItemName, FloatingActionButton saveButton) {
+    private void checkIfItemNameExists(String newItemName, String currentItemName, FloatingActionButton saveButton) {
         executorService.execute(() -> {
             List<String> existingItems = appDatabase.itemEntityDao().getUniqueItemNames();
             boolean itemNameExists = existingItems.stream()
                     .anyMatch(item -> item.equalsIgnoreCase(newItemName));
 
             requireActivity().runOnUiThread(() -> {
-                if (itemNameExists) {
+                if (itemNameExists && !newItemName.equalsIgnoreCase(currentItemName)) {
                     saveButton.setEnabled(false);
                     Toast.makeText(getContext(), "Esiste già un prodotto con questo nome", Toast.LENGTH_SHORT).show();
-                } else {
-                    saveButton.setEnabled(true);
-                }
-            });
-        });
-    }
-
-    private void checkIfItemProviderExists(String providerName, FloatingActionButton saveButton) {
-        executorService.execute(() -> {
-            List<String> providerNames = appDatabase.providerEntityDao().getProviderNames();
-            boolean providerNameExists = providerNames.stream()
-                    .anyMatch(prov -> prov.equalsIgnoreCase(providerName));
-
-            requireActivity().runOnUiThread(() -> {
-                if (providerNameExists) {
-                    saveButton.setEnabled(false);
-                    Toast.makeText(getContext(), "Esiste già un fornitore con questo nome", Toast.LENGTH_SHORT).show();
                 } else {
                     saveButton.setEnabled(true);
                 }
@@ -604,11 +583,12 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         if (item != null) {
             EditText itemNameTextView = view.findViewById(R.id.item_name_card_detail);
             TextView totPortionsAvailableTextView = view.findViewById(R.id.tot_portions_avalaible);
+            EditText barcodeEditText = view.findViewById(R.id.barcode);
+            TextView noteTextView = view.findViewById(R.id.note);
 
             itemNameTextView.setText(item.getName());
             totPortionsAvailableTextView.setText(String.valueOf(item.getTotPortions()));
-
-            TextView noteTextView = view.findViewById(R.id.note);
+            barcodeEditText.setText(item.getBarcode());
             noteTextView.setText(item.getNote());
         }
 
@@ -712,7 +692,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         totPortionsToBeOrderedTextView.setText(String.valueOf(totPortionsToBeOrdered));
         totPortionsAvailablePlusOrderedTextView.setText(String.valueOf(totPortionsAvailablePlusOrdered));
 
-        Integer portionsPerWeekend = Integer.parseInt(portionsPerWeekendTextView.getText().toString().isEmpty() ? "0" : portionsPerWeekendTextView.getText().toString());
+        int portionsPerWeekend = Integer.parseInt(portionsPerWeekendTextView.getText().toString().isEmpty() ? "0" : portionsPerWeekendTextView.getText().toString());
 
         if (totPortionsAvailablePlusOrdered >= portionsPerWeekend) {
             itemNameAndTotPortionsCardView.setCardBackgroundColor(ContextCompat.getColor(requireView().getContext(), R.color.green));
