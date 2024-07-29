@@ -37,10 +37,12 @@
                         android:id="@+id/item_name_card_detail"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_gravity="center"
                         android:textSize="30sp"
                         android:padding="8dp"
-                        android:autofillHints="Nome del prodotto"
+                        android:layout_gravity="center"
+                        android:hint="Nome del prodotto"
+                        android:textAlignment="center"
+                        android:autofillHints="name"
                         android:inputType="text"
                         android:textStyle="bold" />
 
@@ -132,7 +134,8 @@
                 android:gravity="center"
                 android:textSize="20sp"
                 android:inputType="text"
-                android:autofillHints="Nome del fornitore"
+                android:hint="Nome del fornitore"
+                android:autofillHints="name"
                 android:padding="8dp" />
 
             <View
