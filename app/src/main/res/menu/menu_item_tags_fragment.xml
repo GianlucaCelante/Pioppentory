@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/filter_tags"
+        android:title="Filter"
+        android:icon="@drawable/filter_descending"
+        app:showAsAction="always">
+    </item>
+
+    <item
+        android:id="@+id/delete_tag"
+        android:title="Delete"
+        android:icon="@drawable/trash_icon"
+        app:showAsAction="always">
+
+    </item>
+
+
+</menu>

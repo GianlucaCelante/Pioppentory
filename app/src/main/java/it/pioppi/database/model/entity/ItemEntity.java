@@ -12,6 +12,7 @@ import androidx.room.PrimaryKey;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import it.pioppi.ConstantUtils;
@@ -40,6 +41,10 @@ public class ItemEntity extends BaseEntity {
     private LocalDateTime checkDate;
     @ColumnInfo(name = "note")
     private String note;
+
+
+    @Ignore
+    private List<ItemTagEntity> tags;
 
     @Ignore
     public ItemEntity(@NotNull UUID id, String name, Integer totPortions, ItemStatus status, String barcode, LocalDateTime checkDate, String note) {
@@ -111,6 +116,13 @@ public class ItemEntity extends BaseEntity {
         this.note = note;
     }
 
+    public List<ItemTagEntity> getTags() {
+        return tags;
+    }
+
+    public void setTags(List<ItemTagEntity> tags) {
+        this.tags = tags;
+    }
 
     @Override
     public String toString() {

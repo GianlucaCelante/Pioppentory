@@ -6,11 +6,13 @@ import java.util.UUID;
 
 import it.pioppi.business.dto.ItemDetailDto;
 import it.pioppi.business.dto.ItemDto;
+import it.pioppi.business.dto.ItemTagDto;
 import it.pioppi.business.dto.ItemWithProviderDto;
 import it.pioppi.business.dto.ProviderDto;
 import it.pioppi.business.dto.QuantityTypeDto;
 import it.pioppi.database.model.entity.ItemDetailEntity;
 import it.pioppi.database.model.entity.ItemEntity;
+import it.pioppi.database.model.entity.ItemTagEntity;
 import it.pioppi.database.model.entity.ItemWithProviderEntity;
 import it.pioppi.database.model.entity.ProviderEntity;
 import it.pioppi.database.model.entity.QuantityTypeEntity;
@@ -261,6 +263,52 @@ public class EntityDtoMapper {
             itemWithProviderEntities.add(dtoToEntity(itemWithProviderDto));
         }
         return itemWithProviderEntities;
+    }
+
+    public static ItemTagEntity dtoToEntity(ItemTagDto itemTagDto) {
+        if(itemTagDto == null) {
+            return null;
+        }
+        ItemTagEntity itemTagEntity = new ItemTagEntity();
+        itemTagEntity.setId(itemTagDto.getId());
+        itemTagEntity.setName(itemTagDto.getName());
+        itemTagEntity.setCreationDate(itemTagDto.getCreationDate());
+        itemTagEntity.setLastUpdate(itemTagDto.getLastUpdate());
+        return itemTagEntity;
+    }
+
+    public static ItemTagDto entityToDto(ItemTagEntity itemTagEntity) {
+        if(itemTagEntity == null) {
+            return null;
+        }
+        ItemTagDto itemTagDto = new ItemTagDto();
+        itemTagDto.setId(itemTagEntity.getId());
+        itemTagDto.setName(itemTagEntity.getName());
+        itemTagDto.setCreationDate(itemTagEntity.getCreationDate());
+        itemTagDto.setLastUpdate(itemTagEntity.getLastUpdate());
+        return itemTagDto;
+    }
+
+    public static List<ItemTagEntity> dtosToEntitiesItemTags(List<ItemTagDto> itemTagDtos) {
+        if(itemTagDtos == null) {
+            return new ArrayList<>();
+        }
+        List<ItemTagEntity> itemTagEntities = new ArrayList<>();
+        for (ItemTagDto itemTagDto : itemTagDtos) {
+            itemTagEntities.add(dtoToEntity(itemTagDto));
+        }
+        return itemTagEntities;
+    }
+
+    public static List<ItemTagDto> entitiesToDtosItemTags(List<ItemTagEntity> itemTagEntities) {
+        if(itemTagEntities == null) {
+            return new ArrayList<>();
+        }
+        List<ItemTagDto> itemTagDtos = new ArrayList<>();
+        for (ItemTagEntity itemTagEntity : itemTagEntities) {
+            itemTagDtos.add(entityToDto(itemTagEntity));
+        }
+        return itemTagDtos;
     }
 
 }

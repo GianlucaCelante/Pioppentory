@@ -3,6 +3,7 @@ package it.pioppi.business.fragment;
 import static it.pioppi.business.manager.ItemDetailFragmentManager.calculateTotPortions;
 import static it.pioppi.business.manager.ItemDetailFragmentManager.normalizeText;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Bundle;
 import android.text.Editable;
@@ -46,6 +47,7 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import it.pioppi.R;
+import it.pioppi.business.dto.ItemTagDto;
 import it.pioppi.business.viewmodel.ItemViewModel;
 import it.pioppi.business.adapter.EnumAdapter;
 import it.pioppi.business.dto.ItemDetailDto;
@@ -56,6 +58,7 @@ import it.pioppi.business.dto.QuantityTypeDto;
 import it.pioppi.database.AppDatabase;
 import it.pioppi.database.dao.ItemDetailEntityDao;
 import it.pioppi.database.dao.ItemEntityDao;
+import it.pioppi.database.dao.ItemTagEntityDao;
 import it.pioppi.database.dao.ProviderEntityDao;
 import it.pioppi.database.dao.QuantityTypeEntityDao;
 import it.pioppi.database.mapper.EntityDtoMapper;
@@ -64,6 +67,7 @@ import it.pioppi.database.model.QuantityType;
 import it.pioppi.database.model.entity.ItemDetailEntity;
 import it.pioppi.database.model.entity.ItemEntity;
 import it.pioppi.database.model.entity.ItemStatus;
+import it.pioppi.database.model.entity.ItemTagEntity;
 import it.pioppi.database.model.entity.ItemWithDetailAndProviderAndQuantityTypeEntity;
 import it.pioppi.database.model.entity.ProviderEntity;
 import it.pioppi.database.model.entity.QuantityTypeEntity;
@@ -76,6 +80,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
     private RecyclerView quantityTypesAvailable;
     private RecyclerView quantityTypesToBeOrdered;
     private ItemViewModel itemViewModel;
+    private List<ItemTagDto> itemTagsDtos;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -92,15 +97,20 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
 
         View view = inflater.inflate(R.layout.fragment_item_detail, container, false);
 
+        UUID itemId;
         Bundle bundle = getArguments();
         if (bundle != null) {
-            UUID itemId = UUID.fromString(bundle.getString("itemId"));
+            itemId = UUID.fromString(bundle.getString("itemId"));
 
             try {
                 itemWithDetailAndProviderAndQuantityTypeDto = fetchItemWithDetailAndProviderAndQuantityTypeById(itemId);
+                itemTagsDtos = fetchItemTagsById(itemId);
             } catch (ExecutionException | InterruptedException e) {
                 throw new RuntimeException(e);
             }
+        } else {
+            Toast.makeText(requireContext(), "Errore nel caricamento dell'item, Item non esiste", Toast.LENGTH_SHORT).show();
+            return view;
         }
         // Set up touch listener to hide keyboard when touch happens outside EditText
         setupUI(view);
@@ -108,7 +118,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         quantityTypesAvailable = setupRecyclerViewAndButtonForQuantityTypes(view, inflater, R.id.recycler_view_quantity_available, R.id.add_quantity_type_available, QuantityPurpose.AVAILABLE);
         quantityTypesToBeOrdered = setupRecyclerViewAndButtonForQuantityTypes(view, inflater, R.id.recycler_view_quantity_to_be_ordered, R.id.add_quantity_type_to_be_ordered, QuantityPurpose.TO_BE_ORDERED);
 
-        ItemWithDetailAndProviderAndQuantityTypeDto itemWithDetailAndProviderAndQuantityTypeDtoPrefilled = prefillFields(view, itemWithDetailAndProviderAndQuantityTypeDto);
+        ItemWithDetailAndProviderAndQuantityTypeDto itemWithDetailAndProviderAndQuantityTypeDtoPrefilled = prefillFields(view);
 
         CalendarView deliveryDateCalendarView = view.findViewById(R.id.delivery_date);
         deliveryDateCalendarView.setOnDateChangeListener((deliveryDate, year, month, dayOfMonth) -> itemWithDetailAndProviderAndQuantityTypeDtoPrefilled.getItemDetail().setDeliveryDate(
@@ -125,8 +135,30 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
             }
         });
 
+        Button itemTagsButton = view.findViewById(R.id.item_tags_button);
+        itemTagsButton.setOnClickListener(v -> {
+            Bundle bundleItemTags = new Bundle();
+            bundleItemTags.putString("itemId", itemId.toString());
+            NavHostFragment.findNavController(this).navigate(R.id.action_itemDetailFragment_to_itemTagsFragment, bundleItemTags);
+
+        });
 
         return view;
+    }
+
+    private List<ItemTagDto> fetchItemTagsById(UUID itemId) throws ExecutionException, InterruptedException {
+
+        List<ItemTagDto> itemTagsDtos = new ArrayList<>();
+
+        Future<?> future = executorService.submit(() -> {
+            ItemTagEntityDao itemTagEntityDao = appDatabase.itemTagEntityDao();
+            List<ItemTagEntity> itemTagEntities = itemTagEntityDao.getItemTagsForItem(itemId);
+            itemTagsDtos.addAll(EntityDtoMapper.entitiesToDtosItemTags(itemTagEntities));
+        });
+
+        future.get();
+
+        return itemTagsDtos;
     }
 
     @Override
@@ -367,6 +399,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         }
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     private void setupUI(View view) {
         // Set up touch listener for non-text box views to hide keyboard.
         if (!(view instanceof EditText)) {
@@ -527,7 +560,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         return itemWithDetailAndProviderAndQuantityTypeDto;
     }
 
-    protected ItemWithDetailAndProviderAndQuantityTypeDto prefillFields(View view, ItemWithDetailAndProviderAndQuantityTypeDto itemWithDetailAndProviderAndQuantityTypeDto) {
+    protected ItemWithDetailAndProviderAndQuantityTypeDto prefillFields(View view) {
         TextView providerNameTextView = view.findViewById(R.id.provider_name);
         ProviderDto provider = itemWithDetailAndProviderAndQuantityTypeDto.getProvider();
         if (provider != null) {

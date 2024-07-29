@@ -19,5 +19,18 @@
         android:id="@+id/itemDetailFragment"
         android:name="it.pioppi.business.fragment.ItemDetailFragment"
         android:label="Dettagli prodotto"
-        tools:layout="@layout/fragment_item_detail" />
+        tools:layout="@layout/fragment_item_detail" >
+        <action
+            android:id="@+id/action_itemDetailFragment_to_itemTagsFragment"
+            app:destination="@id/itemTagsFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/itemTagsFragment"
+        android:name="it.pioppi.business.fragment.ItemTagsFragment"
+        android:label="Ingredienti"
+        tools:layout="@layout/fragment_item_tags" >
+        <action
+            android:id="@+id/action_itemTagsFragment_to_itemDetailFragment"
+            app:destination="@id/itemDetailFragment" />
+    </fragment>
 </navigation>

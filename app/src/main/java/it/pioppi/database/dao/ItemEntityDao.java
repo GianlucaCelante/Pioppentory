@@ -65,4 +65,7 @@ public interface ItemEntityDao extends BaseDao<ItemEntity> {
     @Transaction
     @Query("SELECT * FROM item WHERE id = :itemId")
     ItemWithDetailAndProviderAndQuantityTypeEntity getItemsWithDetailsAndProviderAndQuantityType(UUID itemId);
+
+    @Query("SELECT id FROM item WHERE name = :name COLLATE NOCASE")
+    UUID getItemByName(String name);
 }

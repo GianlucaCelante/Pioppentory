@@ -13,15 +13,18 @@ import androidx.sqlite.db.SupportSQLiteDatabase;
 
 import it.pioppi.database.dao.ItemDetailEntityDao;
 import it.pioppi.database.dao.ItemEntityDao;
+import it.pioppi.database.dao.ItemTagEntityDao;
 import it.pioppi.database.dao.ProviderEntityDao;
 import it.pioppi.database.dao.QuantityTypeEntityDao;
 import it.pioppi.database.model.entity.ItemDetailEntity;
 import it.pioppi.database.model.entity.ItemEntity;
+import it.pioppi.database.model.entity.ItemTagEntity;
+import it.pioppi.database.model.entity.ItemTagJoinEntity;
 import it.pioppi.database.model.entity.ProviderEntity;
 import it.pioppi.database.model.entity.QuantityTypeEntity;
 import it.pioppi.database.typeconverters.Converters;
 
-@Database(entities = {ItemEntity.class, ItemDetailEntity.class, ProviderEntity.class, QuantityTypeEntity.class}, version = 13)
+@Database(entities = {ItemEntity.class, ItemDetailEntity.class, ProviderEntity.class, QuantityTypeEntity.class, ItemTagEntity.class, ItemTagJoinEntity.class}, version = 14)
 @TypeConverters({Converters.class})
 public abstract class AppDatabase extends RoomDatabase {
 
@@ -29,6 +32,7 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract ProviderEntityDao providerEntityDao();
     public abstract ItemDetailEntityDao itemDetailEntityDao();
     public abstract QuantityTypeEntityDao quantityTypeEntityDao();
+    public abstract ItemTagEntityDao itemTagEntityDao();
 
 
     private static volatile AppDatabase INSTANCE;
