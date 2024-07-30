@@ -109,4 +109,4 @@ INSERT INTO QUANTITY_TYPE (id, quantity_type, quantity_type_description, quantit
 
 -- Aggiornamento della tabella item_fts con i dati inseriti nella tabella ITEM
 INSERT INTO item_fts (rowid, name, barcode)
-SELECT name, barcode FROM ITEM;
+SELECT fts_id, name, barcode FROM ITEM;

@@ -6,6 +6,7 @@ import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
 import androidx.room.Update;
+import androidx.room.Upsert;
 
 import java.util.List;
 import java.util.UUID;
@@ -27,6 +28,10 @@ public interface ItemFTSEntityDao extends BaseDao<ItemFTSEntity> {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insert(ItemFTSEntity item);
 
+    @Override
+    @Upsert
+    void upsert(ItemFTSEntity entity);
+
     @Query("INSERT INTO item_fts(rowid, name, barcode) SELECT fts_id, name, barcode FROM item WHERE fts_id = :ftsId")
     void insertItemFTS(Integer ftsId);
 
@@ -34,5 +39,6 @@ public interface ItemFTSEntityDao extends BaseDao<ItemFTSEntity> {
     Integer getNextId();
 
     @Query("SELECT rowid FROM item_fts WHERE name MATCH :query OR barcode MATCH :query")
-    List<ItemFTSEntity> searchForNameAndBarcode(String query);
+    List<Integer> searchForNameAndBarcode(String query);
+
 }

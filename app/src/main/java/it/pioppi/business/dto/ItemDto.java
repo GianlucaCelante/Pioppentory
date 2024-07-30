@@ -1,11 +1,16 @@
 package it.pioppi.business.dto;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
+import androidx.annotation.NonNull;
+
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 import it.pioppi.database.model.entity.ItemStatus;
 
-public class ItemDto {
+public class ItemDto implements Parcelable {
 
     private UUID id;
     private Integer ftsId;
@@ -32,6 +37,34 @@ public class ItemDto {
     }
 
     public ItemDto() {}
+
+    protected ItemDto(Parcel in) {
+        if (in.readByte() == 0) {
+            ftsId = null;
+        } else {
+            ftsId = in.readInt();
+        }
+        name = in.readString();
+        if (in.readByte() == 0) {
+            totPortions = null;
+        } else {
+            totPortions = in.readInt();
+        }
+        barcode = in.readString();
+        note = in.readString();
+    }
+
+    public static final Creator<ItemDto> CREATOR = new Creator<ItemDto>() {
+        @Override
+        public ItemDto createFromParcel(Parcel in) {
+            return new ItemDto(in);
+        }
+
+        @Override
+        public ItemDto[] newArray(int size) {
+            return new ItemDto[size];
+        }
+    };
 
     public UUID getId() {
         return id;
@@ -111,5 +144,29 @@ public class ItemDto {
 
     public void setLastUpdateDate(LocalDateTime lastUpdateDate) {
         this.lastUpdateDate = lastUpdateDate;
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(@NonNull Parcel parcel, int i) {
+        if (ftsId == null) {
+            parcel.writeByte((byte) 0);
+        } else {
+            parcel.writeByte((byte) 1);
+            parcel.writeInt(ftsId);
+        }
+        parcel.writeString(name);
+        if (totPortions == null) {
+            parcel.writeByte((byte) 0);
+        } else {
+            parcel.writeByte((byte) 1);
+            parcel.writeInt(totPortions);
+        }
+        parcel.writeString(barcode);
+        parcel.writeString(note);
     }
 }

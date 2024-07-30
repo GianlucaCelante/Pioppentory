@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.UUID;
 
 
+import it.pioppi.database.model.entity.ItemFTSEntity;
 import it.pioppi.database.model.entity.ItemWithDetailAndProviderAndQuantityTypeEntity;
 import it.pioppi.database.model.entity.ItemEntity;
 import it.pioppi.database.model.entity.ItemWithDetailAndProviderEntity;
@@ -71,4 +72,8 @@ public interface ItemEntityDao extends BaseDao<ItemEntity> {
 
     @Query("SELECT DISTINCT name FROM item")
     List<String> getUniqueItemNames();
+
+    @Query("SELECT * FROM ITEM " +
+            "JOIN item_fts ON ITEM.fts_id = item_fts.rowid WHERE ITEM.fts_id = :fts_id")
+    ItemEntity searchForId(Integer fts_id);
 }

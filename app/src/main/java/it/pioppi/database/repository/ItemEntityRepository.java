@@ -9,6 +9,7 @@ import it.pioppi.database.AppDatabase;
 import it.pioppi.database.dao.ItemEntityDao;
 import it.pioppi.database.dao.ItemFTSEntityDao;
 import it.pioppi.database.model.entity.ItemEntity;
+import it.pioppi.database.model.entity.ItemFTSEntity;
 
 public class ItemEntityRepository {
     private final ItemEntityDao itemEntityDao;
@@ -33,14 +34,22 @@ public class ItemEntityRepository {
     public void update(ItemEntity item) {
         executorService.execute(() -> {
             itemEntityDao.update(item);
-            itemFTSEntityDao.insertItemFTS(item.getFtsId());
+            ItemFTSEntity itemFTSEntity = new ItemFTSEntity();
+            itemFTSEntity.setId(item.getFtsId());
+            itemFTSEntity.setName(item.getName());
+            itemFTSEntity.setBarcode(item.getBarcode());
+            itemFTSEntityDao.update(itemFTSEntity);
         });
     }
 
     public void delete(ItemEntity item) {
         executorService.execute(() -> {
             itemEntityDao.delete(item);
-            itemFTSEntityDao.insertItemFTS(item.getFtsId());
+            ItemFTSEntity itemFTSEntity = new ItemFTSEntity();
+            itemFTSEntity.setId(item.getFtsId());
+            itemFTSEntity.setName(item.getName());
+            itemFTSEntity.setBarcode(item.getBarcode());
+            itemFTSEntityDao.delete(itemFTSEntity);
         });
     }
 

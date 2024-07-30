@@ -68,6 +68,7 @@ import it.pioppi.database.model.entity.ItemStatus;
 import it.pioppi.database.model.entity.ItemWithDetailAndProviderAndQuantityTypeEntity;
 import it.pioppi.database.model.entity.ProviderEntity;
 import it.pioppi.database.model.entity.QuantityTypeEntity;
+import it.pioppi.database.repository.ItemEntityRepository;
 
 public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLongClickListener, EnumAdapter.OnTextChangeListener  {
 
@@ -77,6 +78,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
     private RecyclerView quantityTypesAvailable;
     private RecyclerView quantityTypesToBeOrdered;
     private ItemViewModel itemViewModel;
+    private ItemEntityRepository itemEntityRepository;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -84,7 +86,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         appDatabase = AppDatabase.getInstance(getContext());
         executorService = Executors.newSingleThreadExecutor();
         itemViewModel = new ViewModelProvider(requireActivity()).get(ItemViewModel.class);
-
+        itemEntityRepository = new ItemEntityRepository(requireActivity().getApplication());
     }
 
     @Override
@@ -167,7 +169,6 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
 
     private void saveAll(View view, ItemWithDetailAndProviderAndQuantityTypeDto itemWithDetailAndProviderAndQuantityTypeDto) throws ExecutionException, InterruptedException {
 
-        ItemEntityDao itemEntityDao = appDatabase.itemEntityDao();
         QuantityTypeEntityDao quantityTypeEntityDao = appDatabase.quantityTypeEntityDao();
         ItemDetailEntityDao itemDetailEntityDao = appDatabase.itemDetailEntityDao();
         ProviderEntityDao providerEntityDao = appDatabase.providerEntityDao();
@@ -258,7 +259,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
 
         Future<?> future = executorService.submit(() -> {
             ItemEntity itemEntity = EntityDtoMapper.dtoToEntity(finalItem);
-            itemEntityDao.upsert(itemEntity);
+            itemEntityRepository.update(itemEntity);
 
             ItemDetailEntity itemDetailEntity = EntityDtoMapper.detailDtoToEntity(finalItemDetail);
             if(itemDetailEntity.getId() != null) {

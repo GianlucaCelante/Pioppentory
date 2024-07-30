@@ -94,5 +94,6 @@ dependencies {
     testImplementation ("org.mockito:mockito-core:4.0.0")
     // Optional -- Mockk framework
     testImplementation ("io.mockk:mockk:1.12.0")
+    implementation ("com.google.android.play:asset-delivery:2.2.2")
 
 }

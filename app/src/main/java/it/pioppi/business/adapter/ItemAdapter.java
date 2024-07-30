@@ -16,7 +16,6 @@ import com.google.android.material.card.MaterialCardView;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 import it.pioppi.R;
@@ -29,7 +28,7 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
     }
 
     public interface OnLongItemClickListener {
-        UUID onLongItemClick(ItemDto item) throws ExecutionException, InterruptedException;
+        void onLongItemClick(ItemDto item) throws ExecutionException, InterruptedException;
     }
 
     private List<ItemDto> itemList;
@@ -94,6 +93,10 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
     @Override
     public int getItemCount() {
         return this.itemList.size();
+    }
+
+    public List<ItemDto> getItemList() {
+        return itemList;
     }
 
     public void setItemList(List<ItemDto> itemList) {

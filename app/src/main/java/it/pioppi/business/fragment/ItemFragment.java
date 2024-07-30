@@ -1,7 +1,11 @@
 package it.pioppi.business.fragment;
 
+import android.app.SearchManager;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
+import android.os.Parcelable;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -43,7 +47,7 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import it.pioppi.R;
-import it.pioppi.business.dto.ItemFTSDto;
+import it.pioppi.business.activity.SearchableActivity;
 import it.pioppi.business.viewmodel.ItemViewModel;
 import it.pioppi.business.adapter.ItemAdapter;
 import it.pioppi.business.dto.ItemDto;
@@ -51,7 +55,6 @@ import it.pioppi.database.AppDatabase;
 import it.pioppi.database.mapper.EntityDtoMapper;
 import it.pioppi.database.model.entity.ItemDetailEntity;
 import it.pioppi.database.model.entity.ItemEntity;
-import it.pioppi.database.model.entity.ItemFTSEntity;
 import it.pioppi.database.model.entity.ItemStatus;
 import it.pioppi.database.model.entity.ProviderEntity;
 import it.pioppi.database.model.entity.QuantityTypeEntity;
@@ -79,6 +82,7 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
         try {
             List<ItemDto> itemDtoList = loadItems();
             itemViewModel.setItems(itemDtoList);
+            Log.d("ItemFragment", "Items set in ViewModel: " + itemDtoList.size());
 
         } catch (ExecutionException | InterruptedException e) {
             throw new RuntimeException(e);
@@ -94,6 +98,7 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
 
         itemViewModel.getItems().observe(getViewLifecycleOwner(), itemList -> {
             itemAdapter.setItemList(itemList);
+            Log.d("ItemFragment", "Observed items: " + itemList.size());
             recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 4));
             recyclerView.setAdapter(itemAdapter);
         });
@@ -105,39 +110,6 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
 
         return view;
     }
-
-    @Override
-    public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
-        inflater.inflate(R.menu.menu_item_fragment, menu);
-        MenuItem searchItem = menu.findItem(R.id.search);
-        SearchView searchView = (SearchView) searchItem.getActionView();
-
-        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
-            @Override
-            public boolean onQueryTextSubmit(String query) {
-                searchItems(query);
-                return true;
-            }
-
-            @Override
-            public boolean onQueryTextChange(String newText) {
-                searchItems(newText);
-                return true;
-            }
-        });
-
-        super.onCreateOptionsMenu(menu, inflater);
-    }
-
-    private void searchItems(String query) {
-        executorService.execute(() -> {
-            List<ItemFTSEntity> filteredList = appDatabase.itemFTSEntityDao().searchForNameAndBarcode(query);
-            List<ItemFTSDto> itemDtos = EntityDtoMapper.entitiesToDtosItemFTS(filteredList);
-            //requireActivity().runOnUiThread(() -> itemAdapter.setItemList(itemDtos));
-        });
-    }
-
-
 
     private void setupMenuToolbar() {
         requireActivity().addMenuProvider(new MenuProvider() {
@@ -173,6 +145,30 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                 } else if (itemId == R.id.filter_by_provider_and_status) {
                     filterItemsByProviderAndStatus();
                     return true;
+                } else if (itemId == R.id.search) {
+                    SearchView searchView = (SearchView) menuItem.getActionView();
+                    Objects.requireNonNull(searchView).setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+                        @Override
+                        public boolean onQueryTextSubmit(String query) {
+                            // Lancia l'intent di ricerca con i dati del ViewModel
+                            Intent intent = new Intent(requireContext(), SearchableActivity.class);
+                            intent.setAction(Intent.ACTION_SEARCH);
+                            intent.putExtra(SearchManager.QUERY, query);
+
+                            // Aggiungi i dati del ViewModel all'intent
+                            ArrayList<ItemDto> items = new ArrayList<>(Objects.requireNonNull(itemViewModel.getItems().getValue()));
+                            intent.putParcelableArrayListExtra("items", items);
+
+                            startActivity(intent);
+                            return true;
+                        }
+
+                        @Override
+                        public boolean onQueryTextChange(String newText) {
+                            return false;
+                        }
+                    });
+                    return true;
                 }
                 return false;
             }
@@ -191,9 +187,9 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                 .setPositiveButton("Aggiungi", null)
                 .setNegativeButton("Indietro", (dialog, id) -> dialog.cancel());
 
-        newItemDialog = builder.create();
-        newItemDialog.setOnShowListener(dlg -> {
-            Button positiveButton = newItemDialog.getButton(AlertDialog.BUTTON_POSITIVE);
+        AlertDialog alertDialog = builder.create();
+        alertDialog.setOnShowListener(dlg -> {
+            Button positiveButton = alertDialog.getButton(AlertDialog.BUTTON_POSITIVE);
             positiveButton.setOnClickListener(v -> {
                 String newProviderName = newProviderNameEditText.getText().toString().trim();
 
@@ -231,12 +227,12 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                         spinnerAdapter.add(newProviderName);
                         spinnerAdapter.notifyDataSetChanged();
                         providerSpinner.setSelection(spinnerAdapter.getPosition(newProviderName));
-                        newItemDialog.dismiss();
+                        alertDialog.dismiss();
                     });
                 });
             });
         });
-        newItemDialog.show();
+        alertDialog.show();
     }
 
     private void addNewItem(@NonNull LayoutInflater inflater, List<ItemDto> itemDtos) {
@@ -301,7 +297,9 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                         newItem.setName(newItemName);
                         newItem.setTotPortions(0);
                         newItem.setStatus(ItemStatus.WHITE);
+                        newItem.setBarcode("FAKE_BARCODE");
                         newItem.setCreationDate(now);
+                        appDatabase.runInTransaction(() -> itemEntityRepository.insert(newItem));
 
                         ProviderEntity providerEntity = new ProviderEntity();
                         providerEntity.setId(UUID.randomUUID());
@@ -320,7 +318,6 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                         quantityTypeEntity.setCreationDate(now);
 
                         appDatabase.runInTransaction(() -> {
-                            itemEntityRepository.insert(newItem);
                             appDatabase.providerEntityDao().insert(providerEntity);
                             appDatabase.itemDetailEntityDao().insert(itemDetailEntity);
                             appDatabase.quantityTypeEntityDao().insert(quantityTypeEntity);
@@ -379,7 +376,7 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
 
 
     @Override
-    public UUID onLongItemClick(ItemDto itemDto) {
+    public void onLongItemClick(ItemDto itemDto) {
         new AlertDialog.Builder(requireContext())
                 .setTitle("Conferma eliminazione")
                 .setMessage("Sei sicuro di voler eliminare questo elemento?")
@@ -412,7 +409,6 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                 .setNegativeButton("Annulla", null)
                 .show();
 
-        return itemDto.getId();
     }
 
 
