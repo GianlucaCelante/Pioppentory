@@ -43,7 +43,6 @@ import it.pioppi.business.dto.ItemTagDto;
 import it.pioppi.business.viewmodel.ItemTagsViewModel;
 import it.pioppi.business.viewmodel.ItemViewModel;
 import it.pioppi.database.AppDatabase;
-import it.pioppi.database.dao.ItemTagEntityDao;
 import it.pioppi.database.mapper.EntityDtoMapper;
 import it.pioppi.database.model.entity.ItemEntity;
 import it.pioppi.database.model.entity.ItemDetailEntity;
@@ -161,15 +160,15 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
             itemTagsAdapter.setItemTagDtos(updatedList);
 
             executorService.execute(() -> {
-                ItemTagEntity newItemTagEntity = EntityDtoMapper.dtoToEntity(newItemTag);
-                appDatabase.itemTagEntityDao().insert(newItemTagEntity);
 
                 UUID itemByNameId = appDatabase.itemEntityDao().getItemByName(newItemTag.getName());
                 if(itemByNameId == null) {
-                    createNewItemAndNavigate(newItemTagEntity.getName());
+                    addNewItem(newItemTag.getName());
                     requireActivity().runOnUiThread(() -> Toast.makeText(getContext(), "Prodotto aggiunto", Toast.LENGTH_SHORT).show());
                 }
 
+                ItemTagEntity newItemTagEntity = EntityDtoMapper.dtoToEntity(newItemTag);
+                appDatabase.itemTagEntityDao().insert(newItemTagEntity);
                 ItemTagJoinEntity joinEntity = new ItemTagJoinEntity(itemId, newItemTag.getId());
                 appDatabase.itemTagEntityDao().insertItemTagJoin(joinEntity);
 
@@ -220,7 +219,7 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
         navController.navigate(R.id.action_itemTagsFragment_to_itemDetailFragment, bundle);
     }
 
-    private void createNewItemAndNavigate(String tagName) {
+    private void addNewItem(String tagName) {
         executorService.execute(() -> {
 
             Integer nextId;
@@ -262,6 +261,12 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
             quantityTypeEntity.setCreationDate(now);
 
             appDatabase.runInTransaction(() -> {
+                // Give some time to the database to update the id
+                try {
+                    Thread.sleep(200);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
 
                 appDatabase.providerEntityDao().insert(providerEntity);
                 appDatabase.itemDetailEntityDao().insert(itemDetailEntity);
