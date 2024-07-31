@@ -80,6 +80,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
     private ItemViewModel itemViewModel;
     private ItemEntityRepository itemEntityRepository;
 
+
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -349,10 +350,13 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
                 }
 
                 Integer portionsPerWeekend = saturdayPortions + sundayPortions;
-                itemWithDetailAndProviderAndQuantityTypeDto.getItemDetail().setPortionsRequiredOnSaturday(saturdayPortions);
-                itemWithDetailAndProviderAndQuantityTypeDto.getItemDetail().setPortionsRequiredOnSunday(sundayPortions);
-                itemWithDetailAndProviderAndQuantityTypeDto.getItemDetail().setPortionsPerWeekend(portionsPerWeekend);
-                portionsPerWeekendTextView.setText(String.valueOf(portionsPerWeekend));
+                if(itemWithDetailAndProviderAndQuantityTypeDto.getItemDetail() != null) {
+                    itemWithDetailAndProviderAndQuantityTypeDto.getItemDetail().setPortionsRequiredOnSaturday(saturdayPortions);
+                    itemWithDetailAndProviderAndQuantityTypeDto.getItemDetail().setPortionsRequiredOnSunday(sundayPortions);
+                    itemWithDetailAndProviderAndQuantityTypeDto.getItemDetail().setPortionsPerWeekend(portionsPerWeekend);
+                    portionsPerWeekendTextView.setText(String.valueOf(portionsPerWeekend));
+
+                }
             }
 
             @Override
@@ -557,7 +561,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
 
                 List<QuantityTypeDto> quantityTypeDto = null;
                 if (itemWithDetailAndProviderAndQuantityType.quantityType != null) {
-                    quantityTypeDto = EntityDtoMapper.entitiesToDtos(itemWithDetailAndProviderAndQuantityType.quantityType);
+                    quantityTypeDto = EntityDtoMapper.entitiesToDtosForQuantityTypes(itemWithDetailAndProviderAndQuantityType.quantityType);
                 }
 
                 itemWithDetailAndProviderAndQuantityTypeDto.setItem(itemDto);

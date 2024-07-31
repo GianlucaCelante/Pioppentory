@@ -41,4 +41,7 @@ public interface ItemFTSEntityDao extends BaseDao<ItemFTSEntity> {
     @Query("SELECT rowid FROM item_fts WHERE name MATCH :query OR barcode MATCH :query")
     List<Integer> searchForNameAndBarcode(String query);
 
+    @Query("SELECT * FROM item WHERE rowid IN (SELECT rowid FROM item_fts WHERE item_fts MATCH :query || '*')")
+    List<ItemEntity> searchForItem(String query);
+
 }

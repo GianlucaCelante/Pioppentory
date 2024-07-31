@@ -218,33 +218,36 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
             LocalDateTime now = LocalDateTime.now();
 
             ItemEntity newItem = new ItemEntity();
-            newItem.setId(UUID.randomUUID());
+            UUID itemId = UUID.randomUUID();
+            newItem.setId(itemId);
             newItem.setFtsId(nextId);
             newItem.setName(tagName);
             newItem.setTotPortions(0);
             newItem.setStatus(ItemStatus.WHITE);
             newItem.setCreationDate(now);
 
+            appDatabase.runInTransaction(() -> itemEntityRepository.insert(newItem));
+
             String providerName = "Default Provider";
 
             ProviderEntity providerEntity = new ProviderEntity();
-            providerEntity.setId(UUID.randomUUID());
+            providerEntity.setId(itemId);
             providerEntity.setItemId(newItem.getId());
             providerEntity.setName(providerName);
             providerEntity.setCreationDate(now);
 
             ItemDetailEntity itemDetailEntity = new ItemDetailEntity();
-            itemDetailEntity.setId(UUID.randomUUID());
+            itemDetailEntity.setId(itemId);
             itemDetailEntity.setItemId(newItem.getId());
             itemDetailEntity.setCreationDate(now);
 
             QuantityTypeEntity quantityTypeEntity = new QuantityTypeEntity();
-            quantityTypeEntity.setId(UUID.randomUUID());
+            quantityTypeEntity.setId(itemId);
             quantityTypeEntity.setItemId(newItem.getId());
             quantityTypeEntity.setCreationDate(now);
 
             appDatabase.runInTransaction(() -> {
-                itemEntityRepository.insert(newItem);
+
                 appDatabase.providerEntityDao().insert(providerEntity);
                 appDatabase.itemDetailEntityDao().insert(itemDetailEntity);
                 appDatabase.quantityTypeEntityDao().insert(quantityTypeEntity);

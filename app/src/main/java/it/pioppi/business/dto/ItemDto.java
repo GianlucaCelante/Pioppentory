@@ -6,6 +6,7 @@ import android.os.Parcelable;
 import androidx.annotation.NonNull;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
 import it.pioppi.database.model.entity.ItemStatus;
@@ -39,19 +40,16 @@ public class ItemDto implements Parcelable {
     public ItemDto() {}
 
     protected ItemDto(Parcel in) {
-        if (in.readByte() == 0) {
-            ftsId = null;
-        } else {
-            ftsId = in.readInt();
-        }
+        id = in.readByte() == 0 ? null : UUID.fromString(in.readString());
+        ftsId = in.readByte() == 0 ? null : in.readInt();
         name = in.readString();
-        if (in.readByte() == 0) {
-            totPortions = null;
-        } else {
-            totPortions = in.readInt();
-        }
+        totPortions = in.readByte() == 0 ? null : in.readInt();
+        status = in.readByte() == 0 ? null : ItemStatus.valueOf(in.readString());
         barcode = in.readString();
         note = in.readString();
+        checkDate = in.readByte() == 0 ? null : LocalDateTime.parse(in.readString(), DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        creationDate = in.readByte() == 0 ? null : LocalDateTime.parse(in.readString(), DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        lastUpdateDate = in.readByte() == 0 ? null : LocalDateTime.parse(in.readString(), DateTimeFormatter.ISO_LOCAL_DATE_TIME);
     }
 
     public static final Creator<ItemDto> CREATOR = new Creator<ItemDto>() {
@@ -153,6 +151,12 @@ public class ItemDto implements Parcelable {
 
     @Override
     public void writeToParcel(@NonNull Parcel parcel, int i) {
+        if (id == null) {
+            parcel.writeByte((byte) 0);
+        } else {
+            parcel.writeByte((byte) 1);
+            parcel.writeString(id.toString());
+        }
         if (ftsId == null) {
             parcel.writeByte((byte) 0);
         } else {
@@ -166,7 +170,31 @@ public class ItemDto implements Parcelable {
             parcel.writeByte((byte) 1);
             parcel.writeInt(totPortions);
         }
+        if (status == null) {
+            parcel.writeByte((byte) 0);
+        } else {
+            parcel.writeByte((byte) 1);
+            parcel.writeString(status.name());
+        }
         parcel.writeString(barcode);
         parcel.writeString(note);
+        if (checkDate == null) {
+            parcel.writeByte((byte) 0);
+        } else {
+            parcel.writeByte((byte) 1);
+            parcel.writeString(checkDate.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+        }
+        if (creationDate == null) {
+            parcel.writeByte((byte) 0);
+        } else {
+            parcel.writeByte((byte) 1);
+            parcel.writeString(creationDate.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+        }
+        if (lastUpdateDate == null) {
+            parcel.writeByte((byte) 0);
+        } else {
+            parcel.writeByte((byte) 1);
+            parcel.writeString(lastUpdateDate.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+        }
     }
 }

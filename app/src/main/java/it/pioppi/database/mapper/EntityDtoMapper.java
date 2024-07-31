@@ -2,7 +2,6 @@ package it.pioppi.database.mapper;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import it.pioppi.business.dto.ItemDetailDto;
 import it.pioppi.business.dto.ItemDto;
@@ -166,7 +165,7 @@ public class EntityDtoMapper {
         return quantityItemDto;
     }
 
-    public static List<QuantityTypeDto> entitiesToDtos(List<QuantityTypeEntity> quantityTypeEntities) {
+    public static List<QuantityTypeDto> entitiesToDtosForQuantityTypes(List<QuantityTypeEntity> quantityTypeEntities) {
         if (quantityTypeEntities == null) {
             return new ArrayList<>();
         }
@@ -193,7 +192,7 @@ public class EntityDtoMapper {
         return quantityTypeEntity;
     }
 
-    public static List<QuantityTypeEntity> dtosToEntities(List<QuantityTypeDto> quantityTypeDtos) {
+    public static List<QuantityTypeEntity> dtosToEntitiesForQuantityTypes(List<QuantityTypeDto> quantityTypeDtos) {
         if(quantityTypeDtos == null) {
             return new ArrayList<>();
         }
@@ -355,4 +354,27 @@ public class EntityDtoMapper {
         return itemFTSDtos;
     }
 
+    public static List<ItemDto> dtosToEntitiesForItemDto(List<ItemEntity> itemEntities) {
+
+        if(itemEntities == null) {
+            return new ArrayList<>();
+        }
+        List<ItemDto> itemDtos = new ArrayList<>();
+        for (ItemEntity itemEntity : itemEntities) {
+            itemDtos.add(entityToDto(itemEntity));
+        }
+        return itemDtos;
+    }
+
+    public static List<ItemEntity> entitiesToDtosForItemEntity(List<ItemDto> itemDtos) {
+
+        if(itemDtos == null) {
+            return new ArrayList<>();
+        }
+        List<ItemEntity> itemEntities = new ArrayList<>();
+        for (ItemDto itemDto : itemDtos) {
+            itemEntities.add(dtoToEntity(itemDto));
+        }
+        return itemEntities;
+    }
 }

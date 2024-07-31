@@ -23,7 +23,10 @@
         <action
             android:id="@+id/action_itemDetailFragment_to_itemTagsFragment"
             app:destination="@id/itemTagsFragment" />
+
+
     </fragment>
+
     <fragment
         android:id="@+id/itemTagsFragment"
         android:name="it.pioppi.business.fragment.ItemTagsFragment"
@@ -33,4 +36,5 @@
             android:id="@+id/action_itemTagsFragment_to_itemDetailFragment"
             app:destination="@id/itemDetailFragment" />
     </fragment>
+
 </navigation>

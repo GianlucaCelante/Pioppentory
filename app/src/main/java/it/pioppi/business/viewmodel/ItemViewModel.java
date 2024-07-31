@@ -5,26 +5,55 @@ import android.app.Application;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import it.pioppi.business.dto.ItemDto;
 
-public class ItemViewModel extends AndroidViewModel {
+public class ItemViewModel extends ViewModel {
     private final MutableLiveData<List<ItemDto>> items = new MutableLiveData<>();
+    private final MutableLiveData<String> query = new MutableLiveData<>("");
 
-    public ItemViewModel(@NonNull Application application) {
-        super(application);
+    private final MediatorLiveData<List<ItemDto>> filteredItems = new MediatorLiveData<>();
+
+    public ItemViewModel() {
+        filteredItems.addSource(items, itemList -> applyFilter());
+        filteredItems.addSource(query, q -> applyFilter());
     }
 
     public LiveData<List<ItemDto>> getItems() {
         return items;
     }
 
-    public void setItems(List<ItemDto> items) {
-        this.items.setValue(items);
+    public void setItems(List<ItemDto> itemList) {
+        items.setValue(itemList);
+    }
+
+    public LiveData<List<ItemDto>> getFilteredItems() {
+        return filteredItems;
+    }
+
+    public void setQuery(String query) {
+        this.query.setValue(query);
+    }
+
+    private void applyFilter() {
+        List<ItemDto> itemList = items.getValue();
+        String q = query.getValue();
+
+        if (itemList == null || q == null || q.isEmpty()) {
+            filteredItems.setValue(itemList);
+        } else {
+            List<ItemDto> filteredList = itemList.stream()
+                    .filter(item -> (item.getName() != null && item.getName().toLowerCase().contains(q.toLowerCase())) ||
+                            (item.getBarcode() != null && item.getBarcode().toLowerCase().contains(q.toLowerCase())))
+                    .collect(Collectors.toList());
+            filteredItems.setValue(filteredList);
+        }
     }
 
     public void updateItem(ItemDto updatedItem) {

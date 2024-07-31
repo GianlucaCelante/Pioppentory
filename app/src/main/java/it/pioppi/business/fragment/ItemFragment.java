@@ -2,9 +2,7 @@ package it.pioppi.business.fragment;
 
 import android.app.SearchManager;
 import android.content.Context;
-import android.content.Intent;
 import android.os.Bundle;
-import android.os.Parcelable;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -47,7 +45,6 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import it.pioppi.R;
-import it.pioppi.business.activity.SearchableActivity;
 import it.pioppi.business.viewmodel.ItemViewModel;
 import it.pioppi.business.adapter.ItemAdapter;
 import it.pioppi.business.dto.ItemDto;
@@ -70,7 +67,6 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
     private ItemEntityRepository itemEntityRepository;
     private AlertDialog newItemDialog;
 
-
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -83,7 +79,6 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
             List<ItemDto> itemDtoList = loadItems();
             itemViewModel.setItems(itemDtoList);
             Log.d("ItemFragment", "Items set in ViewModel: " + itemDtoList.size());
-
         } catch (ExecutionException | InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -96,7 +91,7 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
         recyclerView = view.findViewById(R.id.recycler_view);
         itemAdapter = new ItemAdapter(new ArrayList<>(), this, this, getContext());
 
-        itemViewModel.getItems().observe(getViewLifecycleOwner(), itemList -> {
+        itemViewModel.getFilteredItems().observe(getViewLifecycleOwner(), itemList -> {
             itemAdapter.setItemList(itemList);
             Log.d("ItemFragment", "Observed items: " + itemList.size());
             recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 4));
@@ -116,6 +111,26 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
             @Override
             public void onCreateMenu(@NonNull Menu menu, @NonNull MenuInflater menuInflater) {
                 menuInflater.inflate(R.menu.menu_item_fragment, menu);
+
+                MenuItem searchItem = menu.findItem(R.id.action_search);
+                SearchManager searchManager = (SearchManager) requireActivity().getSystemService(Context.SEARCH_SERVICE);
+                SearchView searchView = (SearchView) searchItem.getActionView();
+                if (searchManager != null) {
+                    searchView.setSearchableInfo(searchManager.getSearchableInfo(requireActivity().getComponentName()));
+                }
+
+                searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+                    @Override
+                    public boolean onQueryTextSubmit(String query) {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean onQueryTextChange(String newText) {
+                        itemViewModel.setQuery(newText);
+                        return true;
+                    }
+                });
             }
 
             @Override
@@ -144,30 +159,6 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                     return true;
                 } else if (itemId == R.id.filter_by_provider_and_status) {
                     filterItemsByProviderAndStatus();
-                    return true;
-                } else if (itemId == R.id.search) {
-                    SearchView searchView = (SearchView) menuItem.getActionView();
-                    Objects.requireNonNull(searchView).setOnQueryTextListener(new SearchView.OnQueryTextListener() {
-                        @Override
-                        public boolean onQueryTextSubmit(String query) {
-                            // Lancia l'intent di ricerca con i dati del ViewModel
-                            Intent intent = new Intent(requireContext(), SearchableActivity.class);
-                            intent.setAction(Intent.ACTION_SEARCH);
-                            intent.putExtra(SearchManager.QUERY, query);
-
-                            // Aggiungi i dati del ViewModel all'intent
-                            ArrayList<ItemDto> items = new ArrayList<>(Objects.requireNonNull(itemViewModel.getItems().getValue()));
-                            intent.putParcelableArrayListExtra("items", items);
-
-                            startActivity(intent);
-                            return true;
-                        }
-
-                        @Override
-                        public boolean onQueryTextChange(String newText) {
-                            return false;
-                        }
-                    });
                     return true;
                 }
                 return false;
@@ -292,7 +283,8 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                         LocalDateTime now = LocalDateTime.now();
 
                         ItemEntity newItem = new ItemEntity();
-                        newItem.setId(UUID.randomUUID());
+                        UUID itemId = UUID.randomUUID();
+                        newItem.setId(itemId);
                         newItem.setFtsId(getMaxFtsId);
                         newItem.setName(newItemName);
                         newItem.setTotPortions(0);
@@ -302,18 +294,18 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                         appDatabase.runInTransaction(() -> itemEntityRepository.insert(newItem));
 
                         ProviderEntity providerEntity = new ProviderEntity();
-                        providerEntity.setId(UUID.randomUUID());
+                        providerEntity.setId(itemId);
                         providerEntity.setItemId(newItem.getId());
                         providerEntity.setName(provider);
                         providerEntity.setCreationDate(now);
 
                         ItemDetailEntity itemDetailEntity = new ItemDetailEntity();
-                        itemDetailEntity.setId(UUID.randomUUID());
+                        itemDetailEntity.setId(itemId);
                         itemDetailEntity.setItemId(newItem.getId());
                         itemDetailEntity.setCreationDate(now);
 
                         QuantityTypeEntity quantityTypeEntity = new QuantityTypeEntity();
-                        quantityTypeEntity.setId(UUID.randomUUID());
+                        quantityTypeEntity.setId(itemId);
                         quantityTypeEntity.setItemId(newItem.getId());
                         quantityTypeEntity.setCreationDate(now);
 
@@ -329,14 +321,13 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                             newItemDialog.dismiss();
                         });
                     } catch (Exception e) {
-                        requireActivity().runOnUiThread(() -> Toast.makeText(getContext(), "Errore durante la creazione del prodotto", Toast.LENGTH_SHORT).show());
+                        requireActivity().runOnUiThread(() -> Toast.makeText(getContext(), "Errore durante la creazione del prodotto: " + e.getLocalizedMessage(), Toast.LENGTH_SHORT).show());
                     }
                 });
             });
         });
         newItemDialog.show();
     }
-
 
     private List<ItemDto> loadItems() throws ExecutionException, InterruptedException {
         List<ItemDto> itemDtos = new ArrayList<>();
@@ -374,7 +365,6 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
         navController.navigate(R.id.action_itemFragment_to_itemDetailFragment, bundle);
     }
 
-
     @Override
     public void onLongItemClick(ItemDto itemDto) {
         new AlertDialog.Builder(requireContext())
@@ -408,17 +398,13 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                 }))
                 .setNegativeButton("Annulla", null)
                 .show();
-
     }
-
-
 
     private void filterItemsByNameAscending() {
         Objects.requireNonNull(itemViewModel.getItems().getValue()).sort(Comparator.comparing(ItemDto::getName, String.CASE_INSENSITIVE_ORDER));
         itemAdapter.setItemList(itemViewModel.getItems().getValue());
         recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 4));
         recyclerView.setAdapter(itemAdapter);
-
     }
 
     private void filterItemsByNameDescending() {
@@ -426,11 +412,10 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
         itemAdapter.setItemList(itemViewModel.getItems().getValue());
         recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 4));
         recyclerView.setAdapter(itemAdapter);
-
     }
 
     private void filterItemsByProvider() {
-
+        // Implementa la logica per filtrare gli item per provider
     }
 
     private void filterItemsByStatus(ItemStatus status) {
@@ -445,7 +430,6 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
     private void filterItemsByProviderAndStatus() {
         // Implementa la logica per filtrare gli item per provider e status
     }
-
 
     private void hideKeyboard(View view) {
         InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);

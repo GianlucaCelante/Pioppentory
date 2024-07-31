@@ -1,31 +1,39 @@
 package it.pioppi.business.activity;
 
+import android.app.SearchManager;
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuItem;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.SearchView;
 import androidx.appcompat.widget.Toolbar;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
-import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 
-
-import java.util.Objects;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import it.pioppi.R;
+import it.pioppi.business.dto.ItemDto;
+import it.pioppi.business.viewmodel.ItemViewModel;
+import it.pioppi.database.AppDatabase;
+import it.pioppi.database.dao.ItemFTSEntityDao;
+import it.pioppi.database.mapper.EntityDtoMapper;
 
 public class MainActivity extends AppCompatActivity {
 
     private NavController navController;
+    private ItemViewModel itemViewModel;
+    private ItemFTSEntityDao itemFTSEntityDao;
+    private ExecutorService executorService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -38,11 +46,37 @@ public class MainActivity extends AppCompatActivity {
         }
         NavigationUI.setupActionBarWithNavController(this, navController);
 
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
+        // Initialize ViewModel and database
+        itemViewModel = new ViewModelProvider(this).get(ItemViewModel.class);
+        AppDatabase appDatabase = AppDatabase.getInstance(this);
+        itemFTSEntityDao = appDatabase.itemFTSEntityDao();
+        executorService = Executors.newSingleThreadExecutor();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_searchable, menu);
+        MenuItem searchItem = menu.findItem(R.id.action_search);
+        SearchManager searchManager = (SearchManager) getSystemService(SEARCH_SERVICE);
+        SearchView searchView = (SearchView) searchItem.getActionView();
+        searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
+
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                executorService.submit(() -> {
+                    List<ItemDto> items = EntityDtoMapper.dtosToEntitiesForItemDto(itemFTSEntityDao.searchForItem(newText));
+                    runOnUiThread(() -> itemViewModel.setItems(items));
+                });
+                return true;
+            }
         });
+        return true;
     }
 
     @Override

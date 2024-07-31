@@ -1,5 +1,6 @@
 package it.pioppi.business.adapter;
 
+import android.app.PendingIntent;
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -24,7 +25,7 @@ import it.pioppi.business.dto.ItemDto;
 public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder> {
 
     public interface OnItemClickListener {
-        void onItemClick(ItemDto item);
+        void onItemClick(ItemDto item) throws ExecutionException, InterruptedException, PendingIntent.CanceledException;
     }
 
     public interface OnLongItemClickListener {
@@ -61,7 +62,13 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
         holder.checkDate.setText(formattedDateTime);
 
         holder.hasNote.setVisibility(item.getNote() != null && !item.getNote().isEmpty() ? View.VISIBLE : View.INVISIBLE);
-        holder.itemView.setOnClickListener(v -> listener.onItemClick(item));
+        holder.itemView.setOnClickListener(v -> {
+            try {
+                listener.onItemClick(item);
+            } catch (PendingIntent.CanceledException | ExecutionException | InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        });
         holder.itemView.setOnLongClickListener(v -> {
             try {
                 longListener.onLongItemClick(item);
@@ -100,8 +107,10 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
     }
 
     public void setItemList(List<ItemDto> itemList) {
-        this.itemList = new ArrayList<>(itemList);
-        notifyDataSetChanged();
+        if (itemList != null && !itemList.isEmpty()) {
+            this.itemList = new ArrayList<>(itemList);
+            notifyDataSetChanged();
+        }
     }
 
     public static class ItemViewHolder extends RecyclerView.ViewHolder {
