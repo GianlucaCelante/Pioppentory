@@ -9,8 +9,8 @@ import it.pioppi.database.model.QuantityType;
 
 public class ItemDetailFragmentManager {
 
-    public static Integer calculateTotPortions(List<QuantityTypeDto> quantityTypeDtos, QuantityPurpose purpose) {
-        AtomicReference<Integer> totPortions = new AtomicReference<>(0);
+    public static Long calculateTotPortions(List<QuantityTypeDto> quantityTypeDtos, QuantityPurpose purpose) {
+        AtomicReference<Long> totPortions = new AtomicReference<>(0L);
         quantityTypeDtos.stream()
                 .filter(quantityTypeDto -> purpose.equals(quantityTypeDto.getPurpose()))
                 .forEach(quantityTypeDto -> totPortions.updateAndGet(v -> v + QuantityType.getTotPortions(quantityTypeDto.getQuantityType(), quantityTypeDto.getQuantity())));

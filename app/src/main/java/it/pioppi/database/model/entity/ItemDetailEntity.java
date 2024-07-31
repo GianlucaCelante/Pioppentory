@@ -34,7 +34,7 @@ public class ItemDetailEntity extends BaseEntity {
     @ColumnInfo(name = "id")
     private UUID id;
     @ColumnInfo(name = "quantity_to_be_ordered")
-    private Integer quantityToBeOrdered;
+    private Long quantityToBeOrdered;
     @ColumnInfo(name = "ordered_quantity")
     private Integer orderedQuantity;
     @ColumnInfo(name = "portions_required_on_saturday")
@@ -53,7 +53,7 @@ public class ItemDetailEntity extends BaseEntity {
     private UUID itemId;
 
     @Ignore
-    public ItemDetailEntity(@NotNull UUID id, Integer quantityToBeOrdered, Integer orderedQuantity, Integer portionsRequiredOnSaturday, Integer portionsRequiredOnSunday, Integer portionsPerWeekend, Integer portionsOnHoliday, Integer maxPortionsSold, LocalDateTime deliveryDate, UUID itemId) {
+    public ItemDetailEntity(@NotNull UUID id, Long quantityToBeOrdered, Integer orderedQuantity, Integer portionsRequiredOnSaturday, Integer portionsRequiredOnSunday, Integer portionsPerWeekend, Integer portionsOnHoliday, Integer maxPortionsSold, LocalDateTime deliveryDate, UUID itemId) {
         super();
         this.id = id;
         this.quantityToBeOrdered = quantityToBeOrdered;
@@ -77,11 +77,11 @@ public class ItemDetailEntity extends BaseEntity {
         this.id = id;
     }
 
-    public Integer getQuantityToBeOrdered() {
+    public Long getQuantityToBeOrdered() {
         return quantityToBeOrdered;
     }
 
-    public void setQuantityToBeOrdered(Integer quantityToBeOrdered) {
+    public void setQuantityToBeOrdered(Long quantityToBeOrdered) {
         this.quantityToBeOrdered = quantityToBeOrdered;
     }
 

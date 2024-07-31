@@ -1,8 +1,11 @@
 package it.pioppi.business.fragment;
 
+import android.app.SearchManager;
+import android.content.Context;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.widget.SearchView;
 import androidx.core.view.MenuProvider;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.Lifecycle;
@@ -31,6 +34,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import it.pioppi.R;
 import it.pioppi.business.adapter.ItemTagsAdapter;
@@ -50,7 +54,7 @@ import it.pioppi.database.model.entity.QuantityTypeEntity;
 import it.pioppi.database.model.entity.ItemStatus;
 import it.pioppi.database.repository.ItemEntityRepository;
 
-public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItemClickListener {
+public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItemClickListener, Searchable {
     private AppDatabase appDatabase;
     private ItemTagsAdapter itemTagsAdapter;
     private ExecutorService executorService;
@@ -190,6 +194,17 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
     }
 
     @Override
+    public void onSearchQueryChanged(String query) {
+        List<ItemTagDto> itemTags = itemTagsViewModel.getItemTags().getValue();
+        if (itemTags != null) {
+            List<ItemTagDto> filteredTags = itemTags.stream()
+                    .filter(tag -> tag.getName().toLowerCase().contains(query.toLowerCase()))
+                    .collect(Collectors.toList());
+            itemTagsAdapter.setItemTagDtos(filteredTags);
+        }
+    }
+
+    @Override
     public void onItemClick(ItemTagDto item) throws ExecutionException, InterruptedException {
         if (item == null || item.getId() == null) {
             return;
@@ -222,7 +237,7 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
             newItem.setId(itemId);
             newItem.setFtsId(nextId);
             newItem.setName(tagName);
-            newItem.setTotPortions(0);
+            newItem.setTotPortions(0L);
             newItem.setStatus(ItemStatus.WHITE);
             newItem.setCreationDate(now);
 
@@ -267,17 +282,41 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
     }
 
     private void setupMenuToolbar() {
-        ItemTagEntityDao itemTagEntityDao = appDatabase.itemTagEntityDao();
         requireActivity().addMenuProvider(new MenuProvider() {
             @Override
             public void onCreateMenu(@NonNull Menu menu, @NonNull MenuInflater menuInflater) {
                 menuInflater.inflate(R.menu.menu_item_tags_fragment, menu);
+
+                MenuItem searchItem = menu.findItem(R.id.action_search);
+                SearchManager searchManager = (SearchManager) requireActivity().getSystemService(Context.SEARCH_SERVICE);
+                SearchView searchView = (SearchView) searchItem.getActionView();
+                if (searchManager != null) {
+                    searchView.setSearchableInfo(searchManager.getSearchableInfo(requireActivity().getComponentName()));
+                }
+
+                searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+                    @Override
+                    public boolean onQueryTextSubmit(String query) {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean onQueryTextChange(String newText) {
+                        Fragment navHostFragment = requireActivity().getSupportFragmentManager().findFragmentById(R.id.nav_host_fragment);
+                        if (navHostFragment != null) {
+                            Fragment currentFragment = navHostFragment.getChildFragmentManager().getPrimaryNavigationFragment();
+                            if (currentFragment instanceof Searchable) {
+                                ((Searchable) currentFragment).onSearchQueryChanged(newText);
+                            }
+                        }
+                        return true;
+                    }
+                });
             }
 
             @Override
             public boolean onMenuItemSelected(@NonNull MenuItem menuItem) {
                 int itemId = menuItem.getItemId();
-
                 if (itemId == R.id.delete_tag) {
                     List<ItemTagDto> itemTagDtos = itemTagsViewModel.getItemTags().getValue();
                     if (itemTagDtos == null) {
@@ -300,7 +339,7 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
                     executorService.submit(() -> {
                         for (ItemTagDto itemTagDto : selectedItems) {
                             ItemTagEntity itemTagEntity = EntityDtoMapper.dtoToEntity(itemTagDto);
-                            itemTagEntityDao.delete(itemTagEntity);
+                            appDatabase.itemTagEntityDao().delete(itemTagEntity);
                         }
                     });
 
@@ -316,5 +355,11 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
                 return false;
             }
         }, getViewLifecycleOwner(), Lifecycle.State.RESUMED);
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        executorService.shutdown();
     }
 }

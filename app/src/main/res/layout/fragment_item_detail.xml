@@ -272,6 +272,7 @@
                             android:layout_height="wrap_content"
                             android:inputType="number"
                             android:padding="8dp"
+                            android:maxLength="9"
                             android:textAlignment="center" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
@@ -303,6 +304,7 @@
                             android:layout_height="wrap_content"
                             android:inputType="number"
                             android:padding="8dp"
+                            android:maxLength="9"
                             android:textAlignment="center" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
@@ -365,6 +367,7 @@
                             android:layout_height="wrap_content"
                             android:inputType="number"
                             android:padding="8dp"
+                            android:maxLength="9"
                             android:textAlignment="center" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
@@ -395,6 +398,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:inputType="number"
+                            android:maxLength="9"
                             android:padding="8dp"
                             android:textAlignment="center" />
                     </LinearLayout>

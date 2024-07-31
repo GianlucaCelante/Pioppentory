@@ -33,7 +33,7 @@ public class ItemEntity extends BaseEntity {
     @ColumnInfo(name = "name")
     private String name;
     @ColumnInfo(name = "tot_portions")
-    private Integer totPortions;
+    private Long totPortions;
     @ColumnInfo(name = "status")
     private ItemStatus status;
     @ColumnInfo(name = "barcode")
@@ -48,7 +48,7 @@ public class ItemEntity extends BaseEntity {
     private List<ItemTagEntity> tags;
 
     @Ignore
-    public ItemEntity(@NotNull UUID id, @NotNull Integer ftsId, String name, Integer totPortions, ItemStatus status, String barcode, LocalDateTime checkDate, String note) {
+    public ItemEntity(@NotNull UUID id, @NotNull Integer ftsId, String name, Long totPortions, ItemStatus status, String barcode, LocalDateTime checkDate, String note) {
         super();
         this.id = id;
         this.ftsId = ftsId;
@@ -88,11 +88,11 @@ public class ItemEntity extends BaseEntity {
         this.name = name;
     }
 
-    public Integer getTotPortions() {
+    public Long getTotPortions() {
         return totPortions;
     }
 
-    public void setTotPortions(Integer totPortions) {
+    public void setTotPortions(Long totPortions) {
         this.totPortions = totPortions;
     }
 

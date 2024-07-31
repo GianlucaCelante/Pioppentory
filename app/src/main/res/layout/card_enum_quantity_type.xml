@@ -29,6 +29,7 @@
             android:layout_weight="1"
             android:textSize="18sp"
             android:inputType="number"
+            android:maxLength="9"
             android:textAlignment="center"
             android:padding="8dp"/>
     </LinearLayout>

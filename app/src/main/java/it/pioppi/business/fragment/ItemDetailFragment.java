@@ -4,12 +4,16 @@ import static it.pioppi.business.manager.ItemDetailFragmentManager.calculateTotP
 import static it.pioppi.business.manager.ItemDetailFragmentManager.normalizeText;
 
 import android.annotation.SuppressLint;
+import android.app.SearchManager;
 import android.content.Context;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
@@ -24,9 +28,12 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.widget.SearchView;
 import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
+import androidx.core.view.MenuProvider;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -88,6 +95,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         executorService = Executors.newSingleThreadExecutor();
         itemViewModel = new ViewModelProvider(requireActivity()).get(ItemViewModel.class);
         itemEntityRepository = new ItemEntityRepository(requireActivity().getApplication());
+        setHasOptionsMenu(true);
     }
 
     @Override
@@ -163,6 +171,15 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
     }
 
     @Override
+    public void onPrepareOptionsMenu(@NonNull Menu menu) {
+        MenuItem searchItem = menu.findItem(R.id.action_search);
+        if (searchItem != null) {
+            searchItem.setVisible(false); // Nascondi l'elemento di ricerca
+        }
+        super.onPrepareOptionsMenu(menu);
+    }
+
+    @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         onTextChanged();
@@ -211,8 +228,8 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         quantityTypesAll.addAll(quantityTypesToBeOrdered);
 
         // ITEM
-        Integer totPortionsAvailable = calculateTotPortions(quantityTypesAvailable, QuantityPurpose.AVAILABLE);
-        Integer totPortionsToBeOrdered = calculateTotPortions(quantityTypesToBeOrdered, QuantityPurpose.TO_BE_ORDERED);
+        Long totPortionsAvailable = calculateTotPortions(quantityTypesAvailable, QuantityPurpose.AVAILABLE);
+        Long totPortionsToBeOrdered = calculateTotPortions(quantityTypesToBeOrdered, QuantityPurpose.TO_BE_ORDERED);
 
         String note = notesEditText.getText().toString();
         String itemName = itemNameTextView.getText().toString();
@@ -689,9 +706,9 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
 
         List<QuantityTypeDto> quantityTypeDtos = getQuantityTypeDtos(quantityTypesAvailable, quantityTypesToBeOrdered);
 
-        Integer totPortionsAvailable = calculateTotPortions(quantityTypeDtos, QuantityPurpose.AVAILABLE);
-        Integer totPortionsToBeOrdered = calculateTotPortions(quantityTypeDtos, QuantityPurpose.TO_BE_ORDERED);
-        Integer totPortionsAvailablePlusOrdered = totPortionsAvailable + totPortionsToBeOrdered;
+        Long totPortionsAvailable = calculateTotPortions(quantityTypeDtos, QuantityPurpose.AVAILABLE);
+        Long totPortionsToBeOrdered = calculateTotPortions(quantityTypeDtos, QuantityPurpose.TO_BE_ORDERED);
+        long totPortionsAvailablePlusOrdered = totPortionsAvailable + totPortionsToBeOrdered;
 
         totPortionsAvailableTextView.setText(String.valueOf(totPortionsAvailable));
         totPortionsToBeOrderedTextView.setText(String.valueOf(totPortionsToBeOrdered));

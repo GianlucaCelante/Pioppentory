@@ -57,7 +57,7 @@ import it.pioppi.database.model.entity.ProviderEntity;
 import it.pioppi.database.model.entity.QuantityTypeEntity;
 import it.pioppi.database.repository.ItemEntityRepository;
 
-public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickListener, ItemAdapter.OnLongItemClickListener {
+public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickListener, ItemAdapter.OnLongItemClickListener, Searchable {
 
     private AppDatabase appDatabase;
     private ItemAdapter itemAdapter;
@@ -127,7 +127,13 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
 
                     @Override
                     public boolean onQueryTextChange(String newText) {
-                        itemViewModel.setQuery(newText);
+                        Fragment navHostFragment = requireActivity().getSupportFragmentManager().findFragmentById(R.id.nav_host_fragment);
+                        if (navHostFragment != null) {
+                            Fragment currentFragment = navHostFragment.getChildFragmentManager().getPrimaryNavigationFragment();
+                            if (currentFragment instanceof Searchable) {
+                                ((Searchable) currentFragment).onSearchQueryChanged(newText);
+                            }
+                        }
                         return true;
                     }
                 });
@@ -142,9 +148,6 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                 } else if (itemId == R.id.filter_by_Z_to_A) {
                     filterItemsByNameDescending();
                     return true;
-                } else if (itemId == R.id.filter_by_provider) {
-                    filterItemsByProvider();
-                    return true;
                 } else if (itemId == R.id.filter_by_status_white) {
                     filterItemsByStatus(ItemStatus.WHITE);
                     return true;
@@ -157,14 +160,13 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                 } else if (itemId == R.id.filter_by_status_green) {
                     filterItemsByStatus(ItemStatus.GREEN);
                     return true;
-                } else if (itemId == R.id.filter_by_provider_and_status) {
-                    filterItemsByProviderAndStatus();
-                    return true;
                 }
                 return false;
             }
         }, getViewLifecycleOwner(), Lifecycle.State.RESUMED);
     }
+
+
 
     private void addProviderItem(LayoutInflater inflater, ArrayAdapter<String> spinnerAdapter, Spinner providerSpinner) {
         View dialogView = inflater.inflate(R.layout.new_provider_alert, null);
@@ -287,7 +289,7 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                         newItem.setId(itemId);
                         newItem.setFtsId(getMaxFtsId);
                         newItem.setName(newItemName);
-                        newItem.setTotPortions(0);
+                        newItem.setTotPortions(0L);
                         newItem.setStatus(ItemStatus.WHITE);
                         newItem.setBarcode("FAKE_BARCODE");
                         newItem.setCreationDate(now);
@@ -414,10 +416,6 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
         recyclerView.setAdapter(itemAdapter);
     }
 
-    private void filterItemsByProvider() {
-        // Implementa la logica per filtrare gli item per provider
-    }
-
     private void filterItemsByStatus(ItemStatus status) {
         List<ItemDto> itemDtoList = Objects.requireNonNull(itemViewModel.getItems().getValue()).stream()
                 .filter(item -> item.getStatus().equals(status))
@@ -425,10 +423,6 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
         itemAdapter.setItemList(itemDtoList);
         recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 4));
         recyclerView.setAdapter(itemAdapter);
-    }
-
-    private void filterItemsByProviderAndStatus() {
-        // Implementa la logica per filtrare gli item per provider e status
     }
 
     private void hideKeyboard(View view) {
@@ -443,5 +437,10 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
         if (imm != null) {
             imm.showSoftInput(view, InputMethodManager.SHOW_FORCED);
         }
+    }
+
+    @Override
+    public void onSearchQueryChanged(String query) {
+        itemViewModel.setQuery(query);
     }
 }

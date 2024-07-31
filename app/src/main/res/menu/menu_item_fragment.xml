@@ -15,12 +15,6 @@
                 android:id="@+id/filter_by_Z_to_A"
                 android:title="Z - A" />
             <item
-                android:id="@+id/filter_by_provider"
-                android:title="Fornitori" />
-            <item
-                android:id="@+id/filter_by_provider_and_status"
-                android:title="Fornitori e " />
-            <item
                 android:id="@+id/filter_by_status_white"
                 android:title="Non controllati - BIANCHI"
                 />

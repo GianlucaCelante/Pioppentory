@@ -16,7 +16,7 @@ public class ItemDto implements Parcelable {
     private UUID id;
     private Integer ftsId;
     private String name;
-    private Integer totPortions;
+    private Long totPortions;
     private ItemStatus status;
     private String barcode;
     private LocalDateTime checkDate;
@@ -24,7 +24,7 @@ public class ItemDto implements Parcelable {
     private LocalDateTime creationDate;
     private LocalDateTime lastUpdateDate;
 
-    public ItemDto(UUID id, Integer ftsId, String name, Integer totPortions, ItemStatus status, String barcode, LocalDateTime checkDate, String note, LocalDateTime creationDate, LocalDateTime lastUpdateDate) {
+    public ItemDto(UUID id, Integer ftsId, String name, Long totPortions, ItemStatus status, String barcode, LocalDateTime checkDate, String note, LocalDateTime creationDate, LocalDateTime lastUpdateDate) {
         this.id = id;
         this.ftsId = ftsId;
         this.name = name;
@@ -43,7 +43,7 @@ public class ItemDto implements Parcelable {
         id = in.readByte() == 0 ? null : UUID.fromString(in.readString());
         ftsId = in.readByte() == 0 ? null : in.readInt();
         name = in.readString();
-        totPortions = in.readByte() == 0 ? null : in.readInt();
+        totPortions = in.readByte() == 0 ? null : in.readLong();
         status = in.readByte() == 0 ? null : ItemStatus.valueOf(in.readString());
         barcode = in.readString();
         note = in.readString();
@@ -88,11 +88,11 @@ public class ItemDto implements Parcelable {
         this.name = name;
     }
 
-    public Integer getTotPortions() {
+    public Long getTotPortions() {
         return totPortions;
     }
 
-    public void setTotPortions(Integer totPortions) {
+    public void setTotPortions(Long totPortions) {
         this.totPortions = totPortions;
     }
 
@@ -168,7 +168,7 @@ public class ItemDto implements Parcelable {
             parcel.writeByte((byte) 0);
         } else {
             parcel.writeByte((byte) 1);
-            parcel.writeInt(totPortions);
+            parcel.writeLong(totPortions);
         }
         if (status == null) {
             parcel.writeByte((byte) 0);
