@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
 import androidx.appcompat.widget.Toolbar;
@@ -12,6 +13,8 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.NavigationUI;
+
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -51,6 +54,27 @@ public class MainActivity extends AppCompatActivity {
         AppDatabase appDatabase = AppDatabase.getInstance(this);
         itemFTSEntityDao = appDatabase.itemFTSEntityDao();
         executorService = Executors.newSingleThreadExecutor();
+
+        setupBottomNavigationBar();
+    }
+
+    private void setupBottomNavigationBar() {
+
+        BottomNavigationView bottomNavigation = findViewById(R.id.bottom_navigation);
+        bottomNavigation.setOnItemSelectedListener(new BottomNavigationView.OnItemSelectedListener() {
+            @Override
+            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+                int itemId = item.getItemId();
+                if (itemId == R.id.nav_home) {
+                    navController.navigate(R.id.itemFragment);
+                    return true;
+                } else if (itemId == R.id.nav_history) {
+                    navController.navigate(R.id.itemHistoryFragment);
+                    return true;
+                }
+                return false;
+            }
+        });
     }
 
     @Override

@@ -36,5 +36,10 @@
             android:id="@+id/action_itemTagsFragment_to_itemDetailFragment"
             app:destination="@id/itemDetailFragment" />
     </fragment>
+    <fragment
+        android:id="@+id/itemHistoryFragment"
+        android:name="it.pioppi.business.fragment.ItemHistoryFragment"
+        android:label="Storico"
+        tools:layout="@layout/fragment_item_history" />
 
 </navigation>
