@@ -263,7 +263,7 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
             appDatabase.runInTransaction(() -> {
                 // Give some time to the database to update the id
                 try {
-                    Thread.sleep(200);
+                    Thread.sleep(500);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }

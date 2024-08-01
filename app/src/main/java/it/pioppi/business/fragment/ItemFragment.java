@@ -168,19 +168,17 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
     private void handleBarcodeScan(String barcode) {
         executorService.submit(() -> {
             List<ItemDto> items = itemViewModel.getItems().getValue();
-            if (items != null) {
-                for (ItemDto item : items) {
-                    if (item.getBarcode().equals(barcode)) {
-                        // Navigate to detail page
-                        requireActivity().runOnUiThread(() -> {
-                            Bundle bundle = new Bundle();
-                            bundle.putString("itemId", item.getId().toString());
-                            NavHostFragment.findNavController(ItemFragment.this).navigate(R.id.action_itemFragment_to_itemDetailFragment, bundle);
-                        });
-                        return;
-                    }
-                }
-            }
+            items.stream()
+                    .filter(item -> item.getBarcode().equals(barcode))
+                    .findFirst()
+                    .ifPresent(item -> {
+                // Navigate to detail page
+                requireActivity().runOnUiThread(() -> {
+                    Bundle bundle = new Bundle();
+                    bundle.putString("itemId", item.getId().toString());
+                    NavHostFragment.findNavController(ItemFragment.this).navigate(R.id.action_itemFragment_to_itemDetailFragment, bundle);
+                });
+            });
             // If no matching barcode is found, perform the normal search
             requireActivity().runOnUiThread(() -> itemViewModel.setQuery(barcode));
         });
@@ -412,9 +410,7 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                         });
 
                     } catch (Exception e) {
-                        requireActivity().runOnUiThread(() -> {
-                            Toast.makeText(getContext(), "Errore durante l'eliminazione", Toast.LENGTH_SHORT).show();
-                        });
+                        requireActivity().runOnUiThread(() -> Toast.makeText(getContext(), "Errore durante l'eliminazione", Toast.LENGTH_SHORT).show());
                     }
                 }))
                 .setNegativeButton("Annulla", null)
