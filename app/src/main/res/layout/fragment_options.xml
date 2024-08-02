@@ -4,10 +4,10 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    tools:context=".business.fragment.ItemFragment">
+    tools:context=".business.fragment.OptionsFragment">
 
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recycler_view_items"
+        android:id="@+id/recycler_view_devices"
         tools:listitem="@layout/card_item"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -18,17 +18,6 @@
         android:clipChildren="false"
         android:overScrollMode="never"
         android:scrollbars="vertical" />
-
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/new_item_fab"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_margin="16dp"
-        android:src="@drawable/plus_icon"
-
-        android:contentDescription="CREA"
-        />
 
 
 </FrameLayout>

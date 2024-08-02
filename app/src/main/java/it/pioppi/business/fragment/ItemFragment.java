@@ -4,6 +4,7 @@ import android.app.SearchManager;
 import android.content.Context;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -88,7 +89,7 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_item, container, false);
 
-        recyclerView = view.findViewById(R.id.recycler_view);
+        recyclerView = view.findViewById(R.id.recycler_view_items);
         itemAdapter = new ItemAdapter(new ArrayList<>(), this, this, getContext());
 
         itemViewModel.getFilteredItems().observe(getViewLifecycleOwner(), itemList -> {
@@ -135,6 +136,20 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                         }
                         return true;
                     }
+                });
+
+                searchView.setOnFocusChangeListener((v, hasFocus) -> {
+                    if (!hasFocus) {
+                        searchView.requestFocus();
+                    }
+                });
+
+                searchView.setOnKeyListener((v, keyCode, event) -> {
+                    if (keyCode == KeyEvent.KEYCODE_ENTER) {
+                        searchView.requestFocus();
+                        return true;
+                    }
+                    return false;
                 });
             }
 
