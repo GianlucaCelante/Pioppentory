@@ -10,7 +10,7 @@ import android.view.ViewGroup;
 
 import it.pioppi.R;
 
-public class ItemHistoryFragment extends Fragment {
+public class ItemHistoryFragment extends Fragment implements Searchable{
 
     public ItemHistoryFragment() {
         // Required empty public constructor
@@ -27,5 +27,10 @@ public class ItemHistoryFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_item_history, container, false);
+    }
+
+    @Override
+    public void onSearchQueryChanged(String query) {
+
     }
 }
