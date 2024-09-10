@@ -43,7 +43,8 @@ public class ItemEntity extends BaseEntity {
     @ColumnInfo(name = "note")
     private String note;
 
-
+    @Ignore
+    private ItemDetailEntity detail;
     @Ignore
     private List<ItemTagEntity> tags;
 
@@ -134,6 +135,14 @@ public class ItemEntity extends BaseEntity {
 
     public void setTags(List<ItemTagEntity> tags) {
         this.tags = tags;
+    }
+
+    public ItemDetailEntity getDetail() {
+        return detail;
+    }
+
+    public void setDetail(ItemDetailEntity detail) {
+        this.detail = detail;
     }
 
     @Override

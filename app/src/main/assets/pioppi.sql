@@ -56,6 +56,15 @@ CREATE TABLE IF NOT EXISTS `QUANTITY_TYPE` (
     FOREIGN KEY(`item_id`) REFERENCES `ITEM`(`id`) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS `BLUETOOTH_DEVICE` (
+    `id` TEXT NOT NULL,
+    `name` TEXT,
+    `address` TEXT,
+    `creation_date` TEXT,
+    `last_update` TEXT,
+    PRIMARY KEY(`id`)
+);
+
 -- Creazione della tabella virtuale per la ricerca full-text
 CREATE VIRTUAL TABLE item_fts USING fts4(
     content=`ITEM`,
@@ -69,6 +78,7 @@ CREATE INDEX IF NOT EXISTS `index_ITEM_id` ON `ITEM` (`id`);
 CREATE INDEX IF NOT EXISTS `index_ITEM_DETAIL_item_id` ON `ITEM_DETAIL` (`item_id`);
 CREATE INDEX IF NOT EXISTS `index_PROVIDER_item_id` ON `PROVIDER` (`item_id`);
 CREATE INDEX IF NOT EXISTS `index_QUANTITY_TYPE_item_id` ON `QUANTITY_TYPE` (`item_id`);
+CREATE INDEX IF NOT EXISTS `index_BLUETOOTH_DEVICE_id` ON `BLUETOOTH_DEVICE` (`id`);
 
 -- Inserimento dei dati di esempio nella tabella ITEM
 INSERT INTO ITEM (id, fts_id, name, tot_portions, status, barcode, note, check_date, creation_date, last_update) VALUES
@@ -110,3 +120,11 @@ INSERT INTO QUANTITY_TYPE (id, quantity_type, quantity_type_description, quantit
 -- Aggiornamento della tabella item_fts con i dati inseriti nella tabella ITEM
 INSERT INTO item_fts (rowid, name, barcode)
 SELECT fts_id, name, barcode FROM ITEM;
+
+-- Inserimento dei dati di esempio nella tabella BLUETOOTH_DEVICE
+INSERT INTO BLUETOOTH_DEVICE (id, name, address, creation_date, last_update) VALUES
+('00000000-0000-0000-0000-000000000001', 'Device 1', '00:00:00:00:00:01', '2023-01-01T00:00:00', '2023-01-02T00:00:00'),
+('00000000-0000-0000-0000-000000000002', 'Device 2', '00:00:00:00:00:02', '2023-01-03T00:00:00', '2023-01-04T00:00:00'),
+('00000000-0000-0000-0000-000000000003', 'Device 3', '00:00:00:00:00:03', '2023-01-05T00:00:00', '2023-01-06T00:00:00'),
+('00000000-0000-0000-0000-000000000004', 'Device 4', '00:00:00:00:00:04', '2023-01-07T00:00:00', '2023-01-08T00:00:00'),
+('00000000-0000-0000-0000-000000000005', 'Device 5', '00:00:00:00:00:05', '2023-01-09T00:00:00', '2023-01-10T00:00:00');

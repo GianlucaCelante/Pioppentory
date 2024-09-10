@@ -53,6 +53,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
+import it.pioppi.ConstantUtils;
 import it.pioppi.R;
 import it.pioppi.business.adapter.EnumAdapter;
 import it.pioppi.business.dto.ItemDetailDto;
@@ -73,6 +74,7 @@ import it.pioppi.database.model.entity.ItemDetailEntity;
 import it.pioppi.database.model.entity.ItemEntity;
 import it.pioppi.database.model.entity.ItemStatus;
 import it.pioppi.database.model.entity.ItemWithDetailAndProviderAndQuantityTypeEntity;
+import it.pioppi.database.model.entity.ItemWithDetailEntity;
 import it.pioppi.database.model.entity.ProviderEntity;
 import it.pioppi.database.model.entity.QuantityTypeEntity;
 import it.pioppi.database.repository.ItemEntityRepository;
@@ -105,15 +107,23 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         View view = inflater.inflate(R.layout.fragment_item_detail, container, false);
 
         UUID itemId;
+        String barcode;
         Bundle bundle = getArguments();
         if (bundle != null) {
             itemId = UUID.fromString(bundle.getString("itemId"));
-
+            barcode = bundle.getString(ConstantUtils.SCANNED_CODE);
             try {
+                if (barcode != null) {
+                    fetchItemWithDetailByBarcode(barcode);
+                }
+
+
                 itemWithDetailAndProviderAndQuantityTypeDto = fetchItemWithDetailAndProviderAndQuantityTypeById(itemId);
-            } catch (ExecutionException | InterruptedException e) {
+
+                } catch (ExecutionException | InterruptedException e) {
                 throw new RuntimeException(e);
             }
+
         } else {
             Toast.makeText(requireContext(), "Errore nel caricamento dell'item, Item non esiste", Toast.LENGTH_SHORT).show();
             return view;
@@ -592,6 +602,18 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         future.get();
 
         return itemWithDetailAndProviderAndQuantityTypeDto;
+    }
+
+    private ItemWithDetailEntity fetchItemWithDetailByBarcode(String barcode) throws ExecutionException, InterruptedException {
+
+        ItemWithDetailAndProviderAndQuantityTypeDto itemWithDetailAndProviderAndQuantityTypeDto = new ItemWithDetailAndProviderAndQuantityTypeDto();
+
+        Future<?> future = executorService.submit(() -> {
+            ItemEntityDao entityDao = appDatabase.itemEntityDao();
+
+        });
+
+        return null;
     }
 
     protected ItemWithDetailAndProviderAndQuantityTypeDto prefillFields(View view) {

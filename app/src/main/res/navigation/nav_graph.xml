@@ -42,4 +42,10 @@
         android:label="Storico"
         tools:layout="@layout/fragment_item_history" />
 
+    <fragment
+        android:id="@+id/optionsFragment"
+        android:name="it.pioppi.business.fragment.OptionsFragment"
+        android:label="Opzioni"
+        tools:layout="@layout/fragment_options" />
+
 </navigation>

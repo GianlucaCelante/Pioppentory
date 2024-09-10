@@ -3,6 +3,7 @@ package it.pioppi.database.mapper;
 import java.util.ArrayList;
 import java.util.List;
 
+import it.pioppi.business.dto.BluetoothDeviceDto;
 import it.pioppi.business.dto.ItemDetailDto;
 import it.pioppi.business.dto.ItemDto;
 import it.pioppi.business.dto.ItemFTSDto;
