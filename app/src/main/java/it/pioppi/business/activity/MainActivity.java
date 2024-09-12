@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
@@ -14,6 +15,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
 import androidx.appcompat.widget.Toolbar;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.NavigationUI;
@@ -45,9 +47,11 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+
+        Log.d("MainActivity", "Registering BroadcastReceiver for scanned code events");
         // Registra il receiver per intercettare gli eventi di scansione
         IntentFilter filter = new IntentFilter(ConstantUtils.ACTION_CODE_SCANNED);
-        registerReceiver(scanReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+        LocalBroadcastManager.getInstance(this).registerReceiver(scanReceiver, filter);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -71,22 +75,19 @@ public class MainActivity extends AppCompatActivity {
     private void setupBottomNavigationBar() {
 
         BottomNavigationView bottomNavigation = findViewById(R.id.bottom_navigation);
-        bottomNavigation.setOnItemSelectedListener(new BottomNavigationView.OnItemSelectedListener() {
-            @Override
-            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-                int itemId = item.getItemId();
-                if (itemId == R.id.nav_home) {
-                    navController.navigate(R.id.itemFragment);
-                    return true;
-                } else if (itemId == R.id.nav_history) {
-                    navController.navigate(R.id.itemHistoryFragment);
-                    return true;
-                } else if (itemId == R.id.nav_options) {
-                    navController.navigate(R.id.optionsFragment);
-                    return true;
-                }
-                return false;
+        bottomNavigation.setOnItemSelectedListener(item -> {
+            int itemId = item.getItemId();
+            if (itemId == R.id.nav_home) {
+                navController.navigate(R.id.itemFragment);
+                return true;
+            } else if (itemId == R.id.nav_history) {
+                navController.navigate(R.id.itemHistoryFragment);
+                return true;
+            } else if (itemId == R.id.nav_options) {
+                navController.navigate(R.id.optionsFragment);
+                return true;
             }
+            return false;
         });
     }
 
@@ -125,10 +126,11 @@ public class MainActivity extends AppCompatActivity {
     private final BroadcastReceiver scanReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
+            Log.d("MainActivity", "action received: " + intent.getAction());
             if (ConstantUtils.ACTION_CODE_SCANNED.equals(intent.getAction())) {
                 // Recupera il codice scansionato
                 String scannedCode = intent.getStringExtra(ConstantUtils.SCANNED_CODE);
-
+                Log.d("MainActivity", "Scanned code: " + scannedCode);
                 openDetailFragment(scannedCode);
             }
         }
@@ -137,21 +139,31 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        unregisterReceiver(scanReceiver);
+        Log.d("MainActivity", "Unregistering BroadcastReceiver for scanned code events");
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(scanReceiver);
     }
 
     private void openDetailFragment(String scannedCode) {
-
         Bundle bundle = new Bundle();
         bundle.putString(ConstantUtils.SCANNED_CODE, scannedCode);
 
-        ItemDetailFragment detailFragment = new ItemDetailFragment();
-        detailFragment.setArguments(bundle);
 
-        getSupportFragmentManager()
-                .beginTransaction()
-                .replace(R.id.nav_host_fragment, detailFragment)
-                .addToBackStack(null)
-                .commit();
+        // Usa l'azione globale per navigare a ItemDetailFragment
+        navController.navigate(R.id.action_global_to_itemDetailFragment, bundle);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.d("MainActivity", "onResume: Registering receiver again");
+        IntentFilter filter = new IntentFilter(ConstantUtils.ACTION_CODE_SCANNED);
+        LocalBroadcastManager.getInstance(this).registerReceiver(scanReceiver, filter);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Log.d("MainActivity", "onPause: Unregistering receiver");
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(scanReceiver);
     }
 }

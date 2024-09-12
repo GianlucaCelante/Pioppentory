@@ -173,25 +173,24 @@ public class OptionsFragment extends Fragment implements BluetoothDevicesAdapter
 
     private void checkBluetoothPermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED
-                    || ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED ||
+                    ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED ||
+                    ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE) != PackageManager.PERMISSION_GRANTED) {
+
+                // Richiedi permessi per Bluetooth e foreground service collegati ai dispositivi
                 ActivityCompat.requestPermissions(requireActivity(),
-                        new String[]{Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT}, ConstantUtils.REQUEST_BLUETOOTH_PERMISSION);
-            } else {
-                enableBluetooth();
-                loadPairedBluetoothDevices();
+                        new String[]{
+                                Manifest.permission.BLUETOOTH_SCAN,
+                                Manifest.permission.BLUETOOTH_CONNECT,
+                                Manifest.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE
+                        }, ConstantUtils.REQUEST_BLUETOOTH_PERMISSION);
             }
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            // Controllo per versioni di Android M e superiori
             if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(requireActivity(),
                         new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, ConstantUtils.REQUEST_LOCATION_PERMISSION);
-            } else {
-                enableBluetooth();
-                loadPairedBluetoothDevices();
             }
-        } else {
-            enableBluetooth();
-            loadPairedBluetoothDevices();
         }
     }
 
@@ -282,27 +281,6 @@ public class OptionsFragment extends Fragment implements BluetoothDevicesAdapter
         }
     }
 
-    protected void loadPairedBluetoothDevices() {
-        try {
-            Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
-            if (!pairedDevices.isEmpty()) {
-                List<BluetoothDeviceDto> bluetoothDeviceDtos = new ArrayList<>();
-                for (BluetoothDevice device : pairedDevices) {
-                    String deviceName = device.getName();
-                    String deviceHardwareAddress = device.getAddress(); // MAC address
-                    BluetoothDeviceDto bluetoothDeviceDto = new BluetoothDeviceDto();
-                    bluetoothDeviceDto.setName(deviceName);
-                    bluetoothDeviceDto.setAddress(deviceHardwareAddress);
-                    bluetoothDeviceDto.setCreationDate(LocalDateTime.now());
-                    bluetoothDeviceDtos.add(bluetoothDeviceDto);
-                }
-                bluetoothDeviceViewModel.setPairedBluetoothDevices(bluetoothDeviceDtos);
-            }
-        } catch (SecurityException e) {
-            Toast.makeText(getContext(), "Errore nel caricamento dei dispositivi Bluetooth", Toast.LENGTH_SHORT).show();
-        }
-    }
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_options, container, false);
@@ -377,30 +355,30 @@ public class OptionsFragment extends Fragment implements BluetoothDevicesAdapter
 
         if (device != null) {
             try {
-                // Connessione Bluetooth al dispositivo (Scanner)
-                BluetoothSocket socket = device.createRfcommSocketToServiceRecord(ConstantUtils.SPP_UUID);
+                // Verifica se tutti i permessi sono stati concessi prima di avviare il servizio
+                if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE) == PackageManager.PERMISSION_GRANTED) {
 
-                // Ferma la scoperta per migliorare la velocità di connessione
-                bluetoothAdapter.cancelDiscovery();
+                    // Ferma la scoperta per migliorare la velocità di connessione
+                    bluetoothAdapter.cancelDiscovery();
 
-                // Connessione al dispositivo
-                socket.connect();
-                Toast.makeText(getContext(), "Connesso a: " + device.getName(), Toast.LENGTH_SHORT).show();
+                    // Avvia il servizio per monitorare la pistola scanner
+                    Intent serviceIntent = new Intent(getContext(), BluetoothScannerService.class);
+                    serviceIntent.putExtra(ConstantUtils.DEVICE_ADDRESS, bluetoothDevice.getAddress());  // Passa l'indirizzo del dispositivo
+                    ContextCompat.startForegroundService(requireContext(), serviceIntent);  // Avvia il service come foreground service
 
-                // Avvia il servizio per monitorare la pistola scanner
-                Intent serviceIntent = new Intent(getContext(), BluetoothScannerService.class);
-                serviceIntent.putExtra("DEVICE_ADDRESS", bluetoothDevice.getAddress()); // Passa l'indirizzo del dispositivo al service
-                ContextCompat.startForegroundService(getContext(), serviceIntent); // Avvia il service come foreground service
+                    Toast.makeText(getContext(), "Tentativo di connessione a: " + device.getName(), Toast.LENGTH_SHORT).show();
+                } else {
+                    checkBluetoothPermissions();  // Richiedi i permessi mancanti
+                }
 
-            } catch (IOException e) {
+            } catch (SecurityException e) {
                 e.printStackTrace();
-                Toast.makeText(getContext(), "Connessione fallita a: " + device.getName(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), "Errore di sicurezza", Toast.LENGTH_SHORT).show();
             }
         } else {
             Toast.makeText(getContext(), "Dispositivo non trovato", Toast.LENGTH_SHORT).show();
         }
     }
-
 
     @Override
     public void onLongItemClick(BluetoothDeviceDto bluetoothDevice) {

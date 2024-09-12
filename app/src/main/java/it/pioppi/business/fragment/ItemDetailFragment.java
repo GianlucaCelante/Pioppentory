@@ -4,7 +4,6 @@ import static it.pioppi.business.manager.ItemDetailFragmentManager.calculateTotP
 import static it.pioppi.business.manager.ItemDetailFragmentManager.normalizeText;
 
 import android.annotation.SuppressLint;
-import android.app.SearchManager;
 import android.content.Context;
 import android.os.Bundle;
 import android.text.Editable;
@@ -12,7 +11,6 @@ import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -28,12 +26,9 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.widget.SearchView;
 import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
-import androidx.core.view.MenuProvider;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -51,6 +46,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import it.pioppi.ConstantUtils;
@@ -74,7 +70,6 @@ import it.pioppi.database.model.entity.ItemDetailEntity;
 import it.pioppi.database.model.entity.ItemEntity;
 import it.pioppi.database.model.entity.ItemStatus;
 import it.pioppi.database.model.entity.ItemWithDetailAndProviderAndQuantityTypeEntity;
-import it.pioppi.database.model.entity.ItemWithDetailEntity;
 import it.pioppi.database.model.entity.ProviderEntity;
 import it.pioppi.database.model.entity.QuantityTypeEntity;
 import it.pioppi.database.repository.ItemEntityRepository;
@@ -110,17 +105,25 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         String barcode;
         Bundle bundle = getArguments();
         if (bundle != null) {
-            itemId = UUID.fromString(bundle.getString("itemId"));
-            barcode = bundle.getString(ConstantUtils.SCANNED_CODE);
+
             try {
-                if (barcode != null) {
-                    fetchItemWithDetailByBarcode(barcode);
-                }
+                if(bundle.getString(ConstantUtils.ITEM_ID) != null) {
+                    itemId = UUID.fromString(bundle.getString(ConstantUtils.ITEM_ID));
+                    itemWithDetailAndProviderAndQuantityTypeDto = fetchItemWithDetailAndProviderAndQuantityTypeById(itemId);
 
+                } else {
+                    barcode = bundle.getString(ConstantUtils.SCANNED_CODE);
 
-                itemWithDetailAndProviderAndQuantityTypeDto = fetchItemWithDetailAndProviderAndQuantityTypeById(itemId);
+                        if (barcode != null) {
+                            UUID itemIdByBarcode = fetchItemWithDetailByBarcode(barcode);
+                            itemWithDetailAndProviderAndQuantityTypeDto = fetchItemWithDetailAndProviderAndQuantityTypeById(itemIdByBarcode);
+                            itemId = itemIdByBarcode;
 
-                } catch (ExecutionException | InterruptedException e) {
+                        } else {
+                            throw new IllegalArgumentException("Item details not found");
+                        }}
+
+            } catch (ExecutionException | InterruptedException e) {
                 throw new RuntimeException(e);
             }
 
@@ -173,7 +176,11 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
             @Override
             public void afterTextChanged(Editable s) {
                 String newItemName = s.toString().trim();
-                checkIfItemNameExists(newItemName, currentItemName, saveButton);
+                try {
+                    checkIfItemNameExists(newItemName, currentItemName, saveButton);
+                } catch (ExecutionException | InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
             }
         });
 
@@ -325,8 +332,8 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         NavHostFragment.findNavController(this).popBackStack();
     }
 
-    private void checkIfItemNameExists(String newItemName, String currentItemName, FloatingActionButton saveButton) {
-        executorService.execute(() -> {
+    private void checkIfItemNameExists(String newItemName, String currentItemName, FloatingActionButton saveButton) throws ExecutionException, InterruptedException {
+        Future<?> future = executorService.submit(() -> {
             List<String> existingItems = appDatabase.itemEntityDao().getUniqueItemNames();
             boolean itemNameExists = existingItems.stream()
                     .anyMatch(item -> item.equalsIgnoreCase(newItemName));
@@ -340,6 +347,8 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
                 }
             });
         });
+
+        future.get();
     }
 
     private void updatePortionsNeededForWeekendWhenPortionsRequiredOnSaturdayAndOnSundayChanged(View view) {
@@ -604,16 +613,19 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         return itemWithDetailAndProviderAndQuantityTypeDto;
     }
 
-    private ItemWithDetailEntity fetchItemWithDetailByBarcode(String barcode) throws ExecutionException, InterruptedException {
-
-        ItemWithDetailAndProviderAndQuantityTypeDto itemWithDetailAndProviderAndQuantityTypeDto = new ItemWithDetailAndProviderAndQuantityTypeDto();
-
-        Future<?> future = executorService.submit(() -> {
-            ItemEntityDao entityDao = appDatabase.itemEntityDao();
-
+    private UUID fetchItemWithDetailByBarcode(String barcode) throws ExecutionException, InterruptedException {
+        // Usa submit per ottenere un Future
+        Future<UUID> future = executorService.submit(() -> {
+            ItemEntityDao itemEntityDao = appDatabase.itemEntityDao();
+            UUID itemId = UUID.fromString(itemEntityDao.getItemByBarcode(barcode));
+            if (itemId != null) {
+                return itemId;
+            } else {
+                throw new IllegalArgumentException("Item not found with barcode: " + barcode);
+            }
         });
 
-        return null;
+        return future.get();
     }
 
     protected ItemWithDetailAndProviderAndQuantityTypeDto prefillFields(View view) {

@@ -55,9 +55,6 @@ public interface ItemEntityDao extends BaseDao<ItemEntity> {
     @Query("SELECT * FROM item WHERE id = :itemId")
     ItemWithDetailEntity getItemWithDetail(UUID itemId);
 
-    @Query("SELECT * FROM item WHERE barcode = :barcode")
-    ItemWithDetailEntity getItemWithDetailByBarcode(String barcode);
-
     @Transaction
     @Query("SELECT item.*, provider.* FROM item JOIN provider ON item.id = provider.item_id ORDER BY provider.name")
     List<ItemWithProviderEntity> getItemsWithProvidersOrderedByProvider();
@@ -79,4 +76,7 @@ public interface ItemEntityDao extends BaseDao<ItemEntity> {
     @Query("SELECT * FROM ITEM " +
             "JOIN item_fts ON ITEM.fts_id = item_fts.rowid WHERE ITEM.fts_id = :fts_id")
     ItemEntity searchForId(Integer fts_id);
+
+    @Query("SELECT id FROM item WHERE barcode = :barcode")
+    String getItemByBarcode(String barcode);
 }

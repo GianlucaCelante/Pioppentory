@@ -123,34 +123,17 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                 searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
                     @Override
                     public boolean onQueryTextSubmit(String query) {
-                        itemViewModel.setQuery(query); // Aggiorna la query nel ViewModel per la ricerca normale
+                        itemViewModel.setQuery(query);
                         return false;
                     }
 
                     @Override
                     public boolean onQueryTextChange(String newText) {
-                        if (newText.startsWith("*")) { // Controlla se il testo inizia con #
-                            handleBarcodeScan(newText);
-                        } else {
-                            itemViewModel.setQuery(newText); // Aggiorna la query nel ViewModel per la ricerca normale
-                        }
+                        itemViewModel.setQuery(newText);
                         return true;
                     }
                 });
 
-                searchView.setOnFocusChangeListener((v, hasFocus) -> {
-                    if (!hasFocus) {
-                        searchView.requestFocus();
-                    }
-                });
-
-                searchView.setOnKeyListener((v, keyCode, event) -> {
-                    if (keyCode == KeyEvent.KEYCODE_ENTER) {
-                        searchView.requestFocus();
-                        return true;
-                    }
-                    return false;
-                });
             }
 
             @Override
@@ -179,26 +162,6 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
             }
         }, getViewLifecycleOwner(), Lifecycle.State.RESUMED);
     }
-
-    private void handleBarcodeScan(String barcode) {
-        executorService.submit(() -> {
-            List<ItemDto> items = itemViewModel.getItems().getValue();
-            items.stream()
-                    .filter(item -> item.getBarcode().equals(barcode))
-                    .findFirst()
-                    .ifPresent(item -> {
-                // Navigate to detail page
-                requireActivity().runOnUiThread(() -> {
-                    Bundle bundle = new Bundle();
-                    bundle.putString("itemId", item.getId().toString());
-                    NavHostFragment.findNavController(ItemFragment.this).navigate(R.id.action_itemFragment_to_itemDetailFragment, bundle);
-                });
-            });
-            // If no matching barcode is found, perform the normal search
-            requireActivity().runOnUiThread(() -> itemViewModel.setQuery(barcode));
-        });
-    }
-
 
     private void addProviderItem(LayoutInflater inflater, ArrayAdapter<String> spinnerAdapter, Spinner providerSpinner) {
         View dialogView = inflater.inflate(R.layout.new_provider_alert, null);
