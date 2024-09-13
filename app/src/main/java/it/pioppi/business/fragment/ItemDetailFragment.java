@@ -4,15 +4,12 @@ import static it.pioppi.business.manager.ItemDetailFragmentManager.calculateTotP
 import static it.pioppi.business.manager.ItemDetailFragmentManager.normalizeText;
 
 import android.annotation.SuppressLint;
-import android.app.SearchManager;
 import android.content.Context;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -28,12 +25,9 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.widget.SearchView;
 import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
-import androidx.core.view.MenuProvider;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -53,6 +47,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
+import it.pioppi.ConstantUtils;
 import it.pioppi.R;
 import it.pioppi.business.adapter.EnumAdapter;
 import it.pioppi.business.dto.ItemDetailDto;
@@ -96,6 +91,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         itemViewModel = new ViewModelProvider(requireActivity()).get(ItemViewModel.class);
         itemEntityRepository = new ItemEntityRepository(requireActivity().getApplication());
         setHasOptionsMenu(true);
+
     }
 
     @Override
@@ -105,15 +101,31 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         View view = inflater.inflate(R.layout.fragment_item_detail, container, false);
 
         UUID itemId;
+        String barcode;
         Bundle bundle = getArguments();
         if (bundle != null) {
-            itemId = UUID.fromString(bundle.getString("itemId"));
 
             try {
-                itemWithDetailAndProviderAndQuantityTypeDto = fetchItemWithDetailAndProviderAndQuantityTypeById(itemId);
+                if(bundle.getString(ConstantUtils.ITEM_ID) != null) {
+                    itemId = UUID.fromString(bundle.getString(ConstantUtils.ITEM_ID));
+                    itemWithDetailAndProviderAndQuantityTypeDto = fetchItemWithDetailAndProviderAndQuantityTypeById(itemId);
+
+                } else {
+                    barcode = bundle.getString(ConstantUtils.SCANNED_CODE);
+
+                        if (barcode != null) {
+                            UUID itemIdByBarcode = fetchItemWithDetailByBarcode(barcode);
+                            itemWithDetailAndProviderAndQuantityTypeDto = fetchItemWithDetailAndProviderAndQuantityTypeById(itemIdByBarcode);
+                            itemId = itemIdByBarcode;
+
+                        } else {
+                            throw new IllegalArgumentException("Item details not found");
+                        }}
+
             } catch (ExecutionException | InterruptedException e) {
                 throw new RuntimeException(e);
             }
+
         } else {
             Toast.makeText(requireContext(), "Errore nel caricamento dell'item, Item non esiste", Toast.LENGTH_SHORT).show();
             return view;
@@ -163,7 +175,11 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
             @Override
             public void afterTextChanged(Editable s) {
                 String newItemName = s.toString().trim();
-                checkIfItemNameExists(newItemName, currentItemName, saveButton);
+                try {
+                    checkIfItemNameExists(newItemName, currentItemName, saveButton);
+                } catch (ExecutionException | InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
             }
         });
 
@@ -315,8 +331,8 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         NavHostFragment.findNavController(this).popBackStack();
     }
 
-    private void checkIfItemNameExists(String newItemName, String currentItemName, FloatingActionButton saveButton) {
-        executorService.execute(() -> {
+    private void checkIfItemNameExists(String newItemName, String currentItemName, FloatingActionButton saveButton) throws ExecutionException, InterruptedException {
+        Future<?> future = executorService.submit(() -> {
             List<String> existingItems = appDatabase.itemEntityDao().getUniqueItemNames();
             boolean itemNameExists = existingItems.stream()
                     .anyMatch(item -> item.equalsIgnoreCase(newItemName));
@@ -330,6 +346,8 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
                 }
             });
         });
+
+        future.get();
     }
 
     private void updatePortionsNeededForWeekendWhenPortionsRequiredOnSaturdayAndOnSundayChanged(View view) {
@@ -552,46 +570,55 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
 
 
     private ItemWithDetailAndProviderAndQuantityTypeDto fetchItemWithDetailAndProviderAndQuantityTypeById(UUID itemId) throws ExecutionException, InterruptedException {
-
-        ItemWithDetailAndProviderAndQuantityTypeDto itemWithDetailAndProviderAndQuantityTypeDto = new ItemWithDetailAndProviderAndQuantityTypeDto();
-
-        Future<?> future = executorService.submit(() -> {
+        Future<ItemWithDetailAndProviderAndQuantityTypeDto> future = executorService.submit(() -> {
             ItemEntityDao entityDao = appDatabase.itemEntityDao();
-            ItemWithDetailAndProviderAndQuantityTypeEntity itemWithDetailAndProviderAndQuantityType = entityDao.getItemsWithDetailsAndProviderAndQuantityType(itemId);
-            Log.d("ItemDetailFragment", "ItemWithDetailAndProviderEntity: " + itemWithDetailAndProviderAndQuantityType);
-            if (itemWithDetailAndProviderAndQuantityType != null) {
+            ItemWithDetailAndProviderAndQuantityTypeEntity entity = entityDao.getItemsWithDetailsAndProviderAndQuantityType(itemId);
 
-                ItemDto itemDto = null;
-                if (itemWithDetailAndProviderAndQuantityType.item != null) {
-                    itemDto = EntityDtoMapper.entityToDto(itemWithDetailAndProviderAndQuantityType.item);
-                }
+            if (entity == null || entity.item == null) {
+                throw new IllegalArgumentException("Item not found");
+            }
 
-                ItemDetailDto itemDetailDto = null;
-                if (itemWithDetailAndProviderAndQuantityType.itemDetail != null) {
-                    itemDetailDto = EntityDtoMapper.detailEntityToDto(itemWithDetailAndProviderAndQuantityType.itemDetail);
-                }
+            ItemWithDetailAndProviderAndQuantityTypeDto dto = new ItemWithDetailAndProviderAndQuantityTypeDto();
+            dto.setItem(EntityDtoMapper.entityToDto(entity.item));
 
-                ProviderDto providerDto = null;
-                if (itemWithDetailAndProviderAndQuantityType.provider != null) {
-                    providerDto = EntityDtoMapper.entityToDto(itemWithDetailAndProviderAndQuantityType.provider);
-                }
+            if (entity.itemDetail != null) {
+                dto.setItemDetail(EntityDtoMapper.detailEntityToDto(entity.itemDetail));
+            } else {
+                dto.setItemDetail(new ItemDetailDto()); // O lascia null se preferisci
+            }
 
-                List<QuantityTypeDto> quantityTypeDto = null;
-                if (itemWithDetailAndProviderAndQuantityType.quantityType != null) {
-                    quantityTypeDto = EntityDtoMapper.entitiesToDtosForQuantityTypes(itemWithDetailAndProviderAndQuantityType.quantityType);
-                }
+            if (entity.provider != null) {
+                dto.setProvider(EntityDtoMapper.entityToDto(entity.provider));
+            } else {
+                dto.setProvider(new ProviderDto()); // O lascia null se preferisci
+            }
 
-                itemWithDetailAndProviderAndQuantityTypeDto.setItem(itemDto);
-                itemWithDetailAndProviderAndQuantityTypeDto.setItemDetail(itemDetailDto);
-                itemWithDetailAndProviderAndQuantityTypeDto.setProvider(providerDto);
-                itemWithDetailAndProviderAndQuantityTypeDto.setQuantityTypes(quantityTypeDto);
+            if (entity.quantityTypes != null) {
+                dto.setQuantityTypes(EntityDtoMapper.entitiesToDtosForQuantityTypes(entity.quantityTypes));
+            } else {
+                dto.setQuantityTypes(new ArrayList<>());
+            }
 
-            } else throw new IllegalArgumentException("Item not found");
+            return dto;
         });
 
-        future.get();
+        return future.get();
+    }
 
-        return itemWithDetailAndProviderAndQuantityTypeDto;
+
+    private UUID fetchItemWithDetailByBarcode(String barcode) throws ExecutionException, InterruptedException {
+        // Usa submit per ottenere un Future
+        Future<UUID> future = executorService.submit(() -> {
+            ItemEntityDao itemEntityDao = appDatabase.itemEntityDao();
+            UUID itemId = UUID.fromString(itemEntityDao.getItemByBarcode(barcode));
+            if (itemId != null) {
+                return itemId;
+            } else {
+                throw new IllegalArgumentException("Item not found with barcode: " + barcode);
+            }
+        });
+
+        return future.get();
     }
 
     protected ItemWithDetailAndProviderAndQuantityTypeDto prefillFields(View view) {
@@ -730,10 +757,11 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
     }
 
     private Integer parseIntegerValueToTextView(TextView portionsPerWeekendTextView) {
-        if (portionsPerWeekendTextView.getText() != null && portionsPerWeekendTextView.getText().toString().isEmpty()) {
+        if (portionsPerWeekendTextView.getText() == null || portionsPerWeekendTextView.getText().toString().isEmpty()) {
             return 0;
         } else {
             return Integer.parseInt(portionsPerWeekendTextView.getText().toString());
         }
     }
+
 }

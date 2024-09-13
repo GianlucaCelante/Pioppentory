@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    tools:context=".business.fragment.OptionsFragment">
+
+    <!-- Prima sezione: Dispositivi nelle vicinanze -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:padding="8dp">
+
+        <!-- Titolo e pulsante di ricerca -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="8dp"
+            android:weightSum="5">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="4"
+                android:text="Dispositivi Bluetooth nelle vicinanze"
+                android:textSize="24sp"
+                android:padding="8dp"
+                android:textAlignment="center"
+                android:textStyle="bold"
+                android:textColor="@color/black" />
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/fab_discover_devices"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_gravity="center"
+                android:src="@drawable/bluetooth_signal_icon" />
+        </LinearLayout>
+
+        <!-- RecyclerView per i dispositivi nelle vicinanze -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler_view_nearby_devices"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:padding="8dp"
+            android:clipToPadding="false"
+            android:overScrollMode="never"
+            android:scrollbars="vertical"
+            tools:listitem="@layout/bluetooth_device_item" />
+    </LinearLayout>
+
+    <!-- Seconda sezione: Dispositivi associati -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:padding="8dp">
+
+        <!-- Titolo -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Dispositivi Bluetooth associati"
+            android:textSize="24sp"
+            android:padding="8dp"
+            android:textAlignment="center"
+            android:textStyle="bold"
+            android:textColor="@color/black" />
+
+        <!-- RecyclerView per i dispositivi associati -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler_view_devices"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:padding="8dp"
+            android:clipToPadding="false"
+            android:overScrollMode="never"
+            android:scrollbars="vertical"
+            tools:listitem="@layout/bluetooth_device_item" />
+    </LinearLayout>
+</LinearLayout>

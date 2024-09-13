@@ -213,6 +213,11 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
         Future<?> future = executorService.submit(() -> itemByNameId.set(appDatabase.itemEntityDao().getItemByName(item.getName())));
         future.get();
 
+        if(itemByNameId.get() == null) {
+            Toast.makeText(getContext(), "Prodotto non più disponibile", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         Bundle bundle = new Bundle();
         bundle.putString("itemId", itemByNameId.get().toString());
         NavController navController = NavHostFragment.findNavController(this);
@@ -261,13 +266,6 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
             quantityTypeEntity.setCreationDate(now);
 
             appDatabase.runInTransaction(() -> {
-                // Give some time to the database to update the id
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-
                 appDatabase.providerEntityDao().insert(providerEntity);
                 appDatabase.itemDetailEntityDao().insert(itemDetailEntity);
                 appDatabase.quantityTypeEntityDao().insert(quantityTypeEntity);

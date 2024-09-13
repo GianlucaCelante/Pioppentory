@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="4dp">
+
+        <LinearLayout
+            android:id="@+id/linear_layout_device_item"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="8dp"
+            android:weightSum="3">
+
+            <TextView
+                android:id="@+id/text_view_device_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Dispositivi Bluetooth"
+                android:textSize="24sp"
+                android:padding="8dp"
+                android:layout_weight="2"
+                />
+
+            <TextView
+                android:id="@+id/text_view_device_address"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Dispositivi Bluetooth"
+                android:textSize="16sp"
+                android:textColor="@color/grey"
+                android:padding="8dp"
+                android:layout_weight="1"
+                />
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+
+</LinearLayout>

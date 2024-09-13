@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -20,11 +19,12 @@
         android:name="it.pioppi.business.fragment.ItemDetailFragment"
         android:label="Dettagli prodotto"
         tools:layout="@layout/fragment_item_detail" >
+        <argument
+            android:name="scannedCode"
+            app:argType="string" />
         <action
             android:id="@+id/action_itemDetailFragment_to_itemTagsFragment"
             app:destination="@id/itemTagsFragment" />
-
-
     </fragment>
 
     <fragment
@@ -36,10 +36,21 @@
             android:id="@+id/action_itemTagsFragment_to_itemDetailFragment"
             app:destination="@id/itemDetailFragment" />
     </fragment>
+
     <fragment
         android:id="@+id/itemHistoryFragment"
         android:name="it.pioppi.business.fragment.ItemHistoryFragment"
         android:label="Storico"
         tools:layout="@layout/fragment_item_history" />
 
+    <fragment
+        android:id="@+id/optionsFragment"
+        android:name="it.pioppi.business.fragment.OptionsFragment"
+        android:label="Opzioni"
+        tools:layout="@layout/fragment_options" />
+
+    <!-- Azione globale per navigare al ItemDetailFragment -->
+    <action
+        android:id="@+id/action_global_to_itemDetailFragment"
+        app:destination="@id/itemDetailFragment" />
 </navigation>

@@ -76,4 +76,7 @@ public interface ItemEntityDao extends BaseDao<ItemEntity> {
     @Query("SELECT * FROM ITEM " +
             "JOIN item_fts ON ITEM.fts_id = item_fts.rowid WHERE ITEM.fts_id = :fts_id")
     ItemEntity searchForId(Integer fts_id);
+
+    @Query("SELECT id FROM item WHERE barcode = :barcode")
+    String getItemByBarcode(String barcode);
 }

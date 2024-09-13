@@ -1,7 +1,12 @@
 package it.pioppi.business.activity;
 
 import android.app.SearchManager;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
@@ -9,8 +14,11 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
 import androidx.appcompat.widget.Toolbar;
+import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.navigation.NavController;
+import androidx.navigation.NavOptions;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.NavigationUI;
 
@@ -20,8 +28,10 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import it.pioppi.ConstantUtils;
 import it.pioppi.R;
 import it.pioppi.business.dto.ItemDto;
+import it.pioppi.business.fragment.ItemDetailFragment;
 import it.pioppi.business.viewmodel.ItemViewModel;
 import it.pioppi.database.AppDatabase;
 import it.pioppi.database.dao.ItemFTSEntityDao;
@@ -38,6 +48,12 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+
+        Log.d("MainActivity", "Registering BroadcastReceiver for scanned code events");
+        // Registra il receiver per intercettare gli eventi di scansione
+        IntentFilter filter = new IntentFilter(ConstantUtils.ACTION_CODE_SCANNED);
+        LocalBroadcastManager.getInstance(this).registerReceiver(scanReceiver, filter);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -61,19 +77,19 @@ public class MainActivity extends AppCompatActivity {
     private void setupBottomNavigationBar() {
 
         BottomNavigationView bottomNavigation = findViewById(R.id.bottom_navigation);
-        bottomNavigation.setOnItemSelectedListener(new BottomNavigationView.OnItemSelectedListener() {
-            @Override
-            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-                int itemId = item.getItemId();
-                if (itemId == R.id.nav_home) {
-                    navController.navigate(R.id.itemFragment);
-                    return true;
-                } else if (itemId == R.id.nav_history) {
-                    navController.navigate(R.id.itemHistoryFragment);
-                    return true;
-                }
-                return false;
+        bottomNavigation.setOnItemSelectedListener(item -> {
+            int itemId = item.getItemId();
+            if (itemId == R.id.nav_home) {
+                navController.navigate(R.id.itemFragment);
+                return true;
+            } else if (itemId == R.id.nav_history) {
+                navController.navigate(R.id.itemHistoryFragment);
+                return true;
+            } else if (itemId == R.id.nav_options) {
+                navController.navigate(R.id.optionsFragment);
+                return true;
             }
+            return false;
         });
     }
 
@@ -107,4 +123,38 @@ public class MainActivity extends AppCompatActivity {
     public boolean onSupportNavigateUp() {
         return navController.navigateUp() || super.onSupportNavigateUp();
     }
+
+
+    private final BroadcastReceiver scanReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Log.d("MainActivity", "action received: " + intent.getAction());
+            if (ConstantUtils.ACTION_CODE_SCANNED.equals(intent.getAction())) {
+                // Recupera il codice scansionato
+                String scannedCode = intent.getStringExtra(ConstantUtils.SCANNED_CODE);
+                Log.d("MainActivity", "Scanned code: " + scannedCode);
+                openDetailFragment(scannedCode);
+            }
+        }
+    };
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Log.d("MainActivity", "Unregistering BroadcastReceiver for scanned code events");
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(scanReceiver);
+    }
+
+    private void openDetailFragment(String scannedCode) {
+        Bundle bundle = new Bundle();
+        bundle.putString(ConstantUtils.SCANNED_CODE, scannedCode);
+
+        NavOptions navOptions = new NavOptions.Builder()
+                .setPopUpTo(R.id.itemDetailFragment, true) // Pops up to and includes the destination
+                .build();
+
+        navController.navigate(R.id.itemDetailFragment, bundle, navOptions);
+    }
+
+
 }

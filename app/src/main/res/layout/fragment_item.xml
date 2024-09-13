@@ -7,7 +7,7 @@
     tools:context=".business.fragment.ItemFragment">
 
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recycler_view"
+        android:id="@+id/recycler_view_items"
         tools:listitem="@layout/card_item"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
