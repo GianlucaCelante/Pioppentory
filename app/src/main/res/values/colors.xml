@@ -15,4 +15,6 @@
     <color name="blue">	#ADD8E6</color>
     <color name="red">#FA8072</color>
     <color name="green">#98FB98</color>
+    <color name="connected_device_background">#2196F3</color> <!-- Blu -->
+    <color name="default_background">#FFFFFF</color> <!-- Bianco -->
 </resources>

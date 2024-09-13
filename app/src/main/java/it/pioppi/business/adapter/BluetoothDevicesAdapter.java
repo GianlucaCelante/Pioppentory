@@ -1,5 +1,6 @@
 package it.pioppi.business.adapter;
 
+import android.animation.ValueAnimator;
 import android.app.PendingIntent;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -7,6 +8,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
@@ -59,6 +61,15 @@ public class BluetoothDevicesAdapter extends RecyclerView.Adapter<BluetoothDevic
         holder.deviceName.setText(bluetoothDevice.getName());
         holder.deviceAddress.setText(bluetoothDevice.getAddress());
 
+        int startColor = ContextCompat.getColor(holder.itemView.getContext(), R.color.default_background);
+        int endColor = ContextCompat.getColor(holder.itemView.getContext(), R.color.connected_device_background);
+
+        if (bluetoothDevice.isConnected()) {
+            animateBackgroundColorChange(holder.itemView, startColor, endColor);
+        } else {
+            holder.itemView.setBackgroundColor(startColor);
+        }
+
         holder.itemView.setOnClickListener(v -> {
             try {
                 listener.onItemClick(bluetoothDevice);
@@ -80,6 +91,15 @@ public class BluetoothDevicesAdapter extends RecyclerView.Adapter<BluetoothDevic
     @Override
     public int getItemCount() {
         return bluetoothDevices != null ? bluetoothDevices.size() : 0;
+    }
+
+    private void animateBackgroundColorChange(final View view, int startColor, int endColor) {
+        ValueAnimator anim = ValueAnimator.ofArgb(startColor, endColor);
+        anim.setDuration(500); // Durata in millisecondi
+        anim.addUpdateListener(valueAnimator -> {
+            view.setBackgroundColor((int) valueAnimator.getAnimatedValue());
+        });
+        anim.start();
     }
 
     public static class BluetoothDevicesViewHolder extends RecyclerView.ViewHolder {

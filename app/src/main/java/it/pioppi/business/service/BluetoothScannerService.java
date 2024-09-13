@@ -20,12 +20,12 @@ import java.io.InputStream;
 
 import it.pioppi.ConstantUtils;
 import it.pioppi.R;
+import it.pioppi.business.dto.BluetoothSocketHolder;
 
 public class BluetoothScannerService extends Service {
 
     private BluetoothAdapter bluetoothAdapter;
     private BluetoothSocket bluetoothSocket;
-    private InputStream inputStream;
 
     @Override
     public void onCreate() {
@@ -35,81 +35,57 @@ public class BluetoothScannerService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        String deviceAddress = intent.getStringExtra(ConstantUtils.DEVICE_ADDRESS);
-
-        // Avvia il servizio come foreground service
-        Notification notification = createNotification();  // Definisci una notifica adeguata qui
+        // Recupera il socket dal BluetoothSocketHolder
+        Notification notification = createNotification();
         startForeground(1, notification);
+        bluetoothSocket = BluetoothSocketHolder.getInstance().getSocket();
 
-        if (deviceAddress != null) {
-            BluetoothDevice device = bluetoothAdapter.getRemoteDevice(deviceAddress);
-            new Thread(() -> startScannerMonitor(device)).start();  // Esegui la connessione in un thread separato
+        if (bluetoothSocket != null && bluetoothSocket.isConnected()) {
+            new Thread(this::startScannerMonitor).start();
+        } else {
+            // Gestisci il caso in cui il socket non è disponibile
+            stopSelf();
         }
 
         return START_STICKY;
     }
 
-    // Metodo per creare una notifica per il foreground service
     private Notification createNotification() {
+        String channelId = "BluetoothScannerChannel";
+        String channelName = "Bluetooth Scanner";
+
         NotificationChannel channel = new NotificationChannel(
-                "BluetoothScannerChannel",
-                "Bluetooth Scanner",
-                NotificationManager.IMPORTANCE_DEFAULT
+                channelId,
+                channelName,
+                NotificationManager.IMPORTANCE_LOW
         );
         NotificationManager manager = getSystemService(NotificationManager.class);
         manager.createNotificationChannel(channel);
 
-        return new NotificationCompat.Builder(this, "BluetoothScannerChannel")
+        return new NotificationCompat.Builder(this, channelId)
                 .setContentTitle("Bluetooth Scanner")
                 .setContentText("Il servizio di scansione Bluetooth è attivo")
-                .setSmallIcon(R.drawable.bluetooth_signal_icon)
+                .setSmallIcon(R.drawable.bluetooth_signal_icon) // Assicurati che l'icona esista
                 .build();
     }
 
-    // Metodo per avviare il monitoraggio della pistola scanner
-    public void startScannerMonitor(BluetoothDevice device) {
+    public void startScannerMonitor() {
         try {
-            if (bluetoothAdapter.isDiscovering()) {
-                bluetoothAdapter.cancelDiscovery();
-                Log.d("BluetoothScannerService", "Scoperta fermata");
-            }
+            InputStream inputStream = bluetoothSocket.getInputStream();
 
-            // Connessione al socket RFCOMM usando UUID SPP
-            Log.d("BluetoothScannerService", "Tentativo di connessione al dispositivo: " + device.getAddress());
-            bluetoothSocket = device.createRfcommSocketToServiceRecord(ConstantUtils.SPP_UUID);
-            bluetoothSocket.connect();
-            Log.d("BluetoothScannerService", "Connesso a: " + device.getName());
-
-            inputStream = bluetoothSocket.getInputStream();
-            Log.d("BluetoothScannerService", "InputStream aperto");
-
-            // Thread per leggere dati dalla pistola scanner
             byte[] buffer = new byte[1024];
             int bytes;
             while (true) {
-                try {
-                    // Legge i dati scansionati
-                    bytes = inputStream.read(buffer);
-                    String scannedCode = new String(buffer, 0, bytes).trim();
+                bytes = inputStream.read(buffer);
+                String scannedCode = new String(buffer, 0, bytes).trim();
 
-                    // Manda un broadcast globale con il codice scansionato
-                    Intent intent = new Intent(ConstantUtils.ACTION_CODE_SCANNED);
-                    intent.putExtra(ConstantUtils.SCANNED_CODE, scannedCode);
-                    Log.d("Intent", "Intent: " + intent.getAction() + " - " + intent.getStringExtra(ConstantUtils.SCANNED_CODE));
-                    Log.d("ScannerService", "Scanned code: " + scannedCode);
-
-                    LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
-
-                } catch (IOException e) {
-                    Log.e("BluetoothScannerService", "Errore durante la lettura del socket", e);
-                    break;  // Esci dal loop se c'è un errore nella lettura
-                }
+                Intent codeIntent = new Intent(ConstantUtils.ACTION_CODE_SCANNED);
+                codeIntent.putExtra(ConstantUtils.SCANNED_CODE, scannedCode);
+                LocalBroadcastManager.getInstance(this).sendBroadcast(codeIntent);
             }
 
         } catch (IOException e) {
-            Log.e("BluetoothScannerService", "Errore durante la connessione", e);
-        } catch (SecurityException e) {
-            Log.e("BluetoothScannerService", "Errore di sicurezza", e);
+            Log.e("BluetoothScannerService", "Errore durante la lettura del socket", e);
         } finally {
             stopSelf();
         }
