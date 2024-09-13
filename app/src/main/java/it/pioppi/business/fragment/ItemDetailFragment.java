@@ -5,11 +5,9 @@ import static it.pioppi.business.manager.ItemDetailFragmentManager.normalizeText
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -42,13 +40,11 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import it.pioppi.ConstantUtils;
@@ -574,47 +570,41 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
 
 
     private ItemWithDetailAndProviderAndQuantityTypeDto fetchItemWithDetailAndProviderAndQuantityTypeById(UUID itemId) throws ExecutionException, InterruptedException {
-
-        ItemWithDetailAndProviderAndQuantityTypeDto itemWithDetailAndProviderAndQuantityTypeDto = new ItemWithDetailAndProviderAndQuantityTypeDto();
-
-        Future<?> future = executorService.submit(() -> {
+        Future<ItemWithDetailAndProviderAndQuantityTypeDto> future = executorService.submit(() -> {
             ItemEntityDao entityDao = appDatabase.itemEntityDao();
-            ItemWithDetailAndProviderAndQuantityTypeEntity itemWithDetailAndProviderAndQuantityType = entityDao.getItemsWithDetailsAndProviderAndQuantityType(itemId);
-            Log.d("ItemDetailFragment", "ItemWithDetailAndProviderEntity: " + itemWithDetailAndProviderAndQuantityType);
-            if (itemWithDetailAndProviderAndQuantityType != null) {
+            ItemWithDetailAndProviderAndQuantityTypeEntity entity = entityDao.getItemsWithDetailsAndProviderAndQuantityType(itemId);
 
-                ItemDto itemDto = null;
-                if (itemWithDetailAndProviderAndQuantityType.item != null) {
-                    itemDto = EntityDtoMapper.entityToDto(itemWithDetailAndProviderAndQuantityType.item);
-                }
+            if (entity == null || entity.item == null) {
+                throw new IllegalArgumentException("Item not found");
+            }
 
-                ItemDetailDto itemDetailDto = null;
-                if (itemWithDetailAndProviderAndQuantityType.itemDetail != null) {
-                    itemDetailDto = EntityDtoMapper.detailEntityToDto(itemWithDetailAndProviderAndQuantityType.itemDetail);
-                }
+            ItemWithDetailAndProviderAndQuantityTypeDto dto = new ItemWithDetailAndProviderAndQuantityTypeDto();
+            dto.setItem(EntityDtoMapper.entityToDto(entity.item));
 
-                ProviderDto providerDto = null;
-                if (itemWithDetailAndProviderAndQuantityType.provider != null) {
-                    providerDto = EntityDtoMapper.entityToDto(itemWithDetailAndProviderAndQuantityType.provider);
-                }
+            if (entity.itemDetail != null) {
+                dto.setItemDetail(EntityDtoMapper.detailEntityToDto(entity.itemDetail));
+            } else {
+                dto.setItemDetail(new ItemDetailDto()); // O lascia null se preferisci
+            }
 
-                List<QuantityTypeDto> quantityTypeDto = null;
-                if (itemWithDetailAndProviderAndQuantityType.quantityType != null) {
-                    quantityTypeDto = EntityDtoMapper.entitiesToDtosForQuantityTypes(itemWithDetailAndProviderAndQuantityType.quantityType);
-                }
+            if (entity.provider != null) {
+                dto.setProvider(EntityDtoMapper.entityToDto(entity.provider));
+            } else {
+                dto.setProvider(new ProviderDto()); // O lascia null se preferisci
+            }
 
-                itemWithDetailAndProviderAndQuantityTypeDto.setItem(itemDto);
-                itemWithDetailAndProviderAndQuantityTypeDto.setItemDetail(itemDetailDto);
-                itemWithDetailAndProviderAndQuantityTypeDto.setProvider(providerDto);
-                itemWithDetailAndProviderAndQuantityTypeDto.setQuantityTypes(quantityTypeDto);
+            if (entity.quantityTypes != null) {
+                dto.setQuantityTypes(EntityDtoMapper.entitiesToDtosForQuantityTypes(entity.quantityTypes));
+            } else {
+                dto.setQuantityTypes(new ArrayList<>());
+            }
 
-            } else throw new IllegalArgumentException("Item not found");
+            return dto;
         });
 
-        future.get();
-
-        return itemWithDetailAndProviderAndQuantityTypeDto;
+        return future.get();
     }
+
 
     private UUID fetchItemWithDetailByBarcode(String barcode) throws ExecutionException, InterruptedException {
         // Usa submit per ottenere un Future
@@ -767,34 +757,10 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
     }
 
     private Integer parseIntegerValueToTextView(TextView portionsPerWeekendTextView) {
-        if (portionsPerWeekendTextView.getText() != null && portionsPerWeekendTextView.getText().toString().isEmpty()) {
+        if (portionsPerWeekendTextView.getText() == null || portionsPerWeekendTextView.getText().toString().isEmpty()) {
             return 0;
         } else {
             return Integer.parseInt(portionsPerWeekendTextView.getText().toString());
-        }
-    }
-
-    public void updateItemDetailsByBarcode(String barcode) {
-        try {
-            // Recupera l'item basato sul barcode
-            UUID itemId = fetchItemWithDetailByBarcode(barcode);
-            itemWithDetailAndProviderAndQuantityTypeDto = fetchItemWithDetailAndProviderAndQuantityTypeById(itemId);
-            // Aggiorna la UI con i nuovi dati
-            prefillFields(requireView());
-        } catch (ExecutionException | InterruptedException e) {
-            e.printStackTrace();
-            Toast.makeText(getContext(), "Errore nel caricamento dei dati", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    public void updateItemDetails(UUID itemId) {
-        try {
-            itemWithDetailAndProviderAndQuantityTypeDto = fetchItemWithDetailAndProviderAndQuantityTypeById(itemId);
-            // Aggiorna la UI con i nuovi dati
-            prefillFields(requireView());
-        } catch (ExecutionException | InterruptedException e) {
-            e.printStackTrace();
-            Toast.makeText(getContext(), "Errore nel caricamento dei dati", Toast.LENGTH_SHORT).show();
         }
     }
 

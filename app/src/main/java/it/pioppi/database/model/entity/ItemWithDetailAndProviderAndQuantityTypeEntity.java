@@ -26,6 +26,6 @@ public class ItemWithDetailAndProviderAndQuantityTypeEntity {
             parentColumn = "id",
             entityColumn = "item_id"
     )
-    public List<QuantityTypeEntity> quantityType;
+    public List<QuantityTypeEntity> quantityTypes;
 
 }
