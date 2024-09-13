@@ -402,6 +402,19 @@ public class OptionsFragment extends Fragment implements BluetoothDevicesAdapter
             return;
         }
 
+        BluetoothSocketHolder socketHolder = BluetoothSocketHolder.getInstance();
+        BluetoothDevice connectedDevice = socketHolder.getConnectedDevice();
+
+        if (connectedDevice != null && connectedDevice.getAddress().equals(bluetoothDevice.getAddress())) {
+            // Il dispositivo è già connesso, quindi disconnettiamo
+            disconnectFromDevice(bluetoothDevice);
+        } else {
+            // Connettiamo al dispositivo
+            connectToDevice(bluetoothDevice);
+        }
+    }
+
+    private void connectToDevice(BluetoothDeviceDto bluetoothDevice) {
         BluetoothDevice device = bluetoothAdapter.getRemoteDevice(bluetoothDevice.getAddress());
 
         if (device != null) {
@@ -416,6 +429,10 @@ public class OptionsFragment extends Fragment implements BluetoothDevicesAdapter
                     // Connessione al socket RFCOMM usando UUID SPP
                     BluetoothSocket socket = device.createRfcommSocketToServiceRecord(ConstantUtils.SPP_UUID);
                     socket.connect();
+
+                    // Memorizza il socket e il dispositivo connesso
+                    BluetoothSocketHolder.getInstance().setSocket(socket);
+                    BluetoothSocketHolder.getInstance().setConnectedDevice(device);
 
                     // Una volta connesso, aggiorna l'UI sul thread principale
                     requireActivity().runOnUiThread(() -> {
@@ -439,16 +456,8 @@ public class OptionsFragment extends Fragment implements BluetoothDevicesAdapter
                         pairedDevicesAdapter.notifyDataSetChanged();
                         nearbyDevicesAdapter.notifyDataSetChanged();
 
-                        if (socket.isConnected()) {
-                            // Memorizza il socket e avvia il servizio
-                            BluetoothSocketHolder.getInstance().setSocket(socket);
-                            startBluetoothScannerService();
-                        } else {
-                            // Gestisci l'errore di connessione
-                            requireActivity().runOnUiThread(() -> {
-                                Toast.makeText(getContext(), "Errore durante la connessione al dispositivo", Toast.LENGTH_SHORT).show();
-                            });
-                        }
+                        // Avvia il servizio
+                        startBluetoothScannerService();
                     });
 
                 } catch (IOException e) {
@@ -468,6 +477,43 @@ public class OptionsFragment extends Fragment implements BluetoothDevicesAdapter
         } else {
             Toast.makeText(getContext(), "Dispositivo non trovato", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private void disconnectFromDevice(BluetoothDeviceDto bluetoothDevice) {
+        // Chiudi il socket
+        BluetoothSocketHolder socketHolder = BluetoothSocketHolder.getInstance();
+        BluetoothSocket socket = socketHolder.getSocket();
+
+        try {
+            if (socket != null && socket.isConnected()) {
+                socket.close();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        // Ferma il servizio
+        stopBluetoothScannerService();
+
+        // Resetta il BluetoothSocketHolder
+        socketHolder.clear();
+
+        // Aggiorna lo stato del dispositivo
+        bluetoothDevice.setConnected(false);
+
+        // Aggiorna l'UI sul thread principale
+        requireActivity().runOnUiThread(() -> {
+            // Notifica l'adapter dei cambiamenti
+            pairedDevicesAdapter.notifyDataSetChanged();
+            nearbyDevicesAdapter.notifyDataSetChanged();
+
+            Toast.makeText(getContext(), "Disconnesso da " + bluetoothDevice.getName(), Toast.LENGTH_SHORT).show();
+        });
+    }
+
+    private void stopBluetoothScannerService() {
+        Intent serviceIntent = new Intent(getContext(), BluetoothScannerService.class);
+        requireContext().stopService(serviceIntent);
     }
 
     private void startBluetoothScannerService() {

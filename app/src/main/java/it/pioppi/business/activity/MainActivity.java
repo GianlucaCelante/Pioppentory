@@ -14,9 +14,11 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
 import androidx.appcompat.widget.Toolbar;
+import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.navigation.NavController;
+import androidx.navigation.NavOptions;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.NavigationUI;
 
@@ -147,23 +149,12 @@ public class MainActivity extends AppCompatActivity {
         Bundle bundle = new Bundle();
         bundle.putString(ConstantUtils.SCANNED_CODE, scannedCode);
 
+        NavOptions navOptions = new NavOptions.Builder()
+                .setPopUpTo(R.id.itemDetailFragment, true) // Pops up to and includes the destination
+                .build();
 
-        // Usa l'azione globale per navigare a ItemDetailFragment
-        navController.navigate(R.id.action_global_to_itemDetailFragment, bundle);
+        navController.navigate(R.id.itemDetailFragment, bundle, navOptions);
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        Log.d("MainActivity", "onResume: Registering receiver again");
-        IntentFilter filter = new IntentFilter(ConstantUtils.ACTION_CODE_SCANNED);
-        LocalBroadcastManager.getInstance(this).registerReceiver(scanReceiver, filter);
-    }
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-        Log.d("MainActivity", "onPause: Unregistering receiver");
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(scanReceiver);
-    }
 }

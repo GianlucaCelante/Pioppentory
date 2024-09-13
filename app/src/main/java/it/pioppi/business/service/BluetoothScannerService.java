@@ -4,8 +4,6 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.os.IBinder;
@@ -24,30 +22,52 @@ import it.pioppi.business.dto.BluetoothSocketHolder;
 
 public class BluetoothScannerService extends Service {
 
-    private BluetoothAdapter bluetoothAdapter;
     private BluetoothSocket bluetoothSocket;
+    private InputStream inputStream;
+    private boolean isRunning = true;
 
     @Override
     public void onCreate() {
         super.onCreate();
-        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        // Recupera il socket dal BluetoothSocketHolder
         Notification notification = createNotification();
         startForeground(1, notification);
+
         bluetoothSocket = BluetoothSocketHolder.getInstance().getSocket();
 
         if (bluetoothSocket != null && bluetoothSocket.isConnected()) {
             new Thread(this::startScannerMonitor).start();
         } else {
-            // Gestisci il caso in cui il socket non è disponibile
+            Log.e("BluetoothScannerService", "Socket Bluetooth nullo o non connesso");
             stopSelf();
         }
 
         return START_STICKY;
+    }
+
+    public void startScannerMonitor() {
+        try {
+            inputStream = bluetoothSocket.getInputStream();
+
+            byte[] buffer = new byte[1024];
+            int bytes;
+            while (isRunning) {
+                bytes = inputStream.read(buffer);
+                String scannedCode = new String(buffer, 0, bytes).trim();
+
+                Intent codeIntent = new Intent(ConstantUtils.ACTION_CODE_SCANNED);
+                codeIntent.putExtra(ConstantUtils.SCANNED_CODE, scannedCode);
+                LocalBroadcastManager.getInstance(this).sendBroadcast(codeIntent);
+            }
+
+        } catch (IOException e) {
+            Log.e("BluetoothScannerService", "Errore durante la lettura del socket", e);
+        } finally {
+            stopSelf();
+        }
     }
 
     private Notification createNotification() {
@@ -69,31 +89,10 @@ public class BluetoothScannerService extends Service {
                 .build();
     }
 
-    public void startScannerMonitor() {
-        try {
-            InputStream inputStream = bluetoothSocket.getInputStream();
-
-            byte[] buffer = new byte[1024];
-            int bytes;
-            while (true) {
-                bytes = inputStream.read(buffer);
-                String scannedCode = new String(buffer, 0, bytes).trim();
-
-                Intent codeIntent = new Intent(ConstantUtils.ACTION_CODE_SCANNED);
-                codeIntent.putExtra(ConstantUtils.SCANNED_CODE, scannedCode);
-                LocalBroadcastManager.getInstance(this).sendBroadcast(codeIntent);
-            }
-
-        } catch (IOException e) {
-            Log.e("BluetoothScannerService", "Errore durante la lettura del socket", e);
-        } finally {
-            stopSelf();
-        }
-    }
-
     @Override
     public void onDestroy() {
         super.onDestroy();
+        isRunning = false;
         try {
             if (bluetoothSocket != null) {
                 bluetoothSocket.close();

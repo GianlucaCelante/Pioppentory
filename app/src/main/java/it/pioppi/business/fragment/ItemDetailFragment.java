@@ -5,6 +5,7 @@ import static it.pioppi.business.manager.ItemDetailFragmentManager.normalizeText
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -41,6 +42,7 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -93,6 +95,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         itemViewModel = new ViewModelProvider(requireActivity()).get(ItemViewModel.class);
         itemEntityRepository = new ItemEntityRepository(requireActivity().getApplication());
         setHasOptionsMenu(true);
+
     }
 
     @Override
@@ -770,4 +773,29 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
             return Integer.parseInt(portionsPerWeekendTextView.getText().toString());
         }
     }
+
+    public void updateItemDetailsByBarcode(String barcode) {
+        try {
+            // Recupera l'item basato sul barcode
+            UUID itemId = fetchItemWithDetailByBarcode(barcode);
+            itemWithDetailAndProviderAndQuantityTypeDto = fetchItemWithDetailAndProviderAndQuantityTypeById(itemId);
+            // Aggiorna la UI con i nuovi dati
+            prefillFields(requireView());
+        } catch (ExecutionException | InterruptedException e) {
+            e.printStackTrace();
+            Toast.makeText(getContext(), "Errore nel caricamento dei dati", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public void updateItemDetails(UUID itemId) {
+        try {
+            itemWithDetailAndProviderAndQuantityTypeDto = fetchItemWithDetailAndProviderAndQuantityTypeById(itemId);
+            // Aggiorna la UI con i nuovi dati
+            prefillFields(requireView());
+        } catch (ExecutionException | InterruptedException e) {
+            e.printStackTrace();
+            Toast.makeText(getContext(), "Errore nel caricamento dei dati", Toast.LENGTH_SHORT).show();
+        }
+    }
+
 }
