@@ -26,6 +26,4 @@ public class ConstantUtils {
     public static final String ITEM_ID = "itemId";
 
 
-    // NOTIFICATION
-    public static final String ITEM_DETAIL_FRAGMENT_TAG = "ItemDetailFragmentTag";
 }
