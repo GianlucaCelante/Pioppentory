@@ -15,7 +15,7 @@ import it.pioppi.business.dto.ItemWithDetailAndProviderAndQuantityTypeDto;
 import it.pioppi.database.AppDatabase;
 import it.pioppi.database.dao.ItemEntityDao;
 import it.pioppi.database.mapper.EntityDtoMapper;
-import it.pioppi.database.model.entity.ItemWithDetailAndProviderAndQuantityTypeEntity;
+import it.pioppi.database.entity.ItemWithDetailAndProviderAndQuantityTypeEntity;
 
 public class ItemDetailViewModel extends ViewModel {
 

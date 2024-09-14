@@ -1,4 +1,4 @@
-package it.pioppi.database.model.entity;
+package it.pioppi.database.entity;
 
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
@@ -13,7 +13,6 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 import it.pioppi.ConstantUtils;
-import it.pioppi.database.model.QuantityType;
 
 @Entity(
         tableName = ConstantUtils.ITEM_DETAIL_TABLE_NAME,

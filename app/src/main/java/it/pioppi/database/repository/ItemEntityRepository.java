@@ -2,14 +2,18 @@ package it.pioppi.database.repository;
 
 import android.app.Application;
 
+import androidx.room.Transaction;
+
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import it.pioppi.database.AppDatabase;
 import it.pioppi.database.dao.ItemEntityDao;
 import it.pioppi.database.dao.ItemFTSEntityDao;
-import it.pioppi.database.model.entity.ItemEntity;
-import it.pioppi.database.model.entity.ItemFTSEntity;
+import it.pioppi.database.entity.ItemEntity;
+import it.pioppi.database.entity.ItemFTSEntity;
 
 public class ItemEntityRepository {
     private final ItemEntityDao itemEntityDao;
@@ -23,14 +27,17 @@ public class ItemEntityRepository {
         executorService = Executors.newSingleThreadExecutor();
     }
 
-    public void insert(ItemEntity item) {
+    @Transaction
+    public void insert(ItemEntity item) throws ExecutionException, InterruptedException {
         executorService.execute(() -> {
-            itemEntityDao.insert(item);
             Integer nextId = itemFTSEntityDao.getNextId();
             itemFTSEntityDao.insertItemFTS(nextId);
+            item.setFtsId(nextId);
+            itemEntityDao.insert(item);
         });
     }
 
+    @Transaction
     public void update(ItemEntity item) {
         executorService.execute(() -> {
             itemEntityDao.update(item);
@@ -42,6 +49,7 @@ public class ItemEntityRepository {
         });
     }
 
+    @Transaction
     public void delete(ItemEntity item) {
         executorService.execute(() -> {
             itemEntityDao.delete(item);

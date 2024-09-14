@@ -1,6 +1,5 @@
-package it.pioppi.database.model.entity;
+package it.pioppi.database.entity;
 
-import androidx.annotation.NonNull;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.ForeignKey;

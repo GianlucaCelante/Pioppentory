@@ -1,5 +1,6 @@
-package it.pioppi.database.model.entity;
+package it.pioppi.database.entity;
 
+import androidx.annotation.NonNull;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.Index;
@@ -9,8 +10,10 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 
+import it.pioppi.ConstantUtils;
+
 @Entity(
-        tableName = "item_tag",
+        tableName = ConstantUtils.ITEM_TAG_TABLE_NAME,
         indices = {@Index("id")}
 )
 public class ItemTagEntity extends BaseEntity {
@@ -22,20 +25,20 @@ public class ItemTagEntity extends BaseEntity {
     @ColumnInfo(name = "name")
     private String name;
 
-    public ItemTagEntity(UUID id, String name) {
+    public ItemTagEntity(@NonNull UUID id, String name) {
         this.id = id;
         this.name = name;
     }
 
     public ItemTagEntity() {
-
     }
 
+    @NonNull
     public UUID getId() {
         return id;
     }
 
-    public void setId(UUID id) {
+    public void setId(@NonNull UUID id) {
         this.id = id;
     }
 

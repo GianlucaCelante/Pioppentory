@@ -1,4 +1,4 @@
-package it.pioppi.database.model.entity;
+package it.pioppi.database.entity;
 
 import androidx.annotation.NonNull;
 import androidx.room.ColumnInfo;
@@ -27,7 +27,6 @@ public class ItemEntity extends BaseEntity {
     @PrimaryKey
     @ColumnInfo(name = "id")
     private UUID id;
-    @NotNull
     @ColumnInfo(name = "fts_id")
     private Integer ftsId;
     @ColumnInfo(name = "name")
@@ -49,7 +48,7 @@ public class ItemEntity extends BaseEntity {
     private List<ItemTagEntity> tags;
 
     @Ignore
-    public ItemEntity(@NotNull UUID id, @NotNull Integer ftsId, String name, Long totPortions, ItemStatus status, String barcode, LocalDateTime checkDate, String note) {
+    public ItemEntity(@NotNull UUID id, Integer ftsId, String name, Long totPortions, ItemStatus status, String barcode, LocalDateTime checkDate, String note) {
         super();
         this.id = id;
         this.ftsId = ftsId;
@@ -72,12 +71,11 @@ public class ItemEntity extends BaseEntity {
         this.id = id;
     }
 
-    @NonNull
     public Integer getFtsId() {
         return ftsId;
     }
 
-    public void setFtsId(@NonNull Integer ftsId) {
+    public void setFtsId(Integer ftsId) {
         this.ftsId = ftsId;
     }
 

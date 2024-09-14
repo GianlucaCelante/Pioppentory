@@ -1,4 +1,4 @@
-package it.pioppi.database.model.entity;
+package it.pioppi.database.entity;
 
 import androidx.annotation.NonNull;
 import androidx.room.ColumnInfo;
@@ -10,7 +10,6 @@ import androidx.room.PrimaryKey;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 import it.pioppi.ConstantUtils;
@@ -22,8 +21,7 @@ import it.pioppi.ConstantUtils;
                 @ForeignKey(
                         entity = ItemEntity.class,
                         parentColumns = "id",
-                        childColumns = "item_id",
-                        onDelete = ForeignKey.CASCADE
+                        childColumns = "item_id"
                 )
         }
 )public class ProviderEntity extends BaseEntity{

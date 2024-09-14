@@ -5,8 +5,6 @@ import androidx.room.Insert;
 import androidx.room.Update;
 import androidx.room.Upsert;
 
-import it.pioppi.database.model.entity.BaseEntity;
-
 
 public interface BaseDao<T> {
 

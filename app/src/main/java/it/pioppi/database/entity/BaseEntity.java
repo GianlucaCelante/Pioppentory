@@ -1,4 +1,4 @@
-package it.pioppi.database.model.entity;
+package it.pioppi.database.entity;
 
 import androidx.room.ColumnInfo;
 

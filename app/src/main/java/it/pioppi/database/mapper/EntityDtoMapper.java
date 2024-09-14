@@ -3,7 +3,6 @@ package it.pioppi.database.mapper;
 import java.util.ArrayList;
 import java.util.List;
 
-import it.pioppi.business.dto.BluetoothDeviceDto;
 import it.pioppi.business.dto.ItemDetailDto;
 import it.pioppi.business.dto.ItemDto;
 import it.pioppi.business.dto.ItemFTSDto;
@@ -11,13 +10,13 @@ import it.pioppi.business.dto.ItemTagDto;
 import it.pioppi.business.dto.ItemWithProviderDto;
 import it.pioppi.business.dto.ProviderDto;
 import it.pioppi.business.dto.QuantityTypeDto;
-import it.pioppi.database.model.entity.ItemDetailEntity;
-import it.pioppi.database.model.entity.ItemEntity;
-import it.pioppi.database.model.entity.ItemFTSEntity;
-import it.pioppi.database.model.entity.ItemTagEntity;
-import it.pioppi.database.model.entity.ItemWithProviderEntity;
-import it.pioppi.database.model.entity.ProviderEntity;
-import it.pioppi.database.model.entity.QuantityTypeEntity;
+import it.pioppi.database.entity.ItemDetailEntity;
+import it.pioppi.database.entity.ItemEntity;
+import it.pioppi.database.entity.ItemFTSEntity;
+import it.pioppi.database.entity.ItemTagEntity;
+import it.pioppi.database.entity.ItemWithProviderEntity;
+import it.pioppi.database.entity.ProviderEntity;
+import it.pioppi.database.entity.QuantityTypeEntity;
 
 public class EntityDtoMapper {
 

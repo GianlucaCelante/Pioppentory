@@ -64,12 +64,12 @@ import it.pioppi.database.dao.QuantityTypeEntityDao;
 import it.pioppi.database.mapper.EntityDtoMapper;
 import it.pioppi.database.model.QuantityPurpose;
 import it.pioppi.database.model.QuantityType;
-import it.pioppi.database.model.entity.ItemDetailEntity;
-import it.pioppi.database.model.entity.ItemEntity;
-import it.pioppi.database.model.entity.ItemStatus;
-import it.pioppi.database.model.entity.ItemWithDetailAndProviderAndQuantityTypeEntity;
-import it.pioppi.database.model.entity.ProviderEntity;
-import it.pioppi.database.model.entity.QuantityTypeEntity;
+import it.pioppi.database.entity.ItemDetailEntity;
+import it.pioppi.database.entity.ItemEntity;
+import it.pioppi.database.entity.ItemStatus;
+import it.pioppi.database.entity.ItemWithDetailAndProviderAndQuantityTypeEntity;
+import it.pioppi.database.entity.ProviderEntity;
+import it.pioppi.database.entity.QuantityTypeEntity;
 import it.pioppi.database.repository.ItemEntityRepository;
 
 public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLongClickListener, EnumAdapter.OnTextChangeListener  {

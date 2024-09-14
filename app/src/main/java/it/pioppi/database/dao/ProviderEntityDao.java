@@ -4,14 +4,12 @@ import androidx.room.Dao;
 import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.Query;
-import androidx.room.Transaction;
 import androidx.room.Update;
 import androidx.room.Upsert;
 
 import java.util.List;
-import java.util.UUID;
 
-import it.pioppi.database.model.entity.ProviderEntity;
+import it.pioppi.database.entity.ProviderEntity;
 
 @Dao
 public interface ProviderEntityDao extends BaseDao<ProviderEntity> {

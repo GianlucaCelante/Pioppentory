@@ -10,7 +10,7 @@ import androidx.room.Upsert;
 import java.util.List;
 import java.util.UUID;
 
-import it.pioppi.database.model.entity.ItemDetailEntity;
+import it.pioppi.database.entity.ItemDetailEntity;
 
 @Dao
 public interface ItemDetailEntityDao extends BaseDao<ItemDetailEntity> {

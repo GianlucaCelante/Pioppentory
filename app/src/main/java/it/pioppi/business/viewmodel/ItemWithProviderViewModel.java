@@ -11,7 +11,7 @@ import java.util.concurrent.Executors;
 import it.pioppi.business.dto.ItemWithProviderDto;
 import it.pioppi.database.AppDatabase;
 import it.pioppi.database.mapper.EntityDtoMapper;
-import it.pioppi.database.model.entity.ItemWithProviderEntity;
+import it.pioppi.database.entity.ItemWithProviderEntity;
 
 public class ItemWithProviderViewModel extends ViewModel {
     private final MutableLiveData<List<ItemWithProviderDto>> itemsWithProviders = new MutableLiveData<>();

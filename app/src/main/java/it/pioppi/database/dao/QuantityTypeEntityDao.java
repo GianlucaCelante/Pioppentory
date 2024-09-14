@@ -10,8 +10,8 @@ import androidx.room.Upsert;
 
 import java.util.UUID;
 
-import it.pioppi.database.model.entity.ItemWithQuantityTypes;
-import it.pioppi.database.model.entity.QuantityTypeEntity;
+import it.pioppi.database.entity.ItemWithQuantityTypes;
+import it.pioppi.database.entity.QuantityTypeEntity;
 
 @Dao
 public interface QuantityTypeEntityDao extends BaseDao<QuantityTypeEntity> {

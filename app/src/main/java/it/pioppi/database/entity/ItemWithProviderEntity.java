@@ -1,6 +1,5 @@
-package it.pioppi.database.model.entity;
+package it.pioppi.database.entity;
 
-import androidx.room.ColumnInfo;
 import androidx.room.Embedded;
 import androidx.room.Relation;
 

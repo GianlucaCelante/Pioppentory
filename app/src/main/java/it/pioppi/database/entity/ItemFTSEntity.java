@@ -1,19 +1,8 @@
-package it.pioppi.database.model.entity;
+package it.pioppi.database.entity;
 
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.Fts4;
-import androidx.room.Ignore;
-import androidx.room.Index;
-import androidx.room.PrimaryKey;
-
-import org.jetbrains.annotations.NotNull;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.UUID;
-
-import it.pioppi.ConstantUtils;
 
 @Entity(tableName = "item_fts", primaryKeys = {"rowid"})
 @Fts4(contentEntity = ItemEntity.class)

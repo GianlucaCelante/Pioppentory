@@ -12,12 +12,11 @@ import java.util.List;
 import java.util.UUID;
 
 
-import it.pioppi.database.model.entity.ItemFTSEntity;
-import it.pioppi.database.model.entity.ItemWithDetailAndProviderAndQuantityTypeEntity;
-import it.pioppi.database.model.entity.ItemEntity;
-import it.pioppi.database.model.entity.ItemWithDetailAndProviderEntity;
-import it.pioppi.database.model.entity.ItemWithDetailEntity;
-import it.pioppi.database.model.entity.ItemWithProviderEntity;
+import it.pioppi.database.entity.ItemWithDetailAndProviderAndQuantityTypeEntity;
+import it.pioppi.database.entity.ItemEntity;
+import it.pioppi.database.entity.ItemWithDetailAndProviderEntity;
+import it.pioppi.database.entity.ItemWithDetailEntity;
+import it.pioppi.database.entity.ItemWithProviderEntity;
 
 @Dao
 public interface ItemEntityDao extends BaseDao<ItemEntity> {
@@ -79,4 +78,5 @@ public interface ItemEntityDao extends BaseDao<ItemEntity> {
 
     @Query("SELECT id FROM item WHERE barcode = :barcode")
     String getItemByBarcode(String barcode);
+
 }

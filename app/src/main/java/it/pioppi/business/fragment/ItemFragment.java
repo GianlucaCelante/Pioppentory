@@ -4,7 +4,6 @@ import android.app.SearchManager;
 import android.content.Context;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -29,6 +28,7 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -46,16 +46,17 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import it.pioppi.R;
+import it.pioppi.business.adapter.PreviewItemsAdapter;
 import it.pioppi.business.viewmodel.ItemViewModel;
 import it.pioppi.business.adapter.ItemAdapter;
 import it.pioppi.business.dto.ItemDto;
 import it.pioppi.database.AppDatabase;
 import it.pioppi.database.mapper.EntityDtoMapper;
-import it.pioppi.database.model.entity.ItemDetailEntity;
-import it.pioppi.database.model.entity.ItemEntity;
-import it.pioppi.database.model.entity.ItemStatus;
-import it.pioppi.database.model.entity.ProviderEntity;
-import it.pioppi.database.model.entity.QuantityTypeEntity;
+import it.pioppi.database.entity.ItemDetailEntity;
+import it.pioppi.database.entity.ItemEntity;
+import it.pioppi.database.entity.ItemStatus;
+import it.pioppi.database.entity.ProviderEntity;
+import it.pioppi.database.entity.QuantityTypeEntity;
 import it.pioppi.database.repository.ItemEntityRepository;
 
 public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickListener, ItemAdapter.OnLongItemClickListener, Searchable {
@@ -134,6 +135,12 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                     }
                 });
 
+                MenuItem closeInventory = menu.findItem(R.id.close_inventory);
+                closeInventory.setOnMenuItemClickListener(item -> {
+                    previewItems();
+                    return true;
+                });
+
             }
 
             @Override
@@ -162,6 +169,45 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
             }
         }, getViewLifecycleOwner(), Lifecycle.State.RESUMED);
     }
+
+    private void previewItems() {
+        // Filtra gli ItemDto con ItemStatus.BLUE
+        List<ItemDto> blueItems = Objects.requireNonNull(itemViewModel.getItems().getValue()).stream()
+                .filter(item -> item.getStatus() == ItemStatus.BLUE)
+                .collect(Collectors.toList());
+
+        if (blueItems.isEmpty()) {
+            Toast.makeText(getContext(), "Non ci sono elementi modificati.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Mostra il dialog con la lista degli Item filtrati
+        showPreviewDialog(blueItems);
+    }
+
+    private void showPreviewDialog(List<ItemDto> itemList) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
+        builder.setTitle("Elementi Modificati");
+
+        // Infla il layout del dialog
+        LayoutInflater inflater = requireActivity().getLayoutInflater();
+        View dialogView = inflater.inflate(R.layout.dialog_preview_items, null);
+        builder.setView(dialogView);
+
+        RecyclerView recyclerView = dialogView.findViewById(R.id.preview_items_recycler_view);
+        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+
+        PreviewItemsAdapter adapter = new PreviewItemsAdapter(itemList);
+        recyclerView.setAdapter(adapter);
+
+        // Aggiungi pulsanti se necessario
+        builder.setPositiveButton("OK", (dialog, which) -> dialog.dismiss());
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
+
 
     private void addProviderItem(LayoutInflater inflater, ArrayAdapter<String> spinnerAdapter, Spinner providerSpinner) {
         View dialogView = inflater.inflate(R.layout.new_provider_alert, null);
@@ -288,7 +334,13 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                         newItem.setStatus(ItemStatus.WHITE);
                         newItem.setBarcode("FAKE_BARCODE");
                         newItem.setCreationDate(now);
-                        appDatabase.runInTransaction(() -> itemEntityRepository.insert(newItem));
+                        appDatabase.runInTransaction(() -> {
+                            try {
+                                itemEntityRepository.insert(newItem);
+                            } catch (ExecutionException | InterruptedException e) {
+                                throw new RuntimeException(e);
+                            }
+                        });
 
                         ProviderEntity providerEntity = new ProviderEntity();
                         providerEntity.setId(itemId);

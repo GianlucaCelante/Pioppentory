@@ -9,10 +9,9 @@ import androidx.room.Update;
 import androidx.room.Upsert;
 
 import java.util.List;
-import java.util.UUID;
 
-import it.pioppi.database.model.entity.ItemEntity;
-import it.pioppi.database.model.entity.ItemFTSEntity;
+import it.pioppi.database.entity.ItemEntity;
+import it.pioppi.database.entity.ItemFTSEntity;
 
 @Dao
 public interface ItemFTSEntityDao extends BaseDao<ItemFTSEntity> {

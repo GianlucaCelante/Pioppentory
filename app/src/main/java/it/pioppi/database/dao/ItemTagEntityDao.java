@@ -11,9 +11,8 @@ import androidx.room.Upsert;
 import java.util.List;
 import java.util.UUID;
 
-import it.pioppi.database.model.entity.ItemTagEntity;
-import it.pioppi.database.model.entity.ItemTagJoinEntity;
-import it.pioppi.database.model.entity.ProviderEntity;
+import it.pioppi.database.entity.ItemTagEntity;
+import it.pioppi.database.entity.ItemTagJoinEntity;
 
 @Dao
 public interface ItemTagEntityDao extends BaseDao<ItemTagEntity> {

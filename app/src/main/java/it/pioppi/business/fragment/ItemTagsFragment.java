@@ -44,13 +44,13 @@ import it.pioppi.business.viewmodel.ItemTagsViewModel;
 import it.pioppi.business.viewmodel.ItemViewModel;
 import it.pioppi.database.AppDatabase;
 import it.pioppi.database.mapper.EntityDtoMapper;
-import it.pioppi.database.model.entity.ItemEntity;
-import it.pioppi.database.model.entity.ItemDetailEntity;
-import it.pioppi.database.model.entity.ItemTagEntity;
-import it.pioppi.database.model.entity.ItemTagJoinEntity;
-import it.pioppi.database.model.entity.ProviderEntity;
-import it.pioppi.database.model.entity.QuantityTypeEntity;
-import it.pioppi.database.model.entity.ItemStatus;
+import it.pioppi.database.entity.ItemEntity;
+import it.pioppi.database.entity.ItemDetailEntity;
+import it.pioppi.database.entity.ItemTagEntity;
+import it.pioppi.database.entity.ItemTagJoinEntity;
+import it.pioppi.database.entity.ProviderEntity;
+import it.pioppi.database.entity.QuantityTypeEntity;
+import it.pioppi.database.entity.ItemStatus;
 import it.pioppi.database.repository.ItemEntityRepository;
 
 public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItemClickListener, Searchable {
@@ -245,7 +245,13 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
             newItem.setStatus(ItemStatus.WHITE);
             newItem.setCreationDate(now);
 
-            appDatabase.runInTransaction(() -> itemEntityRepository.insert(newItem));
+            appDatabase.runInTransaction(() -> {
+                try {
+                    itemEntityRepository.insert(newItem);
+                } catch (ExecutionException | InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            });
 
             String providerName = "Default Provider";
 

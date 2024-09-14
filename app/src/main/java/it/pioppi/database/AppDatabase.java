@@ -11,20 +11,22 @@ import androidx.room.TypeConverters;
 import it.pioppi.database.dao.ItemDetailEntityDao;
 import it.pioppi.database.dao.ItemEntityDao;
 import it.pioppi.database.dao.ItemFTSEntityDao;
+import it.pioppi.database.dao.ItemHistoryEntityDao;
 import it.pioppi.database.dao.ItemTagEntityDao;
 import it.pioppi.database.dao.ProviderEntityDao;
 import it.pioppi.database.dao.QuantityTypeEntityDao;
-import it.pioppi.database.model.entity.ItemDetailEntity;
-import it.pioppi.database.model.entity.ItemEntity;
-import it.pioppi.database.model.entity.ItemFTSEntity;
-import it.pioppi.database.model.entity.ItemTagEntity;
-import it.pioppi.database.model.entity.ItemTagJoinEntity;
-import it.pioppi.database.model.entity.ProviderEntity;
-import it.pioppi.database.model.entity.QuantityTypeEntity;
+import it.pioppi.database.entity.ItemDetailEntity;
+import it.pioppi.database.entity.ItemEntity;
+import it.pioppi.database.entity.ItemFTSEntity;
+import it.pioppi.database.entity.ItemHistoryEntity;
+import it.pioppi.database.entity.ItemTagEntity;
+import it.pioppi.database.entity.ItemTagJoinEntity;
+import it.pioppi.database.entity.ProviderEntity;
+import it.pioppi.database.entity.QuantityTypeEntity;
 import it.pioppi.database.typeconverters.Converters;
 
 @Database(entities = {ItemEntity.class, ItemDetailEntity.class, ProviderEntity.class, QuantityTypeEntity.class,
-        ItemTagEntity.class, ItemTagJoinEntity.class, ItemFTSEntity.class}, version = 29)
+        ItemTagEntity.class, ItemTagJoinEntity.class, ItemFTSEntity.class, ItemHistoryEntity.class}, version = 30)
 @TypeConverters({Converters.class})
 public abstract class AppDatabase extends RoomDatabase {
 
@@ -34,6 +36,7 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract QuantityTypeEntityDao quantityTypeEntityDao();
     public abstract ItemTagEntityDao itemTagEntityDao();
     public abstract ItemFTSEntityDao itemFTSEntityDao();
+    public abstract ItemHistoryEntityDao itemHistoryEntityDao();
 
 
 

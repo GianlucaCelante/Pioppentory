@@ -10,6 +10,8 @@ public class ConstantUtils {
     public static final String ITEM_DETAIL_TABLE_NAME = "ITEM_DETAIL";
     public static final String PROVIDER_TABLE_NAME = "PROVIDER";
     public static final String QUANTITY_TYPE_TABLE_NAME = "QUANTITY_TYPE";
+    public static final String ITEM_TAG_TABLE_NAME = "ITEM_TAG";
+    public static final String ITEM_HISTORY_TABLE_NAME = "ITEM_HISTORY";
 
     // BLUETOOTH
     public static final int REQUEST_ENABLE_BT = 1;
@@ -26,4 +28,6 @@ public class ConstantUtils {
     public static final String ITEM_ID = "itemId";
 
 
+    public class ITEM_HISTORY_TABLE_NAME {
+    }
 }

@@ -1,13 +1,13 @@
 package it.pioppi.database.typeconverters;
 
-import androidx.room.ProvidedTypeConverter;
 import androidx.room.TypeConverter;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 import it.pioppi.database.model.QuantityType;
-import it.pioppi.database.model.entity.ItemStatus;
+import it.pioppi.database.entity.ItemStatus;
 
 public class Converters {
 
@@ -40,6 +40,24 @@ public class Converters {
 
     @TypeConverter
     public static String toDateString(LocalDateTime date) {
+        if (date == null) {
+            return null;
+        } else {
+            return date.toString();
+        }
+    }
+
+    @TypeConverter
+    public static LocalDate toLocalDate(String dateString) {
+        if (dateString == null) {
+            return null;
+        } else {
+            return LocalDate.parse(dateString);
+        }
+    }
+
+    @TypeConverter
+    public static String toLocalDateString(LocalDate date) {
         if (date == null) {
             return null;
         } else {

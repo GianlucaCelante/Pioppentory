@@ -1,9 +1,9 @@
-package it.pioppi.database.model.entity;
+package it.pioppi.database.entity;
 
 import androidx.room.Embedded;
 import androidx.room.Relation;
 
-public class ItemWithDetailEntity {
+public class ItemWithDetailAndProviderEntity {
 
     @Embedded
     public ItemEntity item;
@@ -13,4 +13,11 @@ public class ItemWithDetailEntity {
             entityColumn = "item_id"
     )
     public ItemDetailEntity itemDetail;
+
+    @Relation(
+            parentColumn = "id",
+            entityColumn = "item_id"
+    )
+    public ProviderEntity provider;
+
 }
