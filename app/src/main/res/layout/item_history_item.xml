@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:padding="8dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <!-- Item Name -->
+    <TextView
+        android:id="@+id/text_view_item_name"
+        android:textStyle="bold"
+        android:textSize="16sp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Item Name" />
+
+    <!-- Quantity Present -->
+    <TextView
+        android:id="@+id/text_view_quantity_present"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Quantity Present: 0" />
+
+    <!-- Quantity Ordered -->
+    <TextView
+        android:id="@+id/text_view_quantity_ordered"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Quantity Ordered: 0" />
+
+    <!-- Note -->
+    <TextView
+        android:id="@+id/text_view_note"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Note: " />
+
+</LinearLayout>

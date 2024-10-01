@@ -6,6 +6,7 @@ import java.util.List;
 import it.pioppi.business.dto.ItemDetailDto;
 import it.pioppi.business.dto.ItemDto;
 import it.pioppi.business.dto.ItemFTSDto;
+import it.pioppi.business.dto.ItemHistoryDto;
 import it.pioppi.business.dto.ItemTagDto;
 import it.pioppi.business.dto.ItemWithProviderDto;
 import it.pioppi.business.dto.ProviderDto;
@@ -13,6 +14,7 @@ import it.pioppi.business.dto.QuantityTypeDto;
 import it.pioppi.database.entity.ItemDetailEntity;
 import it.pioppi.database.entity.ItemEntity;
 import it.pioppi.database.entity.ItemFTSEntity;
+import it.pioppi.database.entity.ItemHistoryEntity;
 import it.pioppi.database.entity.ItemTagEntity;
 import it.pioppi.database.entity.ItemWithProviderEntity;
 import it.pioppi.database.entity.ProviderEntity;
@@ -376,5 +378,63 @@ public class EntityDtoMapper {
             itemEntities.add(dtoToEntity(itemDto));
         }
         return itemEntities;
+    }
+
+    public static List<ItemHistoryEntity> mapItemHistoryDtoListToEntityList(List<ItemHistoryDto> itemHistoryDtos) {
+        if(itemHistoryDtos == null) {
+            return new ArrayList<>();
+        }
+        List<ItemHistoryEntity> itemHistoryEntities = new ArrayList<>();
+        for (ItemHistoryDto itemHistoryDto : itemHistoryDtos) {
+            itemHistoryEntities.add(mapItemHistoryDtoToEntity(itemHistoryDto));
+        }
+        return itemHistoryEntities;
+    }
+
+    public static ItemHistoryEntity mapItemHistoryDtoToEntity(ItemHistoryDto itemHistoryDto) {
+        if(itemHistoryDto == null) {
+            return null;
+        }
+        ItemHistoryEntity itemHistoryEntity = new ItemHistoryEntity();
+        itemHistoryEntity.setId(itemHistoryDto.getId());
+        itemHistoryEntity.setProviderName(itemHistoryDto.getProviderName());
+        itemHistoryEntity.setItemName(itemHistoryDto.getItemName());
+        itemHistoryEntity.setQuantityPresent(itemHistoryDto.getQuantityPresent());
+        itemHistoryEntity.setQuantityOrdered(itemHistoryDto.getQuantityOrdered());
+        itemHistoryEntity.setPortionsPerWeekend(itemHistoryDto.getPortionsPerWeekend());
+        itemHistoryEntity.setInventoryClosureDate(itemHistoryDto.getInventoryClosureDate());
+        itemHistoryEntity.setDeliveryDate(itemHistoryDto.getDeliveryDate());
+        itemHistoryEntity.setBarcode(itemHistoryDto.getBarcode());
+        itemHistoryEntity.setNote(itemHistoryDto.getNote());
+        return itemHistoryEntity;
+    }
+
+    public static List<ItemHistoryDto> mapItemHistoryEntityListToDtoList(List<ItemHistoryEntity> itemHistoryEntities) {
+        if(itemHistoryEntities == null) {
+            return new ArrayList<>();
+        }
+        List<ItemHistoryDto> itemHistoryDtos = new ArrayList<>();
+        for (ItemHistoryEntity itemHistoryEntity : itemHistoryEntities) {
+            itemHistoryDtos.add(mapItemHistoryEntityToDto(itemHistoryEntity));
+        }
+        return itemHistoryDtos;
+    }
+
+    public static ItemHistoryDto mapItemHistoryEntityToDto(ItemHistoryEntity itemHistoryEntity) {
+        if(itemHistoryEntity == null) {
+            return null;
+        }
+        ItemHistoryDto itemHistoryDto = new ItemHistoryDto();
+        itemHistoryDto.setId(itemHistoryEntity.getId());
+        itemHistoryDto.setProviderName(itemHistoryEntity.getProviderName());
+        itemHistoryDto.setItemName(itemHistoryEntity.getItemName());
+        itemHistoryDto.setQuantityPresent(itemHistoryEntity.getQuantityPresent());
+        itemHistoryDto.setQuantityOrdered(itemHistoryEntity.getQuantityOrdered());
+        itemHistoryDto.setPortionsPerWeekend(itemHistoryEntity.getPortionsPerWeekend());
+        itemHistoryDto.setInventoryClosureDate(itemHistoryEntity.getInventoryClosureDate());
+        itemHistoryDto.setDeliveryDate(itemHistoryEntity.getDeliveryDate());
+        itemHistoryDto.setBarcode(itemHistoryEntity.getBarcode());
+        itemHistoryDto.setNote(itemHistoryEntity.getNote());
+        return itemHistoryDto;
     }
 }

@@ -33,6 +33,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -51,6 +52,8 @@ import it.pioppi.business.viewmodel.ItemViewModel;
 import it.pioppi.business.adapter.ItemAdapter;
 import it.pioppi.business.dto.ItemDto;
 import it.pioppi.database.AppDatabase;
+import it.pioppi.database.entity.ItemHistoryEntity;
+import it.pioppi.database.entity.ItemWithDetailEntity;
 import it.pioppi.database.mapper.EntityDtoMapper;
 import it.pioppi.database.entity.ItemDetailEntity;
 import it.pioppi.database.entity.ItemEntity;
@@ -200,12 +203,75 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
         PreviewItemsAdapter adapter = new PreviewItemsAdapter(itemList);
         recyclerView.setAdapter(adapter);
 
-        // Aggiungi pulsanti se necessario
-        builder.setPositiveButton("OK", (dialog, which) -> dialog.dismiss());
+        builder.setPositiveButton("Conferma Chiusura", null);
+        builder.setNegativeButton("Annulla", (dialog, which) -> dialog.dismiss());
 
         AlertDialog dialog = builder.create();
+        dialog.setOnShowListener(dialogInterface -> {
+            Button positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+            positiveButton.setOnClickListener(v -> {
+
+                saveItemHistory(itemList);
+
+                resetItemStatus(itemList);
+
+                requireActivity().runOnUiThread(() -> {
+                    itemViewModel.setItems(itemViewModel.getItems().getValue());
+                    itemAdapter.notifyDataSetChanged();
+                    Toast.makeText(getContext(), "Chiusura dell'inventario salvata con successo.", Toast.LENGTH_SHORT).show();
+                    dialog.dismiss();
+                });
+                dialog.dismiss();
+            });
+        });
         dialog.show();
     }
+
+    private void resetItemStatus(List<ItemDto> itemList) {
+        executorService.execute(() -> {
+            try {
+                for (ItemDto item : itemList) {
+                    item.setStatus(ItemStatus.WHITE);
+                    ItemEntity itemEntity = EntityDtoMapper.dtoToEntity(item);
+                    appDatabase.itemEntityDao().update(itemEntity);
+                }
+            } catch (Exception e) {
+                requireActivity().runOnUiThread(() -> Toast.makeText(getContext(), "Errore durante il ripristino dello stato degli elementi", Toast.LENGTH_SHORT).show());
+            }
+        });
+
+    }
+
+    private void saveItemHistory(List<ItemDto> itemList) {
+        executorService.execute(() -> {
+            try {
+                LocalDateTime closureDate = LocalDateTime.now();
+
+                // Per ogni elemento nella lista, creiamo un record da salvare
+                for (ItemDto item : itemList) {
+                    // Recupera eventuali dettagli aggiuntivi necessari (es. quantityPresent, quantityOrdered)
+                    ItemWithDetailEntity itemEntity = appDatabase.itemEntityDao().getItemWithDetail(item.getId());
+
+                    ItemHistoryEntity historyRecord = new ItemHistoryEntity();
+                    historyRecord.setId(UUID.randomUUID());
+                    historyRecord.setInventoryClosureDate(LocalDate.from(closureDate));
+                    historyRecord.setItemName(item.getName());
+                    historyRecord.setBarcode(item.getBarcode());
+                    historyRecord.setQuantityPresent(item.getTotPortions()); // O il campo appropriato
+                    historyRecord.setQuantityOrdered(itemEntity != null ? itemEntity.itemDetail.getQuantityToBeOrdered() : 0L);
+                    historyRecord.setNote(item.getNote());
+                    historyRecord.setCreationDate(closureDate);
+                    historyRecord.setLastUpdate(closureDate);
+
+                    appDatabase.itemHistoryEntityDao().insert(historyRecord);
+                }
+
+            } catch (Exception e) {
+                requireActivity().runOnUiThread(() -> Toast.makeText(getContext(), "Errore durante il salvataggio: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+            }
+        });
+    }
+
 
 
 
@@ -325,6 +391,7 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
 
                         LocalDateTime now = LocalDateTime.now();
 
+                        // Creazione delle entità
                         ItemEntity newItem = new ItemEntity();
                         UUID itemId = UUID.randomUUID();
                         newItem.setId(itemId);
@@ -334,36 +401,36 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                         newItem.setStatus(ItemStatus.WHITE);
                         newItem.setBarcode("FAKE_BARCODE");
                         newItem.setCreationDate(now);
-                        appDatabase.runInTransaction(() -> {
-                            try {
-                                itemEntityRepository.insert(newItem);
-                            } catch (ExecutionException | InterruptedException e) {
-                                throw new RuntimeException(e);
-                            }
-                        });
 
                         ProviderEntity providerEntity = new ProviderEntity();
-                        providerEntity.setId(itemId);
-                        providerEntity.setItemId(newItem.getId());
+                        providerEntity.setId(UUID.randomUUID()); // Genera un nuovo UUID
+                        providerEntity.setItemId(itemId); // Imposta la chiave esterna
                         providerEntity.setName(provider);
                         providerEntity.setCreationDate(now);
 
                         ItemDetailEntity itemDetailEntity = new ItemDetailEntity();
-                        itemDetailEntity.setId(itemId);
-                        itemDetailEntity.setItemId(newItem.getId());
+                        itemDetailEntity.setId(UUID.randomUUID()); // Genera un nuovo UUID
+                        itemDetailEntity.setItemId(itemId); // Imposta la chiave esterna
                         itemDetailEntity.setCreationDate(now);
 
                         QuantityTypeEntity quantityTypeEntity = new QuantityTypeEntity();
-                        quantityTypeEntity.setId(itemId);
-                        quantityTypeEntity.setItemId(newItem.getId());
+                        quantityTypeEntity.setId(UUID.randomUUID()); // Genera un nuovo UUID
+                        quantityTypeEntity.setItemId(itemId); // Imposta la chiave esterna
                         quantityTypeEntity.setCreationDate(now);
 
+                        // Esegui tutte le operazioni in un'unica transazione
                         appDatabase.runInTransaction(() -> {
-                            appDatabase.providerEntityDao().insert(providerEntity);
-                            appDatabase.itemDetailEntityDao().insert(itemDetailEntity);
-                            appDatabase.quantityTypeEntityDao().insert(quantityTypeEntity);
+                            try {
+                                itemEntityRepository.insert(newItem);
+                                appDatabase.providerEntityDao().insert(providerEntity);
+                                appDatabase.itemDetailEntityDao().insert(itemDetailEntity);
+                                appDatabase.quantityTypeEntityDao().insert(quantityTypeEntity);
+                            } catch (Exception e) {
+                                throw new RuntimeException(e);
+                            }
                         });
 
+                        // Aggiorna la lista degli item e l'interfaccia utente
                         itemDtos.add(EntityDtoMapper.entityToDto(newItem));
                         requireActivity().runOnUiThread(() -> {
                             itemAdapter.setItemList(itemDtos);
@@ -377,6 +444,7 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
         });
         newItemDialog.show();
     }
+
 
     private List<ItemDto> loadItems() throws ExecutionException, InterruptedException {
         List<ItemDto> itemDtos = new ArrayList<>();

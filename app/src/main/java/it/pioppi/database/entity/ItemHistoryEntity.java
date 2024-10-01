@@ -25,8 +25,6 @@ public class ItemHistoryEntity extends BaseEntity {
     @PrimaryKey
     @ColumnInfo(name = "id")
     private UUID id;
-    @ColumnInfo(name = "item_id")
-    private UUID itemId;
     @ColumnInfo(name = "provider_name")
     private String providerName;
     @ColumnInfo(name = "item_name")
@@ -46,9 +44,8 @@ public class ItemHistoryEntity extends BaseEntity {
     @ColumnInfo(name = "note")
     private String note;
 
-    public ItemHistoryEntity(@NotNull UUID id, UUID itemId, String providerName, String itemName, Long quantityPresent, Long quantityOrdered, Long portionsPerWeekend, LocalDate inventoryClosureDate, LocalDate deliveryDate, String barcode, String note) {
+    public ItemHistoryEntity(@NotNull UUID id, String providerName, String itemName, Long quantityPresent, Long quantityOrdered, Long portionsPerWeekend, LocalDate inventoryClosureDate, LocalDate deliveryDate, String barcode, String note) {
         this.id = id;
-        this.itemId = itemId;
         this.providerName = providerName;
         this.itemName = itemName;
         this.quantityPresent = quantityPresent;
@@ -69,14 +66,6 @@ public class ItemHistoryEntity extends BaseEntity {
 
     public void setId(@NotNull UUID id) {
         this.id = id;
-    }
-
-    public UUID getItemId() {
-        return itemId;
-    }
-
-    public void setItemId(UUID itemId) {
-        this.itemId = itemId;
     }
 
     public String getProviderName() {
@@ -156,7 +145,6 @@ public class ItemHistoryEntity extends BaseEntity {
     public String toString() {
         return new StringJoiner(", ", ItemHistoryEntity.class.getSimpleName() + "[", "]")
                 .add("id=" + id)
-                .add("itemId=" + itemId)
                 .add("providerName='" + providerName + "'")
                 .add("itemName='" + itemName + "'")
                 .add("quantityPresent=" + quantityPresent)

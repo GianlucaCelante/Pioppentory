@@ -64,7 +64,7 @@ CREATE VIRTUAL TABLE item_fts USING fts4(
 
 );
 
-CREATE TABLE IF NOT EXISTS `INVENTORY_CLOSURE_HISTORY` (
+CREATE TABLE IF NOT EXISTS `ITEM_HISTORY` (
     `id` TEXT NOT NULL,
     `item_id` TEXT,
     `provider_name` TEXT,
@@ -84,7 +84,7 @@ CREATE INDEX IF NOT EXISTS `index_ITEM_id` ON `ITEM` (`id`);
 CREATE INDEX IF NOT EXISTS `index_ITEM_DETAIL_item_id` ON `ITEM_DETAIL` (`item_id`);
 CREATE INDEX IF NOT EXISTS `index_PROVIDER_item_id` ON `PROVIDER` (`item_id`);
 CREATE INDEX IF NOT EXISTS `index_QUANTITY_TYPE_item_id` ON `QUANTITY_TYPE` (`item_id`);
-CREATE INDEX IF NOT EXISTS `index_INVENTORY_CLOSURE_HISTORY_id` ON `INVENTORY_CLOSURE_HISTORY` (`id`);
+CREATE INDEX IF NOT EXISTS `index_ITEM_HISTORY_id` ON `ITEM_HISTORY` (`id`);
 
 -- Aggiornamento della tabella item_fts con i dati inseriti nella tabella ITEM
 INSERT INTO item_fts (rowid, name, barcode)
