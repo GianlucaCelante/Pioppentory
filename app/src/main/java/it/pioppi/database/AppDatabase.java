@@ -26,7 +26,7 @@ import it.pioppi.database.entity.QuantityTypeEntity;
 import it.pioppi.database.typeconverters.Converters;
 
 @Database(entities = {ItemEntity.class, ItemDetailEntity.class, ProviderEntity.class, QuantityTypeEntity.class,
-        ItemTagEntity.class, ItemTagJoinEntity.class, ItemFTSEntity.class, ItemHistoryEntity.class}, version = 30)
+        ItemTagEntity.class, ItemTagJoinEntity.class, ItemFTSEntity.class, ItemHistoryEntity.class}, version = 32)
 @TypeConverters({Converters.class})
 public abstract class AppDatabase extends RoomDatabase {
 

@@ -403,28 +403,28 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                         newItem.setCreationDate(now);
 
                         ProviderEntity providerEntity = new ProviderEntity();
-                        providerEntity.setId(UUID.randomUUID()); // Genera un nuovo UUID
-                        providerEntity.setItemId(itemId); // Imposta la chiave esterna
+                        providerEntity.setId(UUID.randomUUID());
+                        providerEntity.setItemId(itemId);
                         providerEntity.setName(provider);
                         providerEntity.setCreationDate(now);
 
                         ItemDetailEntity itemDetailEntity = new ItemDetailEntity();
-                        itemDetailEntity.setId(UUID.randomUUID()); // Genera un nuovo UUID
-                        itemDetailEntity.setItemId(itemId); // Imposta la chiave esterna
+                        itemDetailEntity.setId(UUID.randomUUID());
+                        itemDetailEntity.setItemId(itemId);
                         itemDetailEntity.setCreationDate(now);
 
                         QuantityTypeEntity quantityTypeEntity = new QuantityTypeEntity();
-                        quantityTypeEntity.setId(UUID.randomUUID()); // Genera un nuovo UUID
-                        quantityTypeEntity.setItemId(itemId); // Imposta la chiave esterna
+                        quantityTypeEntity.setId(UUID.randomUUID());
+                        quantityTypeEntity.setItemId(itemId);
                         quantityTypeEntity.setCreationDate(now);
 
                         // Esegui tutte le operazioni in un'unica transazione
                         appDatabase.runInTransaction(() -> {
                             try {
-                                itemEntityRepository.insert(newItem);
                                 appDatabase.providerEntityDao().insert(providerEntity);
-                                appDatabase.itemDetailEntityDao().insert(itemDetailEntity);
                                 appDatabase.quantityTypeEntityDao().insert(quantityTypeEntity);
+                                appDatabase.itemDetailEntityDao().insert(itemDetailEntity);
+                                itemEntityRepository.insert(newItem);
                             } catch (Exception e) {
                                 throw new RuntimeException(e);
                             }

@@ -66,7 +66,6 @@ CREATE VIRTUAL TABLE item_fts USING fts4(
 
 CREATE TABLE IF NOT EXISTS `ITEM_HISTORY` (
     `id` TEXT NOT NULL,
-    `item_id` TEXT,
     `provider_name` TEXT,
     `item_name` TEXT,
     `quantity_present` INTEGER,

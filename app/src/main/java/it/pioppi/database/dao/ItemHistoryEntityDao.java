@@ -37,7 +37,7 @@ public interface ItemHistoryEntityDao extends BaseDao<ItemHistoryEntity> {
     @Query("SELECT * FROM item_history")
     List<ItemHistoryEntity> getAllItemHistory();
 
-    @Query("SELECT * FROM item_history WHERE item_id = :itemId")
+    @Query("SELECT * FROM item_history WHERE id = :itemId")
     List<ItemHistoryEntity> getItemHistoryByItemId(UUID itemId);
 
 }
