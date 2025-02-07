@@ -106,7 +106,7 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
         setupMenuToolbar();
 
         FloatingActionButton fab = view.findViewById(R.id.new_item_fab);
-        fab.setOnClickListener(v -> addNewItem(inflater, itemViewModel.getItems().getValue()));
+        fab.setOnClickListener(v -> addNewItem(inflater, itemViewModel));
 
         return view;
     }
@@ -272,102 +272,24 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
         });
     }
 
+    private void addNewItem(@NonNull LayoutInflater inflater, ItemViewModel itemViewModel) {
 
+        List<ItemDto> items = itemViewModel.getItems().getValue();
 
-
-    private void addProviderItem(LayoutInflater inflater, ArrayAdapter<String> spinnerAdapter, Spinner providerSpinner) {
-        View dialogView = inflater.inflate(R.layout.new_provider_alert, null);
-
-        EditText newProviderNameEditText = dialogView.findViewById(R.id.new_item_name);
-        newProviderNameEditText.requestFocus();
-        openKeyboard(newProviderNameEditText);
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(requireActivity());
-        builder.setView(dialogView)
-                .setPositiveButton("Aggiungi", null)
-                .setNegativeButton("Indietro", (dialog, id) -> dialog.cancel());
-
-        AlertDialog alertDialog = builder.create();
-        alertDialog.setOnShowListener(dlg -> {
-            Button positiveButton = alertDialog.getButton(AlertDialog.BUTTON_POSITIVE);
-            positiveButton.setOnClickListener(v -> {
-                String newProviderName = newProviderNameEditText.getText().toString().trim();
-
-                if (newProviderName.isEmpty()) {
-                    Toast.makeText(getContext(), "Inserisci un nome per il nuovo fornitore", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
-                List<String> providerNames;
-                try {
-                    providerNames = executorService.submit(() -> appDatabase.providerEntityDao().getProviderNames()).get();
-                } catch (ExecutionException | InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-
-                providerNames.remove(null);
-                boolean isUnique = providerNames.stream().noneMatch(provider -> provider.equalsIgnoreCase(newProviderName));
-
-                if (!isUnique) {
-                    Toast.makeText(getContext(), "Esiste già un fornitore con questo nome", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
-                LocalDateTime now = LocalDateTime.now();
-
-                ProviderEntity newProvider = new ProviderEntity();
-                newProvider.setId(UUID.randomUUID());
-                newProvider.setName(newProviderName);
-                newProvider.setCreationDate(now);
-
-                executorService.execute(() -> {
-                    appDatabase.providerEntityDao().insert(newProvider);
-
-                    requireActivity().runOnUiThread(() -> {
-                        spinnerAdapter.add(newProviderName);
-                        spinnerAdapter.notifyDataSetChanged();
-                        providerSpinner.setSelection(spinnerAdapter.getPosition(newProviderName));
-                        alertDialog.dismiss();
-                    });
-                });
-            });
-        });
-        alertDialog.show();
-    }
-
-    private void addNewItem(@NonNull LayoutInflater inflater, List<ItemDto> itemDtos) {
         View dialogView = inflater.inflate(R.layout.new_item_alert, null);
-
-        Spinner providerSpinner = dialogView.findViewById(R.id.provider_spinner);
         EditText newItemNameEditText = dialogView.findViewById(R.id.new_item_name);
         newItemNameEditText.requestFocus();
         openKeyboard(newItemNameEditText);
 
-        List<String> providers;
-        try {
-            providers = executorService.submit(() -> appDatabase.providerEntityDao().getProviderNames()).get();
-        } catch (ExecutionException | InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-
-        providers.remove(null);
-        ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, providers);
-        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        providerSpinner.setAdapter(spinnerAdapter);
-
-        Button addProviderButton = dialogView.findViewById(R.id.add_provider_button);
-        addProviderButton.setOnClickListener(v -> addProviderItem(inflater, spinnerAdapter, providerSpinner));
-
         AlertDialog.Builder builder = new AlertDialog.Builder(requireActivity());
         builder.setView(dialogView)
                 .setPositiveButton("Aggiungi", null)
                 .setNegativeButton("Indietro", (dialog, id) -> dialog.cancel());
 
-        newItemDialog = builder.create();
+        AlertDialog newItemDialog = builder.create();
         newItemDialog.setOnShowListener(dlg -> {
             Button positiveButton = newItemDialog.getButton(AlertDialog.BUTTON_POSITIVE);
             positiveButton.setOnClickListener(v -> {
-                String provider = providerSpinner.getSelectedItem() != null ? providerSpinner.getSelectedItem().toString() : null;
                 String newItemName = newItemNameEditText.getText().toString();
 
                 if (newItemName.isEmpty()) {
@@ -375,15 +297,9 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                     return;
                 }
 
-                if (provider == null || provider.isEmpty()) {
-                    Toast.makeText(getContext(), "Seleziona un fornitore", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
                 executorService.execute(() -> {
                     try {
                         UUID existingItem = appDatabase.itemEntityDao().getItemByName(newItemName);
-                        Integer getMaxFtsId = appDatabase.itemFTSEntityDao().getNextId();
                         if (existingItem != null) {
                             requireActivity().runOnUiThread(() -> Toast.makeText(getContext(), "Esiste già un prodotto con questo nome", Toast.LENGTH_SHORT).show());
                             return;
@@ -391,22 +307,14 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
 
                         LocalDateTime now = LocalDateTime.now();
 
-                        // Creazione delle entità
                         ItemEntity newItem = new ItemEntity();
                         UUID itemId = UUID.randomUUID();
                         newItem.setId(itemId);
-                        newItem.setFtsId(getMaxFtsId);
                         newItem.setName(newItemName);
                         newItem.setTotPortions(0L);
                         newItem.setStatus(ItemStatus.WHITE);
                         newItem.setBarcode("FAKE_BARCODE");
                         newItem.setCreationDate(now);
-
-                        ProviderEntity providerEntity = new ProviderEntity();
-                        providerEntity.setId(UUID.randomUUID());
-                        providerEntity.setItemId(itemId);
-                        providerEntity.setName(provider);
-                        providerEntity.setCreationDate(now);
 
                         ItemDetailEntity itemDetailEntity = new ItemDetailEntity();
                         itemDetailEntity.setId(UUID.randomUUID());
@@ -418,22 +326,21 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                         quantityTypeEntity.setItemId(itemId);
                         quantityTypeEntity.setCreationDate(now);
 
-                        // Esegui tutte le operazioni in un'unica transazione
+                        // Esegui tutte le operationi in un'unica transazione
                         appDatabase.runInTransaction(() -> {
                             try {
-                                appDatabase.providerEntityDao().insert(providerEntity);
-                                appDatabase.quantityTypeEntityDao().insert(quantityTypeEntity);
+                                appDatabase.itemEntityDao().insert(newItem);
                                 appDatabase.itemDetailEntityDao().insert(itemDetailEntity);
-                                itemEntityRepository.insert(newItem);
+                                appDatabase.quantityTypeEntityDao().insert(quantityTypeEntity);
                             } catch (Exception e) {
                                 throw new RuntimeException(e);
                             }
                         });
 
                         // Aggiorna la lista degli item e l'interfaccia utente
-                        itemDtos.add(EntityDtoMapper.entityToDto(newItem));
+                        items.add(EntityDtoMapper.entityToDto(newItem));
                         requireActivity().runOnUiThread(() -> {
-                            itemAdapter.setItemList(itemDtos);
+                            itemAdapter.setItemList(items);
                             newItemDialog.dismiss();
                         });
                     } catch (Exception e) {
@@ -443,8 +350,8 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
             });
         });
         newItemDialog.show();
-    }
 
+    }
 
     private List<ItemDto> loadItems() throws ExecutionException, InterruptedException {
         List<ItemDto> itemDtos = new ArrayList<>();

@@ -571,7 +571,7 @@ public class OptionsFragment extends Fragment implements BluetoothDevicesAdapter
 
     private void fetchPairedDevices() {
         // Verifica se il Bluetooth è abilitato
-        if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) {
+        if (bluetoothAdapter != null && !bluetoothAdapter.isEnabled()) {
             enableBluetooth();
             return;
         }
