@@ -30,7 +30,7 @@ public interface ProviderEntityDao extends BaseDao<ProviderEntity> {
     @Upsert
     void upsert(ProviderEntity entity);
 
-    @Query("SELECT DISTINCT name FROM provider")
+    @Query("SELECT DISTINCT name FROM provider WHERE name IS NOT NULL")
     List<String> getProviderNames();
 
 }

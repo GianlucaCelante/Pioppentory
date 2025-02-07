@@ -133,6 +133,21 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         // Set up touch listener to hide keyboard when touch happens outside EditText
         setupUI(view);
 
+        // PROVIDER
+        List<String> providers;
+        try {
+            providers = executorService.submit(() -> appDatabase.providerEntityDao().getProviderNames()).get();
+        } catch (ExecutionException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+        ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, providers);
+        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        Spinner providerSpinner = view.findViewById(R.id.provider_spinner);
+        providerSpinner.setAdapter(spinnerAdapter);
+        Button addProviderButton = view.findViewById(R.id.add_provider_button);
+        addProviderButton.setOnClickListener(v -> addProviderItem(inflater, spinnerAdapter, providerSpinner));
+
         quantityTypesAvailable = setupRecyclerViewAndButtonForQuantityTypes(view, inflater, R.id.recycler_view_quantity_available, R.id.add_quantity_type_available, QuantityPurpose.AVAILABLE);
         quantityTypesToBeOrdered = setupRecyclerViewAndButtonForQuantityTypes(view, inflater, R.id.recycler_view_quantity_to_be_ordered, R.id.add_quantity_type_to_be_ordered, QuantityPurpose.TO_BE_ORDERED);
 
@@ -218,11 +233,13 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         TextView maxPortionsSoldTextView = view.findViewById(R.id.max_portions_sold);
         EditText notesEditText = view.findViewById(R.id.note);
         EditText itemNameTextView = view.findViewById(R.id.item_name_card_detail);
-        EditText providerNameTextView = view.findViewById(R.id.provider_name);
+        Spinner providerSpinner = view.findViewById(R.id.provider_spinner);
         EditText barcodeEditText = view.findViewById(R.id.barcode);
 
         // PROVIDER
-        provider.setName(providerNameTextView.getText().toString());
+        if(providerSpinner.getSelectedItem() != null) {
+            provider.setName(providerSpinner.getSelectedItem().toString());
+        }
 
         // ITEM_DETAIL
         Integer portionsPerWeekend = parseIntegerValueToTextView(portionsPerWeekendTextView);
@@ -622,10 +639,10 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
     }
 
     protected ItemWithDetailAndProviderAndQuantityTypeDto prefillFields(View view) {
-        EditText providerNameTextView = view.findViewById(R.id.provider_name);
+        Spinner providerSpinner = view.findViewById(R.id.provider_spinner);
         ProviderDto provider = itemWithDetailAndProviderAndQuantityTypeDto.getProvider();
-        if (provider != null) {
-            providerNameTextView.setText(provider.getName());
+        if(providerSpinner.getSelectedItem() != null) {
+            provider.setName(providerSpinner.getSelectedItem().toString());
         }
 
         ItemDto item = itemWithDetailAndProviderAndQuantityTypeDto.getItem();
@@ -763,5 +780,66 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
             return Integer.parseInt(portionsPerWeekendTextView.getText().toString());
         }
     }
+
+    private void addProviderItem(LayoutInflater inflater, ArrayAdapter<String> spinnerAdapter, Spinner providerSpinner) {
+        View dialogView = inflater.inflate(R.layout.new_provider_alert, null);
+
+        EditText newProviderNameEditText = dialogView.findViewById(R.id.new_item_name);
+        newProviderNameEditText.requestFocus();
+        openKeyboard(newProviderNameEditText);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(requireActivity());
+        builder.setView(dialogView)
+                .setPositiveButton("Aggiungi", null)
+                .setNegativeButton("Indietro", (dialog, id) -> dialog.cancel());
+
+        AlertDialog alertDialog = builder.create();
+        alertDialog.setOnShowListener(dlg -> {
+            Button positiveButton = alertDialog.getButton(AlertDialog.BUTTON_POSITIVE);
+            positiveButton.setOnClickListener(v -> {
+                String newProviderName = newProviderNameEditText.getText().toString().trim();
+
+                if (newProviderName.isEmpty()) {
+                    Toast.makeText(getContext(), "Inserisci un nome per il nuovo fornitore", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                List<String> providerNames;
+                try {
+                    providerNames = executorService.submit(() -> appDatabase.providerEntityDao().getProviderNames()).get();
+                } catch (ExecutionException | InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+
+                providerNames.remove(null);
+                boolean isUnique = providerNames.stream().noneMatch(provider -> provider.equalsIgnoreCase(newProviderName));
+
+                if (!isUnique) {
+                    Toast.makeText(getContext(), "Esiste già un fornitore con questo nome", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                LocalDateTime now = LocalDateTime.now();
+
+                ProviderEntity newProvider = new ProviderEntity();
+                newProvider.setId(UUID.randomUUID());
+                newProvider.setName(newProviderName);
+                newProvider.setCreationDate(now);
+
+                executorService.execute(() -> {
+                    appDatabase.providerEntityDao().insert(newProvider);
+
+                    requireActivity().runOnUiThread(() -> {
+                        spinnerAdapter.add(newProviderName);
+                        spinnerAdapter.notifyDataSetChanged();
+                        providerSpinner.setSelection(spinnerAdapter.getPosition(newProviderName));
+                        alertDialog.dismiss();
+                    });
+                });
+            });
+        });
+        alertDialog.show();
+    }
+
 
 }
