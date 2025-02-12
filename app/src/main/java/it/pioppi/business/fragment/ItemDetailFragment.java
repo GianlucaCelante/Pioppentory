@@ -52,7 +52,7 @@ import it.pioppi.R;
 import it.pioppi.business.adapter.EnumAdapter;
 import it.pioppi.business.dto.ItemDetailDto;
 import it.pioppi.business.dto.ItemDto;
-import it.pioppi.business.dto.ItemWithDetailAndProviderAndQuantityTypeDto;
+import it.pioppi.business.dto.ItemWithDetailAndQuantityTypeDto;
 import it.pioppi.business.dto.ProviderDto;
 import it.pioppi.business.dto.QuantityTypeDto;
 import it.pioppi.business.viewmodel.ItemViewModel;
@@ -61,13 +61,13 @@ import it.pioppi.database.dao.ItemDetailEntityDao;
 import it.pioppi.database.dao.ItemEntityDao;
 import it.pioppi.database.dao.ProviderEntityDao;
 import it.pioppi.database.dao.QuantityTypeEntityDao;
+import it.pioppi.database.entity.ItemWithDetailAndQuantityTypeEntity;
 import it.pioppi.database.mapper.EntityDtoMapper;
 import it.pioppi.database.model.QuantityPurpose;
 import it.pioppi.database.model.QuantityType;
 import it.pioppi.database.entity.ItemDetailEntity;
 import it.pioppi.database.entity.ItemEntity;
 import it.pioppi.database.entity.ItemStatus;
-import it.pioppi.database.entity.ItemWithDetailAndProviderAndQuantityTypeEntity;
 import it.pioppi.database.entity.ProviderEntity;
 import it.pioppi.database.entity.QuantityTypeEntity;
 import it.pioppi.database.repository.ItemEntityRepository;
@@ -76,7 +76,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
 
     private AppDatabase appDatabase;
     private ExecutorService executorService;
-    private ItemWithDetailAndProviderAndQuantityTypeDto itemWithDetailAndProviderAndQuantityTypeDto;
+    private ItemWithDetailAndQuantityTypeDto itemWithDetailAndProviderAndQuantityTypeDto;
     private RecyclerView quantityTypesAvailable;
     private RecyclerView quantityTypesToBeOrdered;
     private ItemViewModel itemViewModel;
@@ -108,14 +108,14 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
             try {
                 if(bundle.getString(ConstantUtils.ITEM_ID) != null) {
                     itemId = UUID.fromString(bundle.getString(ConstantUtils.ITEM_ID));
-                    itemWithDetailAndProviderAndQuantityTypeDto = fetchItemWithDetailAndProviderAndQuantityTypeById(itemId);
+                    itemWithDetailAndProviderAndQuantityTypeDto = fetchItemWithDetailAndQuantityTypeById(itemId);
 
                 } else {
                     barcode = bundle.getString(ConstantUtils.SCANNED_CODE);
 
                         if (barcode != null) {
                             UUID itemIdByBarcode = fetchItemWithDetailByBarcode(barcode);
-                            itemWithDetailAndProviderAndQuantityTypeDto = fetchItemWithDetailAndProviderAndQuantityTypeById(itemIdByBarcode);
+                            itemWithDetailAndProviderAndQuantityTypeDto = fetchItemWithDetailAndQuantityTypeById(itemIdByBarcode);
                             itemId = itemIdByBarcode;
 
                         } else {
@@ -151,7 +151,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         quantityTypesAvailable = setupRecyclerViewAndButtonForQuantityTypes(view, inflater, R.id.recycler_view_quantity_available, R.id.add_quantity_type_available, QuantityPurpose.AVAILABLE);
         quantityTypesToBeOrdered = setupRecyclerViewAndButtonForQuantityTypes(view, inflater, R.id.recycler_view_quantity_to_be_ordered, R.id.add_quantity_type_to_be_ordered, QuantityPurpose.TO_BE_ORDERED);
 
-        ItemWithDetailAndProviderAndQuantityTypeDto itemWithDetailAndProviderAndQuantityTypeDtoPrefilled = prefillFields(view);
+        ItemWithDetailAndQuantityTypeDto itemWithDetailAndProviderAndQuantityTypeDtoPrefilled = prefillFields(view);
 
         CalendarView deliveryDateCalendarView = view.findViewById(R.id.delivery_date);
         deliveryDateCalendarView.setOnDateChangeListener((deliveryDate, year, month, dayOfMonth) -> itemWithDetailAndProviderAndQuantityTypeDtoPrefilled.getItemDetail().setDeliveryDate(
@@ -216,15 +216,13 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         onTextChanged();
     }
 
-    private void saveAll(View view, ItemWithDetailAndProviderAndQuantityTypeDto itemWithDetailAndProviderAndQuantityTypeDto) throws ExecutionException, InterruptedException {
+    private void saveAll(View view, ItemWithDetailAndQuantityTypeDto itemWithDetailAndProviderAndQuantityTypeDto) throws ExecutionException, InterruptedException {
 
         QuantityTypeEntityDao quantityTypeEntityDao = appDatabase.quantityTypeEntityDao();
         ItemDetailEntityDao itemDetailEntityDao = appDatabase.itemDetailEntityDao();
-        ProviderEntityDao providerEntityDao = appDatabase.providerEntityDao();
 
         ItemDto item = itemWithDetailAndProviderAndQuantityTypeDto.getItem() != null ? itemWithDetailAndProviderAndQuantityTypeDto.getItem() : new ItemDto();
         ItemDetailDto itemDetail = itemWithDetailAndProviderAndQuantityTypeDto.getItemDetail() != null ? itemWithDetailAndProviderAndQuantityTypeDto.getItemDetail() : new ItemDetailDto();
-        ProviderDto provider = itemWithDetailAndProviderAndQuantityTypeDto.getProvider() != null ? itemWithDetailAndProviderAndQuantityTypeDto.getProvider() : new ProviderDto();
 
         TextView portionsPerWeekendTextView = view.findViewById(R.id.portions_per_weekend);
         TextView portionsRequiredOnSaturdayTextView = view.findViewById(R.id.portions_required_on_saturday);
@@ -237,8 +235,19 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         EditText barcodeEditText = view.findViewById(R.id.barcode);
 
         // PROVIDER
+        String providerName;
         if(providerSpinner.getSelectedItem() != null) {
-            provider.setName(providerSpinner.getSelectedItem().toString());
+            providerName = providerSpinner.getSelectedItem().toString();
+        } else {
+            providerName = "";
+        }
+
+        if(!providerName.isEmpty()) {
+            executorService.submit(() -> {
+                ProviderEntityDao providerEntityDao = appDatabase.providerEntityDao();
+                ProviderDto provider = EntityDtoMapper.entityToDto(providerEntityDao.getProviderByName(providerName));
+                item.setProviderId(provider.getId());
+            }).get();
         }
 
         // ITEM_DETAIL
@@ -279,6 +288,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         finalItem.setTotPortions(totPortionsAvailable);
         finalItem.setBarcode(barcode);
         finalItem.setNote(note);
+        finalItem.setProviderId(item.getProviderId());
 
         ItemDetailDto finalItemDetail = new ItemDetailDto();
         finalItemDetail.setId(itemDetail.getId());
@@ -318,14 +328,6 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
             } else {
                 itemDetailEntity.setId(UUID.randomUUID());
                 itemDetailEntityDao.upsert(itemDetailEntity);
-            }
-
-            ProviderEntity providerEntity = EntityDtoMapper.dtoToEntity(provider);
-            if(providerEntity.getId() != null) {
-                providerEntityDao.upsert(providerEntity);
-            } else {
-                providerEntity.setId(UUID.randomUUID());
-                providerEntityDao.upsert(providerEntity);
             }
 
             finalQuantityTypes.forEach(quantityTypeDto -> {
@@ -586,28 +588,22 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
     }
 
 
-    private ItemWithDetailAndProviderAndQuantityTypeDto fetchItemWithDetailAndProviderAndQuantityTypeById(UUID itemId) throws ExecutionException, InterruptedException {
-        Future<ItemWithDetailAndProviderAndQuantityTypeDto> future = executorService.submit(() -> {
+    private ItemWithDetailAndQuantityTypeDto fetchItemWithDetailAndQuantityTypeById(UUID itemId) throws ExecutionException, InterruptedException {
+        Future<ItemWithDetailAndQuantityTypeDto> future = executorService.submit(() -> {
             ItemEntityDao entityDao = appDatabase.itemEntityDao();
-            ItemWithDetailAndProviderAndQuantityTypeEntity entity = entityDao.getItemsWithDetailsAndProviderAndQuantityType(itemId);
+            ItemWithDetailAndQuantityTypeEntity entity = entityDao.getItemsWithDetailsAndQuantityType(itemId);
 
             if (entity == null || entity.item == null) {
                 throw new IllegalArgumentException("Item not found");
             }
 
-            ItemWithDetailAndProviderAndQuantityTypeDto dto = new ItemWithDetailAndProviderAndQuantityTypeDto();
+            ItemWithDetailAndQuantityTypeDto dto = new ItemWithDetailAndQuantityTypeDto();
             dto.setItem(EntityDtoMapper.entityToDto(entity.item));
 
             if (entity.itemDetail != null) {
                 dto.setItemDetail(EntityDtoMapper.detailEntityToDto(entity.itemDetail));
             } else {
                 dto.setItemDetail(new ItemDetailDto()); // O lascia null se preferisci
-            }
-
-            if (entity.provider != null) {
-                dto.setProvider(EntityDtoMapper.entityToDto(entity.provider));
-            } else {
-                dto.setProvider(new ProviderDto()); // O lascia null se preferisci
             }
 
             if (entity.quantityTypes != null) {
@@ -638,12 +634,25 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         return future.get();
     }
 
-    protected ItemWithDetailAndProviderAndQuantityTypeDto prefillFields(View view) {
+    protected ItemWithDetailAndQuantityTypeDto prefillFields(View view) {
+
         Spinner providerSpinner = view.findViewById(R.id.provider_spinner);
-        ProviderDto provider = itemWithDetailAndProviderAndQuantityTypeDto.getProvider();
-        if(providerSpinner.getSelectedItem() != null) {
-            provider.setName(providerSpinner.getSelectedItem().toString());
-        }
+        UUID providerId = itemWithDetailAndProviderAndQuantityTypeDto.getItem().getProviderId();
+
+        executorService.submit(() -> {
+            ProviderEntityDao providerEntityDao = appDatabase.providerEntityDao();
+            ProviderEntity providerEntity = providerEntityDao.getProviderById(providerId);
+            if (providerEntity != null) {
+                ProviderDto provider = EntityDtoMapper.entityToDto(providerEntity);
+                requireActivity().runOnUiThread(() -> {
+                    ArrayAdapter<String> spinnerAdapter = (ArrayAdapter<String>) providerSpinner.getAdapter();
+                    int spinnerPosition = spinnerAdapter.getPosition(provider.getName());
+                    if (spinnerPosition >= 0) {
+                        providerSpinner.setSelection(spinnerPosition);
+                    }
+                });
+            }
+        });
 
         ItemDto item = itemWithDetailAndProviderAndQuantityTypeDto.getItem();
         if (item != null) {
@@ -713,10 +722,9 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
 
         }
 
-        ItemWithDetailAndProviderAndQuantityTypeDto itemWithDetailAndProviderAndQuantityTypeDtoPrefilled = new ItemWithDetailAndProviderAndQuantityTypeDto();
+        ItemWithDetailAndQuantityTypeDto itemWithDetailAndProviderAndQuantityTypeDtoPrefilled = new ItemWithDetailAndQuantityTypeDto();
         itemWithDetailAndProviderAndQuantityTypeDtoPrefilled.setItem(item);
         itemWithDetailAndProviderAndQuantityTypeDtoPrefilled.setItemDetail(itemDetail);
-        itemWithDetailAndProviderAndQuantityTypeDtoPrefilled.setProvider(provider);
         itemWithDetailAndProviderAndQuantityTypeDtoPrefilled.setQuantityTypes(quantityTypes);
 
         return itemWithDetailAndProviderAndQuantityTypeDtoPrefilled;
@@ -811,7 +819,6 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
                     throw new RuntimeException(e);
                 }
 
-                providerNames.remove(null);
                 boolean isUnique = providerNames.stream().noneMatch(provider -> provider.equalsIgnoreCase(newProviderName));
 
                 if (!isUnique) {

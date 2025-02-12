@@ -37,6 +37,7 @@ public class EntityDtoMapper {
         itemEntity.setCheckDate(itemDto.getCheckDate());
         itemEntity.setCreationDate(itemDto.getCreationDate());
         itemEntity.setLastUpdate(itemDto.getLastUpdateDate());
+        itemEntity.setProviderId(itemDto.getProviderId());
         return itemEntity;
     }
 
@@ -66,6 +67,7 @@ public class EntityDtoMapper {
         itemDto.setCheckDate(itemEntity.getCheckDate());
         itemDto.setCreationDate(itemEntity.getCreationDate());
         itemDto.setLastUpdateDate(itemEntity.getLastUpdate());
+        itemDto.setProviderId(itemEntity.getProviderId());
         return itemDto;
     }
 
@@ -131,7 +133,6 @@ public class EntityDtoMapper {
         providerDto.setEmail(providerEntity.getEmail());
         providerDto.setCreationDate(providerEntity.getCreationDate());
         providerDto.setLastUpdateDate(providerEntity.getLastUpdate());
-        providerDto.setItemId(providerEntity.getItemId());
         return providerDto;
     }
 
@@ -147,7 +148,6 @@ public class EntityDtoMapper {
         providerEntity.setEmail(providerDto.getEmail());
         providerEntity.setCreationDate(providerDto.getCreationDate());
         providerEntity.setLastUpdate(providerDto.getLastUpdateDate());
-        providerEntity.setItemId(providerDto.getItemId());
         return providerEntity;
     }
 
@@ -211,8 +211,8 @@ public class EntityDtoMapper {
             return null;
         }
         ItemWithProviderEntity itemWithProviderEntity = new ItemWithProviderEntity();
-        itemWithProviderEntity.itemEntity = dtoToEntity(itemWithProviderDto.getItem());
-        itemWithProviderEntity.providers = dtosToEntitiesProviders(itemWithProviderDto.getProviders());
+        itemWithProviderEntity.item = dtoToEntity(itemWithProviderDto.getItem());
+        itemWithProviderEntity.provider = dtoToEntity(itemWithProviderDto.getProvider());
         return itemWithProviderEntity;
     }
 
@@ -232,8 +232,8 @@ public class EntityDtoMapper {
             return null;
         }
         ItemWithProviderDto itemWithProviderDto = new ItemWithProviderDto();
-        itemWithProviderDto.setItem(entityToDto(itemWithProviderEntity.itemEntity));
-        itemWithProviderDto.setProviders(entitiesToDtosProviders(itemWithProviderEntity.providers));
+        itemWithProviderDto.setItem(entityToDto(itemWithProviderEntity.item));
+        itemWithProviderDto.setProvider(entityToDto(itemWithProviderEntity.provider));
         return itemWithProviderDto;
     }
 

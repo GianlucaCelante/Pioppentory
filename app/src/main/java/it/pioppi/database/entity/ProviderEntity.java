@@ -16,14 +16,7 @@ import it.pioppi.ConstantUtils;
 
 @Entity(
         tableName = ConstantUtils.PROVIDER_TABLE_NAME,
-        indices = {@Index("id"), @Index("item_id")},
-        foreignKeys = {
-                @ForeignKey(
-                        entity = ItemEntity.class,
-                        parentColumns = "id",
-                        childColumns = "item_id"
-                )
-        }
+        indices = {@Index("id")}
 )public class ProviderEntity extends BaseEntity{
 
     @ColumnInfo(name = "id")
@@ -38,20 +31,17 @@ import it.pioppi.ConstantUtils;
     private String phoneNumber;
     @ColumnInfo(name = "email")
     private String email;
-    @ColumnInfo(name = "item_id")
-    private UUID itemId;
 
     public ProviderEntity() {}
 
     @Ignore
-    public ProviderEntity(@NonNull UUID id, String name, String address, String phoneNumber, String email, UUID itemId) {
+    public ProviderEntity(@NonNull UUID id, String name, String address, String phoneNumber, String email) {
         super();
         this.id = id;
         this.name = name;
         this.address = address;
         this.phoneNumber = phoneNumber;
         this.email = email;
-        this.itemId = itemId;
     }
 
     public UUID getId() {
@@ -92,14 +82,6 @@ import it.pioppi.ConstantUtils;
 
     public void setEmail(String email) {
         this.email = email;
-    }
-
-    public UUID getItemId() {
-        return itemId;
-    }
-
-    public void setItemId(UUID itemId) {
-        this.itemId = itemId;
     }
 
     @Override

@@ -25,14 +25,6 @@ public class ItemWithProviderViewModel extends ViewModel {
         itemsWithProviders.setValue(itemsWithProvidersList);
     }
 
-    public void loadItemsWithProviders(AppDatabase appDatabase) {
-        executorService.execute(() -> {
-            List<ItemWithProviderEntity> itemsWithProvidersList = appDatabase.itemEntityDao().getItemsWithProvidersOrderedByProvider();
-            List<ItemWithProviderDto> itemsWithProvidersDtoList = EntityDtoMapper.entitiesToDtosItemWithProviders(itemsWithProvidersList);
-            itemsWithProviders.postValue(itemsWithProvidersDtoList);
-        });
-    }
-
     @Override
     protected void onCleared() {
         super.onCleared();

@@ -3,7 +3,9 @@ package it.pioppi.database.entity;
 import androidx.room.Embedded;
 import androidx.room.Relation;
 
-public class ItemWithDetailAndProviderEntity {
+import java.util.List;
+
+public class ItemWithDetailAndQuantityTypeEntity {
 
     @Embedded
     public ItemEntity item;
@@ -18,6 +20,6 @@ public class ItemWithDetailAndProviderEntity {
             parentColumn = "id",
             entityColumn = "item_id"
     )
-    public ProviderEntity provider;
+    public List<QuantityTypeEntity> quantityTypes;
 
 }

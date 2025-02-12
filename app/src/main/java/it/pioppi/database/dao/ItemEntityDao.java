@@ -12,11 +12,9 @@ import java.util.List;
 import java.util.UUID;
 
 
-import it.pioppi.database.entity.ItemWithDetailAndProviderAndQuantityTypeEntity;
 import it.pioppi.database.entity.ItemEntity;
-import it.pioppi.database.entity.ItemWithDetailAndProviderEntity;
+import it.pioppi.database.entity.ItemWithDetailAndQuantityTypeEntity;
 import it.pioppi.database.entity.ItemWithDetailEntity;
-import it.pioppi.database.entity.ItemWithProviderEntity;
 
 @Dao
 public interface ItemEntityDao extends BaseDao<ItemEntity> {
@@ -55,16 +53,8 @@ public interface ItemEntityDao extends BaseDao<ItemEntity> {
     ItemWithDetailEntity getItemWithDetail(UUID itemId);
 
     @Transaction
-    @Query("SELECT item.*, provider.* FROM item JOIN provider ON item.id = provider.item_id ORDER BY provider.name")
-    List<ItemWithProviderEntity> getItemsWithProvidersOrderedByProvider();
-
-    @Transaction
     @Query("SELECT * FROM item WHERE id = :itemId")
-    ItemWithDetailAndProviderEntity getItemsWithDetailsAndProvider(UUID itemId);
-
-    @Transaction
-    @Query("SELECT * FROM item WHERE id = :itemId")
-    ItemWithDetailAndProviderAndQuantityTypeEntity getItemsWithDetailsAndProviderAndQuantityType(UUID itemId);
+    ItemWithDetailAndQuantityTypeEntity getItemsWithDetailsAndQuantityType(UUID itemId);
 
     @Query("SELECT id FROM item WHERE name = :name COLLATE NOCASE")
     UUID getItemByName(String name);

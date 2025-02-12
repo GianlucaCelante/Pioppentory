@@ -2,11 +2,10 @@ package it.pioppi.business.dto;
 
 import java.util.List;
 
-public class ItemWithDetailAndProviderAndQuantityTypeDto {
+public class ItemWithDetailAndQuantityTypeDto {
 
     private ItemDto item;
     private ItemDetailDto itemDetail;
-    private ProviderDto provider;
     private List<QuantityTypeDto> quantityTypes;
 
     public ItemDto getItem() {
@@ -23,14 +22,6 @@ public class ItemWithDetailAndProviderAndQuantityTypeDto {
 
     public void setItemDetail(ItemDetailDto itemDetail) {
         this.itemDetail = itemDetail;
-    }
-
-    public ProviderDto getProvider() {
-        return provider;
-    }
-
-    public void setProvider(ProviderDto provider) {
-        this.provider = provider;
     }
 
     public List<QuantityTypeDto> getQuantityTypes() {

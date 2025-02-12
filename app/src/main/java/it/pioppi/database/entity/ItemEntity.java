@@ -3,6 +3,7 @@ package it.pioppi.database.entity;
 import androidx.annotation.NonNull;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
+import androidx.room.ForeignKey;
 import androidx.room.Ignore;
 import androidx.room.Index;
 import androidx.room.PrimaryKey;
@@ -17,8 +18,15 @@ import it.pioppi.ConstantUtils;
 
 @Entity(
         tableName = ConstantUtils.ITEM_TABLE_NAME,
+        foreignKeys = @ForeignKey(
+                entity = ProviderEntity.class,
+                parentColumns = "id",
+                childColumns = "provider_id",
+                onDelete = ForeignKey.SET_NULL
+        ),
         indices = {
-                @Index("id")
+                @Index("id"),
+                @Index("provider_id")
         }
 )
 public class ItemEntity extends BaseEntity {
@@ -41,6 +49,8 @@ public class ItemEntity extends BaseEntity {
     private LocalDateTime checkDate;
     @ColumnInfo(name = "note")
     private String note;
+    @ColumnInfo(name = "provider_id")
+    private UUID providerId;
 
     @Ignore
     private ItemDetailEntity detail;
@@ -48,7 +58,8 @@ public class ItemEntity extends BaseEntity {
     private List<ItemTagEntity> tags;
 
     @Ignore
-    public ItemEntity(@NotNull UUID id, Integer ftsId, String name, Long totPortions, ItemStatus status, String barcode, LocalDateTime checkDate, String note) {
+    public ItemEntity(@NotNull UUID id, Integer ftsId, String name, Long totPortions,
+                      ItemStatus status, String barcode, LocalDateTime checkDate, String note, UUID providerId) {
         super();
         this.id = id;
         this.ftsId = ftsId;
@@ -58,6 +69,7 @@ public class ItemEntity extends BaseEntity {
         this.barcode = barcode;
         this.checkDate = checkDate;
         this.note = note;
+        this.providerId = providerId;
     }
 
     public ItemEntity() {}
@@ -127,6 +139,14 @@ public class ItemEntity extends BaseEntity {
         this.note = note;
     }
 
+    public UUID getProviderId() {
+        return providerId;
+    }
+
+    public void setProviderId(UUID providerId) {
+        this.providerId = providerId;
+    }
+
     public List<ItemTagEntity> getTags() {
         return tags;
     }
@@ -152,6 +172,7 @@ public class ItemEntity extends BaseEntity {
                 ", barcode='" + barcode + '\'' +
                 ", checkDate=" + checkDate +
                 ", note='" + note + '\'' +
+                ", providerId=" + providerId +
                 '}';
     }
 }

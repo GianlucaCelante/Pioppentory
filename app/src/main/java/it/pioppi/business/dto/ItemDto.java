@@ -23,8 +23,11 @@ public class ItemDto implements Parcelable {
     private String note;
     private LocalDateTime creationDate;
     private LocalDateTime lastUpdateDate;
+    private UUID providerId;
 
-    public ItemDto(UUID id, Integer ftsId, String name, Long totPortions, ItemStatus status, String barcode, LocalDateTime checkDate, String note, LocalDateTime creationDate, LocalDateTime lastUpdateDate) {
+    public ItemDto(UUID id, Integer ftsId, String name, Long totPortions, ItemStatus status,
+                   String barcode, LocalDateTime checkDate, String note,
+                   LocalDateTime creationDate, LocalDateTime lastUpdateDate, UUID providerId) {
         this.id = id;
         this.ftsId = ftsId;
         this.name = name;
@@ -35,6 +38,7 @@ public class ItemDto implements Parcelable {
         this.note = note;
         this.creationDate = creationDate;
         this.lastUpdateDate = lastUpdateDate;
+        this.providerId = providerId;
     }
 
     public ItemDto() {}
@@ -50,6 +54,8 @@ public class ItemDto implements Parcelable {
         checkDate = in.readByte() == 0 ? null : LocalDateTime.parse(in.readString(), DateTimeFormatter.ISO_LOCAL_DATE_TIME);
         creationDate = in.readByte() == 0 ? null : LocalDateTime.parse(in.readString(), DateTimeFormatter.ISO_LOCAL_DATE_TIME);
         lastUpdateDate = in.readByte() == 0 ? null : LocalDateTime.parse(in.readString(), DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        providerId = in.readByte() == 0 ? null : UUID.fromString(in.readString());
+
     }
 
     public static final Creator<ItemDto> CREATOR = new Creator<ItemDto>() {
@@ -144,6 +150,14 @@ public class ItemDto implements Parcelable {
         this.lastUpdateDate = lastUpdateDate;
     }
 
+    public UUID getProviderId() {
+        return providerId;
+    }
+
+    public void setProviderId(UUID providerId) {
+        this.providerId = providerId;
+    }
+
     @Override
     public int describeContents() {
         return 0;
@@ -195,6 +209,13 @@ public class ItemDto implements Parcelable {
         } else {
             parcel.writeByte((byte) 1);
             parcel.writeString(lastUpdateDate.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+        }
+
+        if (providerId == null) {
+            parcel.writeByte((byte) 0);
+        } else {
+            parcel.writeByte((byte) 1);
+            parcel.writeString(providerId.toString());
         }
     }
 }

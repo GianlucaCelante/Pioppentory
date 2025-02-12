@@ -257,7 +257,6 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
 
             ProviderEntity providerEntity = new ProviderEntity();
             providerEntity.setId(itemId);
-            providerEntity.setItemId(newItem.getId());
             providerEntity.setName(providerName);
             providerEntity.setCreationDate(now);
 

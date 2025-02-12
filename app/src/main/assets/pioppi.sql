@@ -10,7 +10,9 @@ CREATE TABLE IF NOT EXISTS `ITEM` (
     `note` TEXT,
     `creation_date` TEXT,
     `last_update` TEXT,
-    PRIMARY KEY(`id`)
+    `provider_id` TEXT,
+    PRIMARY KEY(`id`),
+    FOREIGN KEY(`provider_id`) REFERENCES `PROVIDER`(`id`) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS `ITEM_DETAIL` (
@@ -38,9 +40,7 @@ CREATE TABLE IF NOT EXISTS `PROVIDER` (
     `email` TEXT,
     `creation_date` TEXT,
     `last_update` TEXT,
-    `item_id` TEXT,
-    PRIMARY KEY(`id`),
-    FOREIGN KEY(`item_id`) REFERENCES `ITEM`(`id`)
+    PRIMARY KEY(`id`)
 );
 
 CREATE TABLE IF NOT EXISTS `QUANTITY_TYPE` (
@@ -75,19 +75,18 @@ CREATE TABLE IF NOT EXISTS `ITEM_HISTORY` (
     `delivery_date` TEXT,
     `barcode` TEXT,
     `note` TEXT,
+    `creation_date` TEXT,
+    `last_update` TEXT,
     PRIMARY KEY(`id`)
 );
 
 -- Creazione degli indici
 CREATE INDEX IF NOT EXISTS `index_ITEM_id` ON `ITEM` (`id`);
+CREATE INDEX IF NOT EXISTS `index_ITEM_provider_id` ON `ITEM` (`provider_id`);
 CREATE INDEX IF NOT EXISTS `index_ITEM_DETAIL_item_id` ON `ITEM_DETAIL` (`item_id`);
-CREATE INDEX IF NOT EXISTS `index_PROVIDER_item_id` ON `PROVIDER` (`item_id`);
 CREATE INDEX IF NOT EXISTS `index_QUANTITY_TYPE_item_id` ON `QUANTITY_TYPE` (`item_id`);
 CREATE INDEX IF NOT EXISTS `index_ITEM_HISTORY_id` ON `ITEM_HISTORY` (`id`);
 
 -- Aggiornamento della tabella item_fts con i dati inseriti nella tabella ITEM
 INSERT INTO item_fts (rowid, name, barcode)
 SELECT fts_id, name, barcode FROM ITEM;
-
-
-

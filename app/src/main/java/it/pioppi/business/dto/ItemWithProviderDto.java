@@ -1,11 +1,9 @@
 package it.pioppi.business.dto;
 
-import java.util.List;
-
 public class ItemWithProviderDto {
 
     private ItemDto item;
-    private List<ProviderDto> providers;
+    private ProviderDto provider;
 
     public ItemDto getItem() {
         return item;
@@ -15,10 +13,10 @@ public class ItemWithProviderDto {
         this.item = item;
     }
 
-    public List<ProviderDto> getProviders() {
-        return providers;
+    public ProviderDto getProvider() {
+        return provider;
     }
 
-    public void setProviders(List<ProviderDto> provider) {
-        this.providers = provider;}
+    public void setProvider(ProviderDto provider) {
+        this.provider = provider;}
 }

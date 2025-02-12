@@ -8,6 +8,7 @@ import androidx.room.Update;
 import androidx.room.Upsert;
 
 import java.util.List;
+import java.util.UUID;
 
 import it.pioppi.database.entity.ProviderEntity;
 
@@ -32,5 +33,11 @@ public interface ProviderEntityDao extends BaseDao<ProviderEntity> {
 
     @Query("SELECT DISTINCT name FROM provider WHERE name IS NOT NULL")
     List<String> getProviderNames();
+
+    @Query("SELECT * FROM provider WHERE name = :name")
+    ProviderEntity getProviderByName(String name);
+
+    @Query("SELECT * FROM provider WHERE id = :id")
+    ProviderEntity getProviderById(UUID id);
 
 }
