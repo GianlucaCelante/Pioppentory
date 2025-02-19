@@ -13,16 +13,20 @@ public class QuantityTypeDto {
     private String description;
     private Integer quantity;
     private QuantityPurpose purpose;
+    private Integer unitsPerQuantityType;
     private LocalDateTime creationDate;
     private LocalDateTime lastUpdateDate;
     private UUID itemId;
 
-    public QuantityTypeDto(UUID id, QuantityType quantityType, String description, Integer quantity, QuantityPurpose purpose, LocalDateTime creationDate, LocalDateTime lastUpdateDate, UUID itemId) {
+    public QuantityTypeDto(UUID id, QuantityType quantityType, String description,
+                           Integer quantity, QuantityPurpose purpose, Integer unitsPerQuantityType,
+                           LocalDateTime creationDate, LocalDateTime lastUpdateDate, UUID itemId) {
         this.id = id;
         this.quantityType = quantityType;
         this.description = description;
         this.quantity = quantity;
         this.purpose = purpose;
+        this.unitsPerQuantityType = unitsPerQuantityType;
         this.creationDate = creationDate;
         this.lastUpdateDate = lastUpdateDate;
         this.itemId = itemId;
@@ -70,6 +74,14 @@ public class QuantityTypeDto {
 
     public void setPurpose(QuantityPurpose purpose) {
         this.purpose = purpose;
+    }
+
+    public Integer getUnitsPerQuantityType() {
+        return unitsPerQuantityType;
+    }
+
+    public void setUnitsPerQuantityType(Integer unitsPerQuantityType) {
+        this.unitsPerQuantityType = unitsPerQuantityType;
     }
 
     public LocalDateTime getCreationDate() {

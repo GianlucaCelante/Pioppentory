@@ -39,23 +39,24 @@ public class QuantityTypeEntity extends BaseEntity {
     private Integer quantityTypeAvailable;
     @ColumnInfo(name = "quantity_type_purpose")
     private QuantityPurpose purpose;
+    @ColumnInfo(name = "units_per_quantity_type")
+    private Integer unitsPerQuantityType;
     @ColumnInfo(name = "item_id")
     private UUID itemId;
 
     @Ignore
-    public QuantityTypeEntity(@NotNull UUID id, QuantityType quantityType, String quantityTypeDescription, Integer quantityTypeAvailable, QuantityPurpose purpose, UUID itemId) {
+    public QuantityTypeEntity(@NotNull UUID id, QuantityType quantityType, String quantityTypeDescription, Integer quantityTypeAvailable, QuantityPurpose purpose, Integer unitsPerQuantityType, UUID itemId) {
         super();
         this.id = id;
         this.quantityType = quantityType;
         this.quantityTypeDescription = quantityTypeDescription;
         this.quantityTypeAvailable = quantityTypeAvailable;
         this.purpose = purpose;
+        this.unitsPerQuantityType = unitsPerQuantityType;
         this.itemId = itemId;
     }
 
-    public QuantityTypeEntity() {
-
-    }
+    public QuantityTypeEntity() {}
 
     public UUID getId() {
         return id;
@@ -95,6 +96,14 @@ public class QuantityTypeEntity extends BaseEntity {
 
     public void setPurpose(QuantityPurpose purpose) {
         this.purpose = purpose;
+    }
+
+    public Integer getUnitsPerQuantityType() {
+        return unitsPerQuantityType;
+    }
+
+    public void setUnitsPerQuantityType(Integer unitsPerQuantityType) {
+        this.unitsPerQuantityType = unitsPerQuantityType;
     }
 
     public UUID getItemId() {

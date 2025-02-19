@@ -49,6 +49,7 @@ CREATE TABLE IF NOT EXISTS `QUANTITY_TYPE` (
     `quantity_type_description` TEXT,
     `quantity_type_available` INTEGER,
     `quantity_type_purpose` TEXT,
+    `units_per_quantity_type` INTEGER,
     `creation_date` TEXT,
     `last_update` TEXT,
     `item_id` TEXT,

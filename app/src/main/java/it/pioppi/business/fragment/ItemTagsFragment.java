@@ -134,7 +134,7 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
         dialog.setOnShowListener(dlg -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
             String newTagName = newTagEditText.getText().toString().trim();
             if (newTagName.isEmpty()) {
-                Toast.makeText(getContext(), "Inserisci un nome per il nuovo tag", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), "Inserisci un nome per il nuovo ingrediente", Toast.LENGTH_SHORT).show();
                 return;
             }
 
@@ -145,7 +145,7 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
 
             boolean isUnique = itemTagDtos.stream().noneMatch(tag -> tag.getName().equalsIgnoreCase(newTagName));
             if (!isUnique) {
-                Toast.makeText(getContext(), "Esiste già un tag con questo nome", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), "Esiste già un ingrediente con questo nome", Toast.LENGTH_SHORT).show();
                 return;
             }
 
@@ -167,10 +167,10 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
                     requireActivity().runOnUiThread(() -> Toast.makeText(getContext(), "Prodotto aggiunto", Toast.LENGTH_SHORT).show());
                 }
 
-                ItemTagEntity newItemTagEntity = EntityDtoMapper.dtoToEntity(newItemTag);
-                appDatabase.itemTagEntityDao().insert(newItemTagEntity);
                 ItemTagJoinEntity joinEntity = new ItemTagJoinEntity(itemId, newItemTag.getId());
                 appDatabase.itemTagEntityDao().insertItemTagJoin(joinEntity);
+                ItemTagEntity newItemTagEntity = EntityDtoMapper.dtoToEntity(newItemTag);
+                appDatabase.itemTagEntityDao().insert(newItemTagEntity);
 
                 requireActivity().runOnUiThread(() -> Toast.makeText(getContext(), "Ingrediente aggiunto", Toast.LENGTH_SHORT).show());
             });
@@ -225,67 +225,57 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
     }
 
     private void addNewItem(String tagName) {
-        executorService.execute(() -> {
 
-            Integer nextId;
+        Integer nextId;
+        try {
+            nextId = appDatabase.itemFTSEntityDao().getNextId();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+
+        ItemEntity newItem = new ItemEntity();
+        UUID itemId = UUID.randomUUID();
+        newItem.setId(itemId);
+        newItem.setFtsId(nextId);
+        newItem.setName(tagName);
+        newItem.setTotPortions(0L);
+        newItem.setStatus(ItemStatus.WHITE);
+        newItem.setCreationDate(now);
+
+        appDatabase.runInTransaction(() -> {
             try {
-                nextId = appDatabase.itemFTSEntityDao().getNextId();
-            } catch (Exception e) {
+                itemEntityRepository.insert(newItem);
+            } catch (ExecutionException | InterruptedException e) {
                 throw new RuntimeException(e);
             }
+        });
 
-            LocalDateTime now = LocalDateTime.now();
+        ItemDetailEntity itemDetailEntity = new ItemDetailEntity();
+        itemDetailEntity.setId(itemId);
+        itemDetailEntity.setItemId(newItem.getId());
+        itemDetailEntity.setCreationDate(now);
 
-            ItemEntity newItem = new ItemEntity();
-            UUID itemId = UUID.randomUUID();
-            newItem.setId(itemId);
-            newItem.setFtsId(nextId);
-            newItem.setName(tagName);
-            newItem.setTotPortions(0L);
-            newItem.setStatus(ItemStatus.WHITE);
-            newItem.setCreationDate(now);
+        QuantityTypeEntity quantityTypeEntity = new QuantityTypeEntity();
+        quantityTypeEntity.setId(itemId);
+        quantityTypeEntity.setItemId(newItem.getId());
+        quantityTypeEntity.setCreationDate(now);
 
-            appDatabase.runInTransaction(() -> {
-                try {
-                    itemEntityRepository.insert(newItem);
-                } catch (ExecutionException | InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-            });
+        appDatabase.runInTransaction(() -> {
+            appDatabase.itemDetailEntityDao().insert(itemDetailEntity);
+            appDatabase.quantityTypeEntityDao().insert(quantityTypeEntity);
+        });
 
-            String providerName = "Default Provider";
+        requireActivity().runOnUiThread(() -> {
+            ItemViewModel itemViewModel = new ViewModelProvider(requireActivity()).get(ItemViewModel.class);
+            List<ItemDto> currentItems = itemViewModel.getItems().getValue();
+            if (currentItems == null) {
+                currentItems = new ArrayList<>();
+            }
+            currentItems.add(EntityDtoMapper.entityToDto(newItem));
+            itemViewModel.setItems(currentItems);
 
-            ProviderEntity providerEntity = new ProviderEntity();
-            providerEntity.setId(itemId);
-            providerEntity.setName(providerName);
-            providerEntity.setCreationDate(now);
-
-            ItemDetailEntity itemDetailEntity = new ItemDetailEntity();
-            itemDetailEntity.setId(itemId);
-            itemDetailEntity.setItemId(newItem.getId());
-            itemDetailEntity.setCreationDate(now);
-
-            QuantityTypeEntity quantityTypeEntity = new QuantityTypeEntity();
-            quantityTypeEntity.setId(itemId);
-            quantityTypeEntity.setItemId(newItem.getId());
-            quantityTypeEntity.setCreationDate(now);
-
-            appDatabase.runInTransaction(() -> {
-                appDatabase.providerEntityDao().insert(providerEntity);
-                appDatabase.itemDetailEntityDao().insert(itemDetailEntity);
-                appDatabase.quantityTypeEntityDao().insert(quantityTypeEntity);
-            });
-
-            requireActivity().runOnUiThread(() -> {
-                ItemViewModel itemViewModel = new ViewModelProvider(requireActivity()).get(ItemViewModel.class);
-                List<ItemDto> currentItems = itemViewModel.getItems().getValue();
-                if (currentItems == null) {
-                    currentItems = new ArrayList<>();
-                }
-                currentItems.add(EntityDtoMapper.entityToDto(newItem));
-                itemViewModel.setItems(currentItems);
-
-            });
         });
     }
 

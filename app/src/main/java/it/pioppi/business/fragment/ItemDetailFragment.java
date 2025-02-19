@@ -223,6 +223,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
 
         ItemDto item = itemWithDetailAndProviderAndQuantityTypeDto.getItem() != null ? itemWithDetailAndProviderAndQuantityTypeDto.getItem() : new ItemDto();
         ItemDetailDto itemDetail = itemWithDetailAndProviderAndQuantityTypeDto.getItemDetail() != null ? itemWithDetailAndProviderAndQuantityTypeDto.getItemDetail() : new ItemDetailDto();
+        List<QuantityTypeDto> quantityTypes = itemWithDetailAndProviderAndQuantityTypeDto.getQuantityTypes() != null ? itemWithDetailAndProviderAndQuantityTypeDto.getQuantityTypes() : new ArrayList<>();
 
         TextView portionsPerWeekendTextView = view.findViewById(R.id.portions_per_weekend);
         TextView portionsRequiredOnSaturdayTextView = view.findViewById(R.id.portions_required_on_saturday);
@@ -258,20 +259,9 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         Integer maxPortionsSold = parseIntegerValueToTextView(maxPortionsSoldTextView);
         LocalDateTime deliveryDate = itemDetail.getDeliveryDate();
 
-        // QUANTITY_TYPE
-        EnumAdapter adapterAvailable = (EnumAdapter) quantityTypesAvailable.getAdapter();
-        List<QuantityTypeDto> quantityTypesAvailable = adapterAvailable.getQuantityTypes();
-
-        EnumAdapter adapterToBeOrdered = (EnumAdapter) quantityTypesToBeOrdered.getAdapter();
-        List<QuantityTypeDto> quantityTypesToBeOrdered = adapterToBeOrdered.getQuantityTypes();
-
-        List<QuantityTypeDto> quantityTypesAll = new ArrayList<>();
-        quantityTypesAll.addAll(quantityTypesAvailable);
-        quantityTypesAll.addAll(quantityTypesToBeOrdered);
-
         // ITEM
-        Long totPortionsAvailable = calculateTotPortions(quantityTypesAvailable, QuantityPurpose.AVAILABLE);
-        Long totPortionsToBeOrdered = calculateTotPortions(quantityTypesToBeOrdered, QuantityPurpose.TO_BE_ORDERED);
+        Long totPortionsAvailable = calculateTotPortions(quantityTypes, QuantityPurpose.AVAILABLE);
+        Long totPortionsToBeOrdered = calculateTotPortions(quantityTypes, QuantityPurpose.TO_BE_ORDERED);
 
         String note = notesEditText.getText().toString();
         String itemName = itemNameTextView.getText().toString();
@@ -305,7 +295,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         finalItemDetail.setOrderedQuantity(itemDetail.getOrderedQuantity());
 
         List<QuantityTypeDto> finalQuantityTypes = new ArrayList<>();
-        for (QuantityTypeDto quantityTypeDto : quantityTypesAll) {
+        for (QuantityTypeDto quantityTypeDto : quantityTypes) {
             QuantityTypeDto finalQuantityType = new QuantityTypeDto();
             finalQuantityType.setId(quantityTypeDto.getId());
             finalQuantityType.setItemId(quantityTypeDto.getItemId());
@@ -313,6 +303,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
             finalQuantityType.setDescription(quantityTypeDto.getDescription());
             finalQuantityType.setQuantity(quantityTypeDto.getQuantity());
             finalQuantityType.setPurpose(quantityTypeDto.getPurpose());
+            finalQuantityType.setUnitsPerQuantityType(quantityTypeDto.getUnitsPerQuantityType());
             finalQuantityType.setCreationDate(quantityTypeDto.getCreationDate());
             finalQuantityType.setLastUpdateDate(LocalDateTime.now());
             finalQuantityTypes.add(finalQuantityType);
@@ -536,6 +527,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
 
         Spinner spinner = dialogView.findViewById(R.id.quantity_type_spinner);
         EditText quantityAvailable = dialogView.findViewById(R.id.quantity_type_available);
+        EditText unitsPerQuantityType = dialogView.findViewById(R.id.units_per_quantity_type);
 
         ArrayAdapter<QuantityType> spinnerAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, availableQuantityTypes);
         spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -560,6 +552,13 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
                         quantityTypeDto.setQuantity(Integer.parseInt(quantityText));
                     } else {
                         quantityTypeDto.setQuantity(0);
+                    }
+
+                    String unitsPerQuantityTypeText = unitsPerQuantityType.getText().toString();
+                    if (!unitsPerQuantityTypeText.isEmpty()) {
+                        quantityTypeDto.setUnitsPerQuantityType(Integer.parseInt(unitsPerQuantityTypeText));
+                    } else {
+                        quantityTypeDto.setUnitsPerQuantityType(0);
                     }
 
                     if (!adapter.containsQuantityType(quantityTypeDto)) {
@@ -620,7 +619,6 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
 
 
     private UUID fetchItemWithDetailByBarcode(String barcode) throws ExecutionException, InterruptedException {
-        // Usa submit per ottenere un Future
         Future<UUID> future = executorService.submit(() -> {
             ItemEntityDao itemEntityDao = appDatabase.itemEntityDao();
             UUID itemId = UUID.fromString(itemEntityDao.getItemByBarcode(barcode));

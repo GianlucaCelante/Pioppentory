@@ -13,7 +13,7 @@ public class ItemDetailFragmentManager {
         AtomicReference<Long> totPortions = new AtomicReference<>(0L);
         quantityTypeDtos.stream()
                 .filter(quantityTypeDto -> purpose.equals(quantityTypeDto.getPurpose()))
-                .forEach(quantityTypeDto -> totPortions.updateAndGet(v -> v + QuantityType.getTotPortions(quantityTypeDto.getQuantityType(), quantityTypeDto.getQuantity())));
+                .forEach(quantityTypeDto -> totPortions.updateAndGet(v -> v + QuantityType.calculateTotalPortions(quantityTypeDto.getUnitsPerQuantityType(), quantityTypeDto.getQuantity())));
         return totPortions.get();
     }
 

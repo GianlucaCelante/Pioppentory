@@ -4,40 +4,25 @@ public enum QuantityType {
 
     STRATO("Strato"),
     CARTONE("Cartone"),
+    VASCHETTA("Vaschetta"),
     SACCHETTO("Sacchetto"),
-    PEZZI("Pezzi");
+    PACCO("Pacco"),
+    FUSTO("Fusto"),
+    PEZZO("Pezzo"),
+    PORZIONE("Porzione");
 
     private final String description;
-    private Integer quantity;
 
     QuantityType(String description) {
         this.description = description;
-        this.quantity = 0;
-    }
-
-    public static Integer getTotPortions(QuantityType quantityType, Integer quantity) {
-
-        switch (quantityType) {
-            case STRATO:
-                return quantity * 9 * 5 * 10;
-            case CARTONE:
-                return quantity * 5 * 10;
-            case SACCHETTO:
-                return quantity * 10;
-            default:
-                return quantity;
-        }
     }
 
     public String getDescription() {
         return description;
     }
 
-    public Integer getQuantity() {
-        return quantity;
+    public static int calculateTotalPortions(int quantity, int unitsPerPack) {
+        return quantity * unitsPerPack;
     }
 
-    public void setQuantity(Integer quantity) {
-        this.quantity = quantity;
-    }
 }

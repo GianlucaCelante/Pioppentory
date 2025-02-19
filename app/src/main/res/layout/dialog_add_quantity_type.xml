@@ -7,16 +7,37 @@
         android:id="@+id/quantity_type_spinner"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="8dp"
+        android:layout_weight="1"
+        android:textSize="18sp"
+        android:textAlignment="center"
+        android:layout_margin="16dp"
         android:spinnerMode="dropdown"
         />
 
     <EditText
         android:id="@+id/quantity_type_available"
-        android:inputType="number"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="8dp"
+        android:layout_weight="1"
+        android:textSize="18sp"
+        android:inputType="number"
         android:maxLength="9"
+        android:textAlignment="center"
+        android:layout_margin="16dp"
         android:hint="Quantità disponibile"/>
+
+    <EditText
+        android:id="@+id/units_per_quantity_type"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:textSize="18sp"
+        android:inputType="number"
+        android:maxLength="9"
+        android:textAlignment="center"
+        android:layout_margin="16dp"
+        android:hint="Unità per tipo di packaging"
+
+        />
+
 </LinearLayout>

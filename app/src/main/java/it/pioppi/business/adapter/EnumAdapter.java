@@ -58,6 +58,7 @@ public class EnumAdapter extends RecyclerView.Adapter<EnumAdapter.EnumViewHolder
         QuantityTypeDto currentQuantityType = quantityTypesDto.get(position);
         holder.enumQuantityType.setText(currentQuantityType.getQuantityType().name());
         holder.enumTotPortions.setText(String.valueOf(currentQuantityType.getQuantity()));
+        holder.enumUnitsPerQuantityType.setText(String.valueOf(currentQuantityType.getUnitsPerQuantityType()));
 
         holder.itemView.setOnLongClickListener((v -> {
             try {
@@ -102,8 +103,10 @@ public class EnumAdapter extends RecyclerView.Adapter<EnumAdapter.EnumViewHolder
                 // Update the quantity in the QuantityTypeDto
                 if (!normalizedText.isEmpty()) {
                     quantityTypesDto.get(holder.getBindingAdapterPosition()).setQuantity(Integer.parseInt(normalizedText));
+                    quantityTypesDto.get(holder.getBindingAdapterPosition()).setUnitsPerQuantityType(Integer.parseInt(normalizedText));
                 } else {
                     quantityTypesDto.get(holder.getBindingAdapterPosition()).setQuantity(0);
+                    quantityTypesDto.get(holder.getBindingAdapterPosition()).setUnitsPerQuantityType(0);
                 }
 
                 // Call the text change listener
@@ -140,6 +143,7 @@ public class EnumAdapter extends RecyclerView.Adapter<EnumAdapter.EnumViewHolder
     public static class EnumViewHolder extends RecyclerView.ViewHolder {
         TextView enumQuantityType;
         EditText enumTotPortions;
+        EditText enumUnitsPerQuantityType;
         TextWatcher currentTextWatcher;
 
 
@@ -147,6 +151,7 @@ public class EnumAdapter extends RecyclerView.Adapter<EnumAdapter.EnumViewHolder
             super(itemView);
             enumQuantityType = itemView.findViewById(R.id.enum_quantity_type);
             enumTotPortions = itemView.findViewById(R.id.enum_tot_portions);
+            enumUnitsPerQuantityType = itemView.findViewById(R.id.units_per_quantity_type_edit);
         }
     }
 
@@ -176,7 +181,7 @@ public class EnumAdapter extends RecyclerView.Adapter<EnumAdapter.EnumViewHolder
 
     private void sortQuantityTypes() {
         quantityTypesDto.sort((o1, o2) -> {
-            List<QuantityType> order = Arrays.asList(QuantityType.STRATO, QuantityType.CARTONE, QuantityType.SACCHETTO, QuantityType.PEZZI);
+            List<QuantityType> order = Arrays.asList(QuantityType.values());
             return Integer.compare(order.indexOf(o1.getQuantityType()), order.indexOf(o2.getQuantityType()));
         });
     }

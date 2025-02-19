@@ -4,6 +4,7 @@ import androidx.room.TypeConverter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
 import it.pioppi.database.model.QuantityType;
@@ -34,7 +35,7 @@ public class Converters {
         if (dateString == null) {
             return null;
         } else {
-            return LocalDateTime.parse(dateString);
+            return LocalDateTime.parse(dateString, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
         }
     }
 
