@@ -39,7 +39,7 @@ public interface ItemTagEntityDao extends BaseDao<ItemTagEntity> {
     @Query("SELECT * FROM item_tag WHERE name = :name")
     ItemTagEntity getItemTagByName(String name);
 
-    @Query("SELECT * FROM item_tag WHERE id IN (SELECT tagId FROM item_tag_join WHERE itemId = :itemId)")
+    @Query("SELECT * FROM item_tag WHERE id IN (SELECT tag_id FROM item_tag_join WHERE item_id = :itemId)")
     List<ItemTagEntity> getItemTagsForItem(UUID itemId);
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

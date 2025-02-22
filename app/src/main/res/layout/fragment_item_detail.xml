@@ -391,13 +391,6 @@
                 android:layout_marginTop="8dp"
                 android:background="#CCCCCC" />
 
-
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginTop="8dp"
-                android:background="#CCCCCC" />
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -529,7 +522,7 @@
         android:id="@+id/save_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
+        android:layout_gravity="top|end"
         android:layout_margin="16dp"
         android:src="@drawable/save_icon"
         android:contentDescription="Salva" />

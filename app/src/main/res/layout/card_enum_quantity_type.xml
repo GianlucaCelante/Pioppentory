@@ -11,7 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:padding="8dp">
+        android:padding="2dp">
 
         <TextView
             android:id="@+id/enum_quantity_type"
@@ -20,7 +20,8 @@
             android:layout_weight="1"
             android:textSize="18sp"
             android:textAlignment="center"
-            android:layout_margin="16dp"
+            android:textStyle="bold"
+            android:layout_margin="4dp"
             />
 
         <TextView
@@ -29,7 +30,7 @@
             android:layout_weight="1"
             android:textSize="18sp"
             android:textAlignment="center"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="4dp"
             android:text="Quantità"
             />
 
@@ -42,7 +43,7 @@
             android:inputType="number"
             android:maxLength="9"
             android:textAlignment="center"
-            android:layout_margin="16dp"
+            android:layout_margin="4dp"
             />
 
         <TextView
@@ -51,8 +52,9 @@
             android:layout_weight="1"
             android:textSize="18sp"
             android:textAlignment="center"
-            android:layout_marginTop="16dp"
-            android:text="Unità per tipo di packaging"
+            android:layout_marginTop="4dp"
+            android:lines="2"
+            android:text="Unità per tipo\ndi packaging"
             />
 
         <EditText
@@ -64,9 +66,10 @@
             android:inputType="number"
             android:maxLength="9"
             android:textAlignment="center"
-            android:layout_margin="16dp"
-            android:hint="Unità per tipo di packaging"
-
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="4dp"
+            android:layout_marginStart="4dp"
             />
     </LinearLayout>
 </androidx.cardview.widget.CardView>

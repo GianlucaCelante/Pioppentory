@@ -8,7 +8,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
 import it.pioppi.database.model.QuantityType;
-import it.pioppi.database.entity.ItemStatus;
+import it.pioppi.database.model.ItemStatus;
 
 public class Converters {
 

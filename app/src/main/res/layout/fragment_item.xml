@@ -13,7 +13,7 @@
         android:layout_height="match_parent"
         android:padding="8dp"
         app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
-        app:spanCount="4"
+        app:spanCount="6"
         android:clipToPadding="false"
         android:clipChildren="false"
         android:overScrollMode="never"

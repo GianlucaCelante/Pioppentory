@@ -48,9 +48,8 @@ import it.pioppi.database.entity.ItemEntity;
 import it.pioppi.database.entity.ItemDetailEntity;
 import it.pioppi.database.entity.ItemTagEntity;
 import it.pioppi.database.entity.ItemTagJoinEntity;
-import it.pioppi.database.entity.ProviderEntity;
 import it.pioppi.database.entity.QuantityTypeEntity;
-import it.pioppi.database.entity.ItemStatus;
+import it.pioppi.database.model.ItemStatus;
 import it.pioppi.database.repository.ItemEntityRepository;
 
 public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItemClickListener, Searchable {

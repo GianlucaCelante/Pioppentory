@@ -67,7 +67,7 @@ import it.pioppi.database.model.QuantityPurpose;
 import it.pioppi.database.model.QuantityType;
 import it.pioppi.database.entity.ItemDetailEntity;
 import it.pioppi.database.entity.ItemEntity;
-import it.pioppi.database.entity.ItemStatus;
+import it.pioppi.database.model.ItemStatus;
 import it.pioppi.database.entity.ProviderEntity;
 import it.pioppi.database.entity.QuantityTypeEntity;
 import it.pioppi.database.repository.ItemEntityRepository;
@@ -136,7 +136,8 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         // PROVIDER
         List<String> providers;
         try {
-            providers = executorService.submit(() -> appDatabase.providerEntityDao().getProviderNames()).get();
+            providers = executorService.submit(() -> appDatabase.providerEntityDao().getProviderNames()).get()
+                    .stream().sorted().collect(Collectors.toList());
         } catch (ExecutionException | InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -484,19 +485,6 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         }
     }
 
-    @NonNull
-    private static List<QuantityTypeDto> getQuantityTypeDtos(RecyclerView quantityTypesAvailableRecyclerView, RecyclerView quantityTypesToBeOrderedRecyclerView) {
-        EnumAdapter adapterToBeOrdered = (EnumAdapter) quantityTypesToBeOrderedRecyclerView.getAdapter();
-        List<QuantityTypeDto> quantityTypesToBeOrdered = adapterToBeOrdered.getQuantityTypes();
-
-        EnumAdapter adapterAvailable = (EnumAdapter) quantityTypesAvailableRecyclerView.getAdapter();
-        List<QuantityTypeDto> quantityTypesAvailable = adapterAvailable.getQuantityTypes();
-
-        List<QuantityTypeDto> quantityTypesAll = new ArrayList<>();
-        quantityTypesAll.addAll(quantityTypesToBeOrdered);
-        quantityTypesAll.addAll(quantityTypesAvailable);
-        return quantityTypesAll;
-    }
 
     private RecyclerView setupRecyclerViewAndButtonForQuantityTypes(View view, LayoutInflater inflater, int recyclerViewId, int buttonId, QuantityPurpose purpose) {
         List<QuantityTypeDto> filteredQuantityTypes = itemWithDetailAndProviderAndQuantityTypeDto.getQuantityTypes().stream()
@@ -602,7 +590,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
             if (entity.itemDetail != null) {
                 dto.setItemDetail(EntityDtoMapper.detailEntityToDto(entity.itemDetail));
             } else {
-                dto.setItemDetail(new ItemDetailDto()); // O lascia null se preferisci
+                dto.setItemDetail(new ItemDetailDto());
             }
 
             if (entity.quantityTypes != null) {
@@ -742,6 +730,9 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         });
         future.get();
 
+        itemWithDetailAndProviderAndQuantityTypeDto.getQuantityTypes()
+                .removeIf(q -> q.getId().equals(quantityTypeDto.getId()));
+
         Toast.makeText(requireContext(), "Deleted", Toast.LENGTH_SHORT).show();
         return quantityTypeDto.getId();
     }
@@ -754,8 +745,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         TextView portionsPerWeekendTextView = requireView().findViewById(R.id.portions_per_weekend);
         CardView itemNameAndTotPortionsCardView = requireView().findViewById(R.id.item_name_tot_portions);
 
-        List<QuantityTypeDto> quantityTypeDtos = getQuantityTypeDtos(quantityTypesAvailable, quantityTypesToBeOrdered);
-
+        List<QuantityTypeDto> quantityTypeDtos = itemWithDetailAndProviderAndQuantityTypeDto.getQuantityTypes();
         Long totPortionsAvailable = calculateTotPortions(quantityTypeDtos, QuantityPurpose.AVAILABLE);
         Long totPortionsToBeOrdered = calculateTotPortions(quantityTypeDtos, QuantityPurpose.TO_BE_ORDERED);
         long totPortionsAvailablePlusOrdered = totPortionsAvailable + totPortionsToBeOrdered;

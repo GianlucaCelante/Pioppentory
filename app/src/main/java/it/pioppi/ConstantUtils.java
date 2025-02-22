@@ -12,6 +12,7 @@ public class ConstantUtils {
     public static final String QUANTITY_TYPE_TABLE_NAME = "QUANTITY_TYPE";
     public static final String ITEM_TAG_TABLE_NAME = "ITEM_TAG";
     public static final String ITEM_HISTORY_TABLE_NAME = "ITEM_HISTORY";
+    public static final String ITEM_TAG_JOIN_TABLE_NAME = "ITEM_TAG_JOIN";
 
     // BLUETOOTH
     public static final int REQUEST_ENABLE_BT = 1;
@@ -24,10 +25,8 @@ public class ConstantUtils {
     public static final String ACTION_CODE_SCANNED = "ACTION_CODE_SCANNED";
     public static final String SCANNED_CODE = "SCANNED_CODE";
 
-    // FRAGMENT
+    // ITEM FRAGMENT
     public static final String ITEM_ID = "itemId";
+    public static final int GRID_LAYOUT_NUMBER_COLUMNS = 5;
 
-
-    public class ITEM_HISTORY_TABLE_NAME {
-    }
 }

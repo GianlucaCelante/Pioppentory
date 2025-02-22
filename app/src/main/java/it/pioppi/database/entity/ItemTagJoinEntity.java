@@ -10,31 +10,33 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 
+import it.pioppi.ConstantUtils;
+
 @Entity(
-        tableName = "item_tag_join",
-        primaryKeys = {"itemId", "tagId"},
+        tableName = ConstantUtils.ITEM_TAG_JOIN_TABLE_NAME,
+        primaryKeys = {"item_id", "tag_id"},
         foreignKeys = {
                 @ForeignKey(entity = ItemEntity.class,
                         parentColumns = "id",
-                        childColumns = "itemId",
+                        childColumns = "item_id",
                         onDelete = ForeignKey.CASCADE),
                 @ForeignKey(entity = ItemTagEntity.class,
                         parentColumns = "id",
-                        childColumns = "tagId",
+                        childColumns = "tag_id",
                         onDelete = ForeignKey.CASCADE)
         },
         indices = {
-                @Index(value = "itemId"),
-                @Index(value = "tagId")
+                @Index(value = "item_id"),
+                @Index(value = "tag_id")
         }
 )
 public class ItemTagJoinEntity {
     @NotNull
-    @ColumnInfo(name = "itemId")
+    @ColumnInfo(name = "item_id")
     private UUID itemId;
 
     @NotNull
-    @ColumnInfo(name = "tagId")
+    @ColumnInfo(name = "tag_id")
     private UUID tagId;
 
     public ItemTagJoinEntity(@NonNull UUID itemId, @NonNull UUID tagId) {

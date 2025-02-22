@@ -1,4 +1,4 @@
-package it.pioppi.database.entity;
+package it.pioppi.database.model;
 
 public enum ItemStatus {
 

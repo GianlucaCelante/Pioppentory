@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.UUID;
 
 import it.pioppi.ConstantUtils;
+import it.pioppi.database.model.ItemStatus;
 
 @Entity(
         tableName = ConstantUtils.ITEM_TABLE_NAME,

@@ -11,10 +11,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.Spinner;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -46,6 +44,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
+import it.pioppi.ConstantUtils;
 import it.pioppi.R;
 import it.pioppi.business.adapter.PreviewItemsAdapter;
 import it.pioppi.business.viewmodel.ItemViewModel;
@@ -57,8 +56,7 @@ import it.pioppi.database.entity.ItemWithDetailEntity;
 import it.pioppi.database.mapper.EntityDtoMapper;
 import it.pioppi.database.entity.ItemDetailEntity;
 import it.pioppi.database.entity.ItemEntity;
-import it.pioppi.database.entity.ItemStatus;
-import it.pioppi.database.entity.ProviderEntity;
+import it.pioppi.database.model.ItemStatus;
 import it.pioppi.database.entity.QuantityTypeEntity;
 import it.pioppi.database.repository.ItemEntityRepository;
 
@@ -99,7 +97,8 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
         itemViewModel.getFilteredItems().observe(getViewLifecycleOwner(), itemList -> {
             itemAdapter.setItemList(itemList);
             Log.d("ItemFragment", "Observed items: " + itemList.size());
-            recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 4));
+            recyclerView.setLayoutManager(new GridLayoutManager(getContext(), ConstantUtils.GRID_LAYOUT_NUMBER_COLUMNS));
+            recyclerView.setHasFixedSize(true);
             recyclerView.setAdapter(itemAdapter);
         });
 
@@ -425,24 +424,24 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
     private void filterItemsByNameAscending() {
         Objects.requireNonNull(itemViewModel.getItems().getValue()).sort(Comparator.comparing(ItemDto::getName, String.CASE_INSENSITIVE_ORDER));
         itemAdapter.setItemList(itemViewModel.getItems().getValue());
-        recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 4));
+        recyclerView.setLayoutManager(new GridLayoutManager(getContext(), ConstantUtils.GRID_LAYOUT_NUMBER_COLUMNS));
         recyclerView.setAdapter(itemAdapter);
     }
 
     private void filterItemsByNameDescending() {
         Objects.requireNonNull(itemViewModel.getItems().getValue()).sort(Comparator.comparing(ItemDto::getName, String.CASE_INSENSITIVE_ORDER).reversed());
         itemAdapter.setItemList(itemViewModel.getItems().getValue());
-        recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 4));
+        recyclerView.setLayoutManager(new GridLayoutManager(getContext(), ConstantUtils.GRID_LAYOUT_NUMBER_COLUMNS));
         recyclerView.setAdapter(itemAdapter);
     }
 
     private void filterItemsByStatus(ItemStatus status) {
-        List<ItemDto> itemDtoList = Objects.requireNonNull(itemViewModel.getItems().getValue()).stream()
+/*        List<ItemDto> itemDtoList = Objects.requireNonNull(itemViewModel.getItems().getValue()).stream()
                 .filter(item -> item.getStatus().equals(status))
                 .collect(Collectors.toList());
         itemAdapter.setItemList(itemDtoList);
-        recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 4));
-        recyclerView.setAdapter(itemAdapter);
+        recyclerView.setLayoutManager(new GridLayoutManager(getContext(), ConstantUtils.GRID_LAYOUT_NUMBER_COLUMNS));
+        recyclerView.setAdapter(itemAdapter);*/
     }
 
     private void hideKeyboard(View view) {

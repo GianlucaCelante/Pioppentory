@@ -81,12 +81,31 @@ CREATE TABLE IF NOT EXISTS `ITEM_HISTORY` (
     PRIMARY KEY(`id`)
 );
 
+CREATE TABLE IF NOT EXISTS `ITEM_TAG` (
+    `id` TEXT NOT NULL,
+    `name` TEXT,
+    `creation_date` TEXT,
+    `last_update` TEXT,
+    PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `ITEM_TAG_JOIN` (
+    `item_id` TEXT NOT NULL,
+    `tag_id` TEXT NOT NULL,
+    PRIMARY KEY (`item_id`, `tag_id`),
+    FOREIGN KEY (`item_id`) REFERENCES `ITEM`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`tag_id`) REFERENCES `ITEM_TAG`(`id`) ON DELETE CASCADE
+);
+
 -- Creazione degli indici
 CREATE INDEX IF NOT EXISTS `index_ITEM_id` ON `ITEM` (`id`);
 CREATE INDEX IF NOT EXISTS `index_ITEM_provider_id` ON `ITEM` (`provider_id`);
 CREATE INDEX IF NOT EXISTS `index_ITEM_DETAIL_item_id` ON `ITEM_DETAIL` (`item_id`);
 CREATE INDEX IF NOT EXISTS `index_QUANTITY_TYPE_item_id` ON `QUANTITY_TYPE` (`item_id`);
 CREATE INDEX IF NOT EXISTS `index_ITEM_HISTORY_id` ON `ITEM_HISTORY` (`id`);
+CREATE INDEX IF NOT EXISTS `index_ITEM_TAG_id ON `ITEM_TAG`(`id`);
+CREATE INDEX `index_ITEM_TAG_JOIN_itemId` ON `ITEM_TAG_JOIN`(`item_id`);
+CREATE INDEX `index_ITEM_TAG_JOIN_tagId` ON `ITEM_TAG_JOIN`(`tag_id`);
 
 -- Aggiornamento della tabella item_fts con i dati inseriti nella tabella ITEM
 INSERT INTO item_fts (rowid, name, barcode)
