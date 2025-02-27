@@ -294,6 +294,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         finalItemDetail.setLastUpdateDate(LocalDateTime.now());
         finalItemDetail.setQuantityToBeOrdered(totPortionsToBeOrdered);
         finalItemDetail.setOrderedQuantity(itemDetail.getOrderedQuantity());
+        finalItemDetail.setItemId(finalItem.getId());
 
         List<QuantityTypeDto> finalQuantityTypes = new ArrayList<>();
         for (QuantityTypeDto quantityTypeDto : quantityTypes) {

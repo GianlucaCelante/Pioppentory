@@ -22,6 +22,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.Toast;
+
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -38,6 +39,8 @@ import java.util.stream.Collectors;
 
 import it.pioppi.R;
 import it.pioppi.business.adapter.ItemTagsAdapter;
+import it.pioppi.business.adapter.ItemsInTagAdapter;
+import it.pioppi.business.dto.ItemDetailDto;
 import it.pioppi.business.dto.ItemDto;
 import it.pioppi.business.dto.ItemTagDto;
 import it.pioppi.business.viewmodel.ItemTagsViewModel;
@@ -52,12 +55,12 @@ import it.pioppi.database.entity.QuantityTypeEntity;
 import it.pioppi.database.model.ItemStatus;
 import it.pioppi.database.repository.ItemEntityRepository;
 
-public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItemClickListener, Searchable {
+public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItemClickListener, ItemsInTagAdapter.OnItemClickListener, Searchable {
     private AppDatabase appDatabase;
     private ItemTagsAdapter itemTagsAdapter;
     private ExecutorService executorService;
     private ItemTagsViewModel itemTagsViewModel;
-    private RecyclerView recyclerView;
+    private RecyclerView recyclerViewTags;
     private UUID itemId;
     private ItemEntityRepository itemEntityRepository;
 
@@ -79,39 +82,77 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
         }
 
         try {
-            List<ItemTagDto> itemDtoList = fetchItemTags(itemId);
-            itemTagsViewModel.setItemTags(itemDtoList);
-            itemTagsAdapter = new ItemTagsAdapter(itemTagsViewModel.getItemTags().getValue(), this, getContext());
+
+            List<ItemTagDto> itemTagDtos = fetchItemTagsDtos(itemId);
+            List<ItemDto> itemDtos = fetchItemTags(itemId);
+            List<ItemDetailDto> itemDetailDtos = fetchItemDetails(itemDtos);
+            itemTagsViewModel.setItemTags(itemTagDtos);
+            itemTagsViewModel.setItems(itemDtos);
+            itemTagsViewModel.setItemDetails(itemDetailDtos);
+            itemTagsAdapter = new ItemTagsAdapter(itemTagDtos, itemDtos, itemDetailDtos,
+                    this, getContext());
         } catch (ExecutionException | InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private List<ItemTagDto> fetchItemTags(UUID itemId) throws ExecutionException, InterruptedException {
-        List<ItemTagDto> itemTagsDtos = new ArrayList<>();
+    private List<ItemDetailDto> fetchItemDetails(List<ItemDto> itemDtos) throws ExecutionException, InterruptedException {
+
+        List<ItemDetailDto> itemDetailDtos = new ArrayList<>();
+
+        itemDtos.forEach(itemDto -> {
+            try {
+                Future<?> future = executorService.submit(() -> {
+
+                    ItemDetailEntity itemDetailsForItem = appDatabase.itemDetailEntityDao().getItemDetailByItemId(itemDto.getId());
+                    ItemDetailDto itemDetailDto = EntityDtoMapper.detailEntityToDto(itemDetailsForItem);
+                    itemDetailDtos.add(itemDetailDto);
+
+                });
+                future.get();
+
+
+            } catch (ExecutionException | InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        return itemDetailDtos;
+    }
+
+    private List<ItemTagDto> fetchItemTagsDtos(UUID itemId) throws ExecutionException, InterruptedException {
+        List<ItemTagDto> itemDtos = new ArrayList<>();
         Future<?> future = executorService.submit(() -> {
             List<ItemTagEntity> itemTagsForItem = appDatabase.itemTagEntityDao().getItemTagsForItem(itemId);
             itemTagsForItem.forEach(itemEntity -> {
-                ItemTagDto itemTagDto = EntityDtoMapper.entityToDto(itemEntity);
-                itemTagsDtos.add(itemTagDto);
+                ItemTagDto itemDto = EntityDtoMapper.entityToDto(itemEntity);
+                itemDtos.add(itemDto);
             });
         });
         future.get();
-        return itemTagsDtos;
+        return itemDtos;
+    }
+
+    private List<ItemDto> fetchItemTags(UUID itemId) throws ExecutionException, InterruptedException {
+        List<ItemDto> itemDtos = new ArrayList<>();
+        Future<?> future = executorService.submit(() -> {
+            List<ItemEntity> itemTagsForItem = appDatabase.itemTagEntityDao().getItemsWithSameTag(itemId);
+            itemTagsForItem.forEach(itemEntity -> {
+                ItemDto itemDto = EntityDtoMapper.entityToDto(itemEntity);
+                itemDtos.add(itemDto);
+            });
+        });
+        future.get();
+        return itemDtos;
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_item_tags, container, false);
-        recyclerView = view.findViewById(R.id.recycler_view_tags);
-        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        recyclerViewTags = view.findViewById(R.id.recycler_view_tags);
+        recyclerViewTags.setAdapter(itemTagsAdapter);
+        recyclerViewTags.setLayoutManager(new LinearLayoutManager(getContext()));
 
         setupMenuToolbar();
-
-        itemTagsViewModel.getItemTags().observe(getViewLifecycleOwner(), itemList -> {
-            itemTagsAdapter.setItemTagDtos(itemList);
-            recyclerView.setAdapter(itemTagsAdapter);
-        });
 
         FloatingActionButton fab = view.findViewById(R.id.new_tag_fab);
         fab.setOnClickListener(v -> addNewTag(inflater, container));
@@ -166,10 +207,10 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
                     requireActivity().runOnUiThread(() -> Toast.makeText(getContext(), "Prodotto aggiunto", Toast.LENGTH_SHORT).show());
                 }
 
-                ItemTagJoinEntity joinEntity = new ItemTagJoinEntity(itemId, newItemTag.getId());
-                appDatabase.itemTagEntityDao().insertItemTagJoin(joinEntity);
                 ItemTagEntity newItemTagEntity = EntityDtoMapper.dtoToEntity(newItemTag);
                 appDatabase.itemTagEntityDao().insert(newItemTagEntity);
+                ItemTagJoinEntity joinEntity = new ItemTagJoinEntity(itemId, newItemTag.getId());
+                appDatabase.itemTagEntityDao().insertItemTagJoin(joinEntity);
 
                 requireActivity().runOnUiThread(() -> Toast.makeText(getContext(), "Ingrediente aggiunto", Toast.LENGTH_SHORT).show());
             });
@@ -181,10 +222,10 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
     protected void prefillFields(View view) {
         if (itemId != null) {
             try {
-                List<ItemTagDto> itemTagDtos = fetchItemTags(itemId);
+                List<ItemTagDto> itemTagDtos = fetchItemTagsDtos(itemId);
                 itemTagsViewModel.setItemTags(itemTagDtos);
                 itemTagsAdapter.setItemTagDtos(itemTagDtos);
-                recyclerView.setAdapter(itemTagsAdapter);
+                recyclerViewTags.setAdapter(itemTagsAdapter);
             } catch (ExecutionException | InterruptedException e) {
                 throw new RuntimeException(e);
             }
@@ -202,26 +243,7 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
         }
     }
 
-    @Override
-    public void onItemClick(ItemTagDto item) throws ExecutionException, InterruptedException {
-        if (item == null || item.getId() == null) {
-            return;
-        }
 
-        AtomicReference<UUID> itemByNameId = new AtomicReference<>();
-        Future<?> future = executorService.submit(() -> itemByNameId.set(appDatabase.itemEntityDao().getItemByName(item.getName())));
-        future.get();
-
-        if(itemByNameId.get() == null) {
-            Toast.makeText(getContext(), "Prodotto non più disponibile", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        Bundle bundle = new Bundle();
-        bundle.putString("itemId", itemByNameId.get().toString());
-        NavController navController = NavHostFragment.findNavController(this);
-        navController.navigate(R.id.action_itemTagsFragment_to_itemDetailFragment, bundle);
-    }
 
     private void addNewItem(String tagName) {
 
@@ -359,4 +381,19 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
         super.onDestroy();
         executorService.shutdown();
     }
+
+    @Override
+    public void onItemClick(ItemDto item) {
+
+        if (item == null || item.getId() == null) {
+            return;
+        }
+
+        Bundle bundle = new Bundle();
+        bundle.putString("itemId", item.getId().toString());
+        NavController navController = NavHostFragment.findNavController(this);
+        navController.navigate(R.id.action_itemTagsFragment_to_itemDetailFragment, bundle);
+
+    }
+
 }

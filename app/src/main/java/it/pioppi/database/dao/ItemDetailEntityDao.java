@@ -34,6 +34,9 @@ public interface ItemDetailEntityDao extends BaseDao<ItemDetailEntity> {
     @Query("SELECT * FROM item_detail WHERE id = :itemDetailId")
     ItemDetailEntity getItemDetailById(UUID itemDetailId);
 
+    @Query("SELECT * FROM item_detail WHERE item_id = :itemId")
+    ItemDetailEntity getItemDetailByItemId(UUID itemId);
+
     @Query("SELECT * FROM item_detail")
     List<ItemDetailEntity> getAllItemDetails();
 

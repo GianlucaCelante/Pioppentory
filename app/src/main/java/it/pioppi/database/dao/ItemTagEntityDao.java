@@ -11,6 +11,7 @@ import androidx.room.Upsert;
 import java.util.List;
 import java.util.UUID;
 
+import it.pioppi.database.entity.ItemEntity;
 import it.pioppi.database.entity.ItemTagEntity;
 import it.pioppi.database.entity.ItemTagJoinEntity;
 
@@ -41,6 +42,13 @@ public interface ItemTagEntityDao extends BaseDao<ItemTagEntity> {
 
     @Query("SELECT * FROM item_tag WHERE id IN (SELECT tag_id FROM item_tag_join WHERE item_id = :itemId)")
     List<ItemTagEntity> getItemTagsForItem(UUID itemId);
+
+    @Query("SELECT * FROM item WHERE id IN (" +
+            "SELECT item_id FROM item_tag_join WHERE tag_id IN (" +
+            "SELECT tag_id FROM item_tag_join WHERE item_id = :itemId" +
+            ")" +
+            ")")
+    List<ItemEntity> getItemsWithSameTag(UUID itemId);
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertItemTagJoin(ItemTagJoinEntity itemTagJoinEntity);

@@ -165,6 +165,7 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                     return true;
                 } else if (itemId == R.id.filter_by_status_green) {
                     filterItemsByStatus(ItemStatus.GREEN);
+                    filterItemsByStatus(ItemStatus.GREEN);
                     return true;
                 }
                 return false;

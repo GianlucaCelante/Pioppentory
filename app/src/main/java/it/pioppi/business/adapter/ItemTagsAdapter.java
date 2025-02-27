@@ -7,32 +7,39 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.checkbox.MaterialCheckBox;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import it.pioppi.R;
+import it.pioppi.business.dto.ItemDetailDto;
 import it.pioppi.business.dto.ItemDto;
 import it.pioppi.business.dto.ItemTagDto;
 
 public class ItemTagsAdapter extends RecyclerView.Adapter<ItemTagsAdapter.ItemTagsViewHolder> {
 
     public interface OnItemClickListener {
-        void onItemClick(ItemTagDto item) throws ExecutionException, InterruptedException;
+        void onItemClick(ItemDto item) throws ExecutionException, InterruptedException;
     }
 
     private List<ItemTagDto> itemTagDtos;
-    private final OnItemClickListener listener;
+    private List<ItemDto> itemDtos;
+    private List<ItemDetailDto> itemDetailDtos;
+    private final ItemsInTagAdapter.OnItemClickListener listenerInTags;
     private final Context context;
 
-    public ItemTagsAdapter(List<ItemTagDto> itemTagDtos, OnItemClickListener listener, Context context) {
+    public ItemTagsAdapter(List<ItemTagDto> itemTagDtos, List<ItemDto> itemDtos, List<ItemDetailDto> itemDetailDtos,
+                           ItemsInTagAdapter.OnItemClickListener listenerInTags, Context context) {
         this.itemTagDtos = itemTagDtos;
-        this.listener = listener;
+        this.itemDtos = itemDtos;
+        this.itemDetailDtos = itemDetailDtos;
+        this.listenerInTags = listenerInTags;
         this.context = context;
     }
 
@@ -49,11 +56,20 @@ public class ItemTagsAdapter extends RecyclerView.Adapter<ItemTagsAdapter.ItemTa
         holder.tagName.setText(itemTagDto.getName() != null ? itemTagDto.getName() : "");
         holder.checkBox.setOnCheckedChangeListener((buttonView, isChecked) -> itemTagDto.setSelected(isChecked));
         holder.checkBox.setChecked(itemTagDto.isSelected());
-        holder.cardView.setOnClickListener(v -> {
-            try {
-                listener.onItemClick(itemTagDto);
-            } catch (ExecutionException | InterruptedException e) {
-                throw new RuntimeException(e);
+
+        if (holder.recyclerView.getLayoutManager() == null) {
+            holder.recyclerView.setLayoutManager(new LinearLayoutManager(context));
+        }
+
+        ItemsInTagAdapter innerAdapter = new ItemsInTagAdapter(Collections.singletonList(itemTagDto),
+                itemDtos, itemDetailDtos, listenerInTags, context);
+        holder.recyclerView.setAdapter(innerAdapter);
+
+        holder.tagName.setOnClickListener(v -> {
+            if(holder.recyclerView.getVisibility() == View.VISIBLE){
+                holder.recyclerView.setVisibility(View.GONE);
+            } else {
+                holder.recyclerView.setVisibility(View.VISIBLE);
             }
         });
     }
@@ -71,13 +87,13 @@ public class ItemTagsAdapter extends RecyclerView.Adapter<ItemTagsAdapter.ItemTa
     public static class ItemTagsViewHolder extends RecyclerView.ViewHolder {
         public TextView tagName;
         public MaterialCheckBox checkBox;
-        public MaterialCardView cardView;
+        public RecyclerView recyclerView;
 
         public ItemTagsViewHolder(View itemView) {
             super(itemView);
-            cardView = itemView.findViewById(R.id.card_view_tag);
             tagName = itemView.findViewById(R.id.tag_name);
             checkBox = itemView.findViewById(R.id.selected_tag);
+            recyclerView = itemView.findViewById(R.id.recycler_view_items_in_tag);
 
         }
     }
