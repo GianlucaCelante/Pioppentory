@@ -1,5 +1,6 @@
 package it.pioppi.database.entity;
 
+import androidx.annotation.NonNull;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.ForeignKey;
@@ -9,7 +10,7 @@ import androidx.room.PrimaryKey;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.UUID;
 
 import it.pioppi.ConstantUtils;
@@ -47,12 +48,12 @@ public class ItemDetailEntity extends BaseEntity {
     @ColumnInfo(name = "max_portions_sold")
     private Integer maxPortionsSold;
     @ColumnInfo(name = "delivery_date")
-    private LocalDateTime deliveryDate;
+    private ZonedDateTime deliveryDate;
     @ColumnInfo(name = "item_id")
     private UUID itemId;
 
     @Ignore
-    public ItemDetailEntity(@NotNull UUID id, Long quantityToBeOrdered, Integer orderedQuantity, Integer portionsRequiredOnSaturday, Integer portionsRequiredOnSunday, Integer portionsPerWeekend, Integer portionsOnHoliday, Integer maxPortionsSold, LocalDateTime deliveryDate, UUID itemId) {
+    public ItemDetailEntity(@NotNull UUID id, Long quantityToBeOrdered, Integer orderedQuantity, Integer portionsRequiredOnSaturday, Integer portionsRequiredOnSunday, Integer portionsPerWeekend, Integer portionsOnHoliday, Integer maxPortionsSold, ZonedDateTime deliveryDate, UUID itemId) {
         super();
         this.id = id;
         this.quantityToBeOrdered = quantityToBeOrdered;
@@ -68,11 +69,12 @@ public class ItemDetailEntity extends BaseEntity {
 
     public ItemDetailEntity() {}
 
+    @NonNull
     public UUID getId() {
         return id;
     }
 
-    public void setId(UUID id) {
+    public void setId(@NonNull UUID id) {
         this.id = id;
     }
 
@@ -132,11 +134,11 @@ public class ItemDetailEntity extends BaseEntity {
         this.maxPortionsSold = maxPortionsSold;
     }
 
-    public LocalDateTime getDeliveryDate() {
+    public ZonedDateTime getDeliveryDate() {
         return deliveryDate;
     }
 
-    public void setDeliveryDate(LocalDateTime deliveryDate) {
+    public void setDeliveryDate(ZonedDateTime deliveryDate) {
         this.deliveryDate = deliveryDate;
     }
 
@@ -149,6 +151,7 @@ public class ItemDetailEntity extends BaseEntity {
     }
 
 
+    @NonNull
     @Override
     public String toString() {
         return "ItemDetailEntity{" + "id=" + id +

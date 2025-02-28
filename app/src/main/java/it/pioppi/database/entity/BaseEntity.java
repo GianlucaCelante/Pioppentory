@@ -2,36 +2,34 @@ package it.pioppi.database.entity;
 
 import androidx.room.ColumnInfo;
 
-import java.time.LocalDateTime;
-
-import it.pioppi.DateTimeUtils;
-import it.pioppi.database.typeconverters.Converters;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 
 public class BaseEntity {
 
     @ColumnInfo(name = "creation_date")
-    private LocalDateTime creationDate;
+    private ZonedDateTime creationDate;
     @ColumnInfo(name = "last_update")
-    private LocalDateTime lastUpdate;
+    private ZonedDateTime lastUpdate;
 
     public BaseEntity() {
-        this.creationDate = LocalDateTime.now();
-        this.lastUpdate = LocalDateTime.now();
+        this.creationDate = ZonedDateTime.now(ZoneId.of("Europe/Rome"));
+        this.lastUpdate = ZonedDateTime.now(ZoneId.of("Europe/Rome"));
     }
 
-    public LocalDateTime getCreationDate() {
+    public ZonedDateTime getCreationDate() {
         return creationDate;
     }
 
-    public void setCreationDate(LocalDateTime creationDate) {
+    public void setCreationDate(ZonedDateTime creationDate) {
         this.creationDate = creationDate;
     }
 
-    public LocalDateTime getLastUpdate() {
+    public ZonedDateTime getLastUpdate() {
         return lastUpdate;
     }
 
-    public void setLastUpdate(LocalDateTime lastUpdate) {
+    public void setLastUpdate(ZonedDateTime lastUpdate) {
         this.lastUpdate = lastUpdate;
     }
 

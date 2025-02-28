@@ -1,6 +1,6 @@
 package it.pioppi.business.dto;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.UUID;
 
 public class ItemTagDto {
@@ -8,10 +8,10 @@ public class ItemTagDto {
     private UUID id;
     private String name;
     private boolean isSelected;
-    private LocalDateTime creationDate;
-    private LocalDateTime lastUpdate;
+    private ZonedDateTime creationDate;
+    private ZonedDateTime lastUpdate;
 
-    public ItemTagDto(UUID id, String name, boolean isSelected, LocalDateTime creationDate, LocalDateTime lastUpdate) {
+    public ItemTagDto(UUID id, String name, boolean isSelected, ZonedDateTime creationDate, ZonedDateTime lastUpdate) {
         this.id = id;
         this.name = name;
         this.isSelected = isSelected;
@@ -52,19 +52,19 @@ public class ItemTagDto {
         isSelected = selected;
     }
 
-    public LocalDateTime getCreationDate() {
+    public ZonedDateTime getCreationDate() {
         return creationDate;
     }
 
-    public void setCreationDate(LocalDateTime creationDate) {
+    public void setCreationDate(ZonedDateTime creationDate) {
         this.creationDate = creationDate;
     }
 
-    public LocalDateTime getLastUpdate() {
+    public ZonedDateTime getLastUpdate() {
         return lastUpdate;
     }
 
-    public void setLastUpdate(LocalDateTime lastUpdate) {
+    public void setLastUpdate(ZonedDateTime lastUpdate) {
         this.lastUpdate = lastUpdate;
     }
 }

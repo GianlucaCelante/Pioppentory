@@ -1,6 +1,6 @@
 package it.pioppi.business.dto;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.UUID;
 
 import it.pioppi.database.model.QuantityPurpose;
@@ -14,13 +14,13 @@ public class QuantityTypeDto {
     private Integer quantity;
     private QuantityPurpose purpose;
     private Integer unitsPerQuantityType;
-    private LocalDateTime creationDate;
-    private LocalDateTime lastUpdateDate;
+    private ZonedDateTime creationDate;
+    private ZonedDateTime lastUpdateDate;
     private UUID itemId;
 
     public QuantityTypeDto(UUID id, QuantityType quantityType, String description,
                            Integer quantity, QuantityPurpose purpose, Integer unitsPerQuantityType,
-                           LocalDateTime creationDate, LocalDateTime lastUpdateDate, UUID itemId) {
+                           ZonedDateTime creationDate, ZonedDateTime lastUpdateDate, UUID itemId) {
         this.id = id;
         this.quantityType = quantityType;
         this.description = description;
@@ -84,19 +84,19 @@ public class QuantityTypeDto {
         this.unitsPerQuantityType = unitsPerQuantityType;
     }
 
-    public LocalDateTime getCreationDate() {
+    public ZonedDateTime getCreationDate() {
         return creationDate;
     }
 
-    public void setCreationDate(LocalDateTime creationDate) {
+    public void setCreationDate(ZonedDateTime creationDate) {
         this.creationDate = creationDate;
     }
 
-    public LocalDateTime getLastUpdateDate() {
+    public ZonedDateTime getLastUpdateDate() {
         return lastUpdateDate;
     }
 
-    public void setLastUpdateDate(LocalDateTime lastUpdateDate) {
+    public void setLastUpdateDate(ZonedDateTime lastUpdateDate) {
         this.lastUpdateDate = lastUpdateDate;
     }
 

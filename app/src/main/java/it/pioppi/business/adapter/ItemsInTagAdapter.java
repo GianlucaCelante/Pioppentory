@@ -1,7 +1,6 @@
 package it.pioppi.business.adapter;
 
 import android.content.Context;
-import android.content.res.Resources;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,11 +15,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
+import it.pioppi.DateTimeUtils;
 import it.pioppi.R;
 import it.pioppi.business.dto.ItemDetailDto;
 import it.pioppi.business.dto.ItemDto;
 import it.pioppi.business.dto.ItemTagDto;
-import it.pioppi.database.typeconverters.Converters;
 
 public class ItemsInTagAdapter extends RecyclerView.Adapter<ItemsInTagAdapter.ItemTagsViewHolder> {
 
@@ -62,7 +61,7 @@ public class ItemsInTagAdapter extends RecyclerView.Adapter<ItemsInTagAdapter.It
 
         if(itemDetailDto != null) {
             holder.portionsNeededOnWeekendTextView.setText(String.valueOf(itemDetailDto.getPortionsPerWeekend()));
-            holder.lastUpdate.setText(Converters.toDateString(itemDetailDto.getLastUpdateDate()));
+            holder.lastUpdate.setText(DateTimeUtils.formatForDisplay(itemDetailDto.getLastUpdateDate()));
         } else {
             holder.portionsNeededOnWeekendTextView.setText("");
             holder.lastUpdate.setText("");

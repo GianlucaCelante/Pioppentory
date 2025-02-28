@@ -4,7 +4,10 @@ import androidx.room.TypeConverter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.UUID;
 
 import it.pioppi.database.model.QuantityType;
@@ -31,22 +34,28 @@ public class Converters {
     }
 
     @TypeConverter
-    public static LocalDateTime toDate(String dateString) {
+    public static ZonedDateTime toZonedDateTime(String dateString) {
         if (dateString == null) {
             return null;
-        } else {
-            return LocalDateTime.parse(dateString, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        }
+        try {
+            // Prova a fare il parsing considerando la presenza dell'offset/fuso
+            return ZonedDateTime.parse(dateString, DateTimeFormatter.ISO_ZONED_DATE_TIME);
+        } catch (DateTimeParseException e) {
+            // Se non c'è il fuso, lo interpretiamo come LocalDateTime e applichiamo il fuso di default
+            LocalDateTime localDateTime = LocalDateTime.parse(dateString, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+            return localDateTime.atZone(ZoneId.systemDefault());
         }
     }
 
     @TypeConverter
-    public static String toDateString(LocalDateTime date) {
-        if (date == null) {
+    public static String fromZonedDateTime(ZonedDateTime dateTime) {
+        if (dateTime == null) {
             return null;
-        } else {
-            return date.toString();
         }
+        return dateTime.format(DateTimeFormatter.ISO_ZONED_DATE_TIME);
     }
+
 
     @TypeConverter
     public static LocalDate toLocalDate(String dateString) {

@@ -1,6 +1,6 @@
 package it.pioppi.business.dto;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.UUID;
 
 public class BluetoothDeviceDto {
@@ -10,13 +10,13 @@ public class BluetoothDeviceDto {
     private String address;
     private boolean detected;
     private boolean connected;
-    private LocalDateTime creationDate;
-    private LocalDateTime lastUpdateDate;
+    private ZonedDateTime creationDate;
+    private ZonedDateTime lastUpdateDate;
 
     public BluetoothDeviceDto() {
     }
 
-    public BluetoothDeviceDto(UUID id, String name, String address, boolean detected, boolean connected, LocalDateTime creationDate, LocalDateTime lastUpdateDate) {
+    public BluetoothDeviceDto(UUID id, String name, String address, boolean detected, boolean connected, ZonedDateTime creationDate, ZonedDateTime lastUpdateDate) {
         this.id = id;
         this.name = name;
         this.address = address;
@@ -66,19 +66,19 @@ public class BluetoothDeviceDto {
         this.connected = connected;
     }
 
-    public LocalDateTime getCreationDate() {
+    public ZonedDateTime getCreationDate() {
         return creationDate;
     }
 
-    public void setCreationDate(LocalDateTime creationDate) {
+    public void setCreationDate(ZonedDateTime creationDate) {
         this.creationDate = creationDate;
     }
 
-    public LocalDateTime getLastUpdateDate() {
+    public ZonedDateTime getLastUpdateDate() {
         return lastUpdateDate;
     }
 
-    public void setLastUpdateDate(LocalDateTime lastUpdateDate) {
+    public void setLastUpdateDate(ZonedDateTime lastUpdateDate) {
         this.lastUpdateDate = lastUpdateDate;
     }
 

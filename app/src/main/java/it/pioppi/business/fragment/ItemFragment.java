@@ -32,7 +32,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -45,7 +46,6 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import it.pioppi.ConstantUtils;
-import it.pioppi.DateTimeUtils;
 import it.pioppi.R;
 import it.pioppi.business.adapter.PreviewItemsAdapter;
 import it.pioppi.business.dto.ItemDetailDto;
@@ -61,7 +61,6 @@ import it.pioppi.database.entity.ItemEntity;
 import it.pioppi.database.model.ItemStatus;
 import it.pioppi.database.entity.QuantityTypeEntity;
 import it.pioppi.database.repository.ItemEntityRepository;
-import it.pioppi.database.typeconverters.Converters;
 
 public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickListener, ItemAdapter.OnLongItemClickListener, Searchable {
 
@@ -252,7 +251,7 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
     private void saveItemHistory(List<ItemDto> itemList) {
         executorService.execute(() -> {
             try {
-                LocalDateTime closureDate = LocalDateTime.now();
+                ZonedDateTime closureDate = ZonedDateTime.now(ZoneId.of("Europe/Rome"));
 
                 for (ItemDto item : itemList) {
                     ItemWithDetailEntity itemEntity = appDatabase.itemEntityDao().getItemWithDetail(item.getId());
@@ -310,7 +309,7 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                             return;
                         }
 
-                        LocalDateTime now = LocalDateTime.now();
+                        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Europe/Rome"));
 
                         ItemEntity newItem = new ItemEntity();
                         UUID itemId = UUID.randomUUID();

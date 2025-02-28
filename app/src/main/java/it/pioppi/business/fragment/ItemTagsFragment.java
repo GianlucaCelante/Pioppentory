@@ -25,7 +25,9 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import java.time.LocalDateTime;
+
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -37,7 +39,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
-import it.pioppi.DateTimeUtils;
 import it.pioppi.R;
 import it.pioppi.business.adapter.ItemTagsAdapter;
 import it.pioppi.business.adapter.ItemsInTagAdapter;
@@ -50,7 +51,6 @@ import it.pioppi.database.mapper.EntityDtoMapper;
 import it.pioppi.database.entity.ItemDetailEntity;
 import it.pioppi.database.entity.ItemTagEntity;
 import it.pioppi.database.entity.ItemTagJoinEntity;
-import it.pioppi.database.typeconverters.Converters;
 
 public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItemClickListener, ItemsInTagAdapter.OnItemClickListener, Searchable {
     private AppDatabase appDatabase;
@@ -190,7 +190,7 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
             ItemTagDto newItemTag = new ItemTagDto();
             newItemTag.setId(UUID.randomUUID());
             newItemTag.setName(newTagName);
-            newItemTag.setCreationDate(LocalDateTime.now());
+            newItemTag.setCreationDate(ZonedDateTime.now(ZoneId.of("Europe/Rome")));
 
             itemTagDtos.add(newItemTag);
             List<ItemTagDto> updatedList = new ArrayList<>(itemTagDtos);

@@ -10,7 +10,7 @@ import androidx.room.PrimaryKey;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -47,7 +47,7 @@ public class ItemEntity extends BaseEntity {
     @ColumnInfo(name = "barcode")
     private String barcode;
     @ColumnInfo(name = "check_date")
-    private LocalDateTime checkDate;
+    private ZonedDateTime checkDate;
     @ColumnInfo(name = "note")
     private String note;
     @ColumnInfo(name = "provider_id")
@@ -60,7 +60,7 @@ public class ItemEntity extends BaseEntity {
 
     @Ignore
     public ItemEntity(@NotNull UUID id, Integer ftsId, String name, Long totPortions,
-                      ItemStatus status, String barcode, LocalDateTime checkDate, String note, UUID providerId) {
+                      ItemStatus status, String barcode, ZonedDateTime checkDate, String note, UUID providerId) {
         super();
         this.id = id;
         this.ftsId = ftsId;
@@ -124,11 +124,11 @@ public class ItemEntity extends BaseEntity {
         this.barcode = barcode;
     }
 
-    public LocalDateTime getCheckDate() {
+    public ZonedDateTime getCheckDate() {
         return checkDate;
     }
 
-    public void setCheckDate(LocalDateTime checkDate) {
+    public void setCheckDate(ZonedDateTime checkDate) {
         this.checkDate = checkDate;
     }
 

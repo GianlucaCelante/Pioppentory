@@ -1,6 +1,6 @@
 package it.pioppi.business.dto;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.UUID;
 
 public class ProviderDto {
@@ -10,8 +10,8 @@ public class ProviderDto {
     private String address;
     private String phoneNumber;
     private String email;
-    private LocalDateTime creationDate;
-    private LocalDateTime lastUpdateDate;
+    private ZonedDateTime creationDate;
+    private ZonedDateTime lastUpdateDate;
     private UUID itemId;
 
     public UUID getId() {
@@ -54,19 +54,19 @@ public class ProviderDto {
         this.email = email;
     }
 
-    public LocalDateTime getCreationDate() {
+    public ZonedDateTime getCreationDate() {
         return creationDate;
     }
 
-    public void setCreationDate(LocalDateTime creationDate) {
+    public void setCreationDate(ZonedDateTime creationDate) {
         this.creationDate = creationDate;
     }
 
-    public LocalDateTime getLastUpdateDate() {
+    public ZonedDateTime getLastUpdateDate() {
         return lastUpdateDate;
     }
 
-    public void setLastUpdateDate(LocalDateTime lastUpdateDate) {
+    public void setLastUpdateDate(ZonedDateTime lastUpdateDate) {
         this.lastUpdateDate = lastUpdateDate;
     }
     public UUID getItemId() {
@@ -79,7 +79,7 @@ public class ProviderDto {
     public ProviderDto() {
     }
 
-    public ProviderDto(UUID id, String name, String address, String phoneNumber, String email, LocalDateTime creationDate, LocalDateTime lastUpdateDate, UUID itemId) {
+    public ProviderDto(UUID id, String name, String address, String phoneNumber, String email, ZonedDateTime creationDate, ZonedDateTime lastUpdateDate, UUID itemId) {
         this.id = id;
         this.name = name;
         this.address = address;

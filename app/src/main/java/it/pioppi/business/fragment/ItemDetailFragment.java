@@ -35,13 +35,11 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -52,7 +50,6 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import it.pioppi.ConstantUtils;
-import it.pioppi.DateTimeUtils;
 import it.pioppi.R;
 import it.pioppi.business.adapter.EnumAdapter;
 import it.pioppi.business.dto.ItemDetailDto;
@@ -76,7 +73,6 @@ import it.pioppi.database.model.ItemStatus;
 import it.pioppi.database.entity.ProviderEntity;
 import it.pioppi.database.entity.QuantityTypeEntity;
 import it.pioppi.database.repository.ItemEntityRepository;
-import it.pioppi.database.typeconverters.Converters;
 
 public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLongClickListener, EnumAdapter.OnTextChangeListener  {
 
@@ -159,7 +155,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
                 .stream()
                 .filter(itemDetail -> itemDetail.getItemId().equals(itemId))
                 .findFirst()
-                .ifPresent(itemDetailDto -> itemDetailDto.setDeliveryDate(LocalDateTime.of(year, month + 1, dayOfMonth, 0, 0))));
+                .ifPresent(itemDetailDto -> itemDetailDto.setDeliveryDate(ZonedDateTime.of(LocalDateTime.of(year, month + 1, dayOfMonth, 0, 0), ZoneId.systemDefault()))));
 
         updatePortionsNeededForWeekendWhenPortionsRequiredOnSaturdayAndOnSundayChanged(view);
 
@@ -271,7 +267,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         Integer portionsRequiredOnSunday = parseIntegerValueToTextView(portionsRequiredOnSundayTextView);
         Integer portionsOnHoliday = parseIntegerValueToTextView(portionsOnHolidayTextView);
         Integer maxPortionsSold = parseIntegerValueToTextView(maxPortionsSoldTextView);
-        LocalDateTime deliveryDate = itemDetail != null ? itemDetail.getDeliveryDate() : null;
+        ZonedDateTime deliveryDate = itemDetail != null ? itemDetail.getDeliveryDate() : null;
 
         // ITEM
         Long totPortionsAvailable = calculateTotPortions(quantityTypes, QuantityPurpose.AVAILABLE);
@@ -281,7 +277,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         String itemName = itemNameTextView.getText().toString();
         String barcode = barcodeEditText.getText().toString();
 
-        LocalDateTime now = LocalDateTime.now();
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Europe/Rome"));
 
         ItemDto finalItem = new ItemDto();
         finalItem.setId(item != null ? item.getId() : null);
@@ -551,7 +547,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
                     quantityTypeDto.setId(UUID.randomUUID());
                     quantityTypeDto.setItemId(itemId);
                     quantityTypeDto.setPurpose(purpose);
-                    quantityTypeDto.setCreationDate(LocalDateTime.now());
+                    quantityTypeDto.setCreationDate(ZonedDateTime.now(ZoneId.of("Europe/Rome")));
 
                     if (spinner.getSelectedItem() != null) {
                         quantityTypeDto.setQuantityType((QuantityType) spinner.getSelectedItem());
@@ -709,13 +705,9 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
             maxPortionsSold.setText(String.valueOf(itemDetail.getMaxPortionsSold() != null ? itemDetail.getMaxPortionsSold() : 0));
 
             CalendarView deliveryDateCalendarView = view.findViewById(R.id.delivery_date);
-            LocalDateTime deliveryDate = itemDetail.getDeliveryDate();
+            ZonedDateTime deliveryDate = itemDetail.getDeliveryDate();
             if (deliveryDate != null) {
-                deliveryDateCalendarView.setDate(
-                        deliveryDate.atZone(ZoneId.of("Europe/Rome"))
-                                .toInstant()
-                                .toEpochMilli()
-                );
+                deliveryDateCalendarView.setDate(deliveryDate.toInstant().toEpochMilli());
             }
 
         }
@@ -842,7 +834,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
                     return;
                 }
 
-                LocalDateTime now = LocalDateTime.now();
+                ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Europe/Rome"));
 
                 ProviderEntity newProvider = new ProviderEntity();
                 newProvider.setId(UUID.randomUUID());

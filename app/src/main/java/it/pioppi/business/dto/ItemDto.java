@@ -5,7 +5,7 @@ import android.os.Parcelable;
 
 import androidx.annotation.NonNull;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
@@ -19,15 +19,15 @@ public class ItemDto implements Parcelable {
     private Long totPortions;
     private ItemStatus status;
     private String barcode;
-    private LocalDateTime checkDate;
+    private ZonedDateTime checkDate;
     private String note;
-    private LocalDateTime creationDate;
-    private LocalDateTime lastUpdateDate;
+    private ZonedDateTime creationDate;
+    private ZonedDateTime lastUpdateDate;
     private UUID providerId;
 
     public ItemDto(UUID id, Integer ftsId, String name, Long totPortions, ItemStatus status,
-                   String barcode, LocalDateTime checkDate, String note,
-                   LocalDateTime creationDate, LocalDateTime lastUpdateDate, UUID providerId) {
+                   String barcode, ZonedDateTime checkDate, String note,
+                   ZonedDateTime creationDate, ZonedDateTime lastUpdateDate, UUID providerId) {
         this.id = id;
         this.ftsId = ftsId;
         this.name = name;
@@ -51,9 +51,9 @@ public class ItemDto implements Parcelable {
         status = in.readByte() == 0 ? null : ItemStatus.valueOf(in.readString());
         barcode = in.readString();
         note = in.readString();
-        checkDate = in.readByte() == 0 ? null : LocalDateTime.parse(in.readString(), DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-        creationDate = in.readByte() == 0 ? null : LocalDateTime.parse(in.readString(), DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-        lastUpdateDate = in.readByte() == 0 ? null : LocalDateTime.parse(in.readString(), DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        checkDate = in.readByte() == 0 ? null : ZonedDateTime.parse(in.readString(), DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        creationDate = in.readByte() == 0 ? null : ZonedDateTime.parse(in.readString(), DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        lastUpdateDate = in.readByte() == 0 ? null : ZonedDateTime.parse(in.readString(), DateTimeFormatter.ISO_LOCAL_DATE_TIME);
         providerId = in.readByte() == 0 ? null : UUID.fromString(in.readString());
 
     }
@@ -118,11 +118,11 @@ public class ItemDto implements Parcelable {
         this.barcode = barcode;
     }
 
-    public LocalDateTime getCheckDate() {
+    public ZonedDateTime getCheckDate() {
         return checkDate;
     }
 
-    public void setCheckDate(LocalDateTime checkDate) {
+    public void setCheckDate(ZonedDateTime checkDate) {
         this.checkDate = checkDate;
     }
 
@@ -134,19 +134,19 @@ public class ItemDto implements Parcelable {
         this.note = note;
     }
 
-    public LocalDateTime getCreationDate() {
+    public ZonedDateTime getCreationDate() {
         return creationDate;
     }
 
-    public void setCreationDate(LocalDateTime creationDate) {
+    public void setCreationDate(ZonedDateTime creationDate) {
         this.creationDate = creationDate;
     }
 
-    public LocalDateTime getLastUpdateDate() {
+    public ZonedDateTime getLastUpdateDate() {
         return lastUpdateDate;
     }
 
-    public void setLastUpdateDate(LocalDateTime lastUpdateDate) {
+    public void setLastUpdateDate(ZonedDateTime lastUpdateDate) {
         this.lastUpdateDate = lastUpdateDate;
     }
 

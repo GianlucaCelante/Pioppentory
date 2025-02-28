@@ -1,9 +1,7 @@
 package it.pioppi.business.dto;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.UUID;
-
-import it.pioppi.database.model.QuantityType;
 
 public class ItemDetailDto {
 
@@ -15,12 +13,12 @@ public class ItemDetailDto {
     private Integer portionsPerWeekend;
     private Integer portionsOnHoliday;
     private Integer maxPortionsSold;
-    private LocalDateTime deliveryDate;
-    private LocalDateTime creationDate;
-    private LocalDateTime lastUpdateDate;
+    private ZonedDateTime deliveryDate;
+    private ZonedDateTime creationDate;
+    private ZonedDateTime lastUpdateDate;
     private UUID itemId;
 
-    public ItemDetailDto(UUID id, Long quantityToBeOrdered, Integer orderedQuantity, Integer portionsRequiredOnSaturday, Integer portionsRequiredOnSunday, Integer portionsPerWeekend, Integer portionsOnHoliday, Integer maxPortionsSold, LocalDateTime deliveryDate, LocalDateTime creationDate, LocalDateTime lastUpdateDate, UUID itemId) {
+    public ItemDetailDto(UUID id, Long quantityToBeOrdered, Integer orderedQuantity, Integer portionsRequiredOnSaturday, Integer portionsRequiredOnSunday, Integer portionsPerWeekend, Integer portionsOnHoliday, Integer maxPortionsSold, ZonedDateTime deliveryDate, ZonedDateTime creationDate, ZonedDateTime lastUpdateDate, UUID itemId) {
         this.id = id;
         this.quantityToBeOrdered = quantityToBeOrdered;
         this.orderedQuantity = orderedQuantity;
@@ -101,27 +99,27 @@ public class ItemDetailDto {
         this.maxPortionsSold = maxPortionsSold;
     }
 
-    public LocalDateTime getDeliveryDate() {
+    public ZonedDateTime getDeliveryDate() {
         return deliveryDate;
     }
 
-    public void setDeliveryDate(LocalDateTime deliveryDate) {
+    public void setDeliveryDate(ZonedDateTime deliveryDate) {
         this.deliveryDate = deliveryDate;
     }
 
-    public LocalDateTime getCreationDate() {
+    public ZonedDateTime getCreationDate() {
         return creationDate;
     }
 
-    public void setCreationDate(LocalDateTime creationDate) {
+    public void setCreationDate(ZonedDateTime creationDate) {
         this.creationDate = creationDate;
     }
 
-    public LocalDateTime getLastUpdateDate() {
+    public ZonedDateTime getLastUpdateDate() {
         return lastUpdateDate;
     }
 
-    public void setLastUpdateDate(LocalDateTime lastUpdateDate) {
+    public void setLastUpdateDate(ZonedDateTime lastUpdateDate) {
         this.lastUpdateDate = lastUpdateDate;
     }
 
