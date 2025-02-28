@@ -10,11 +10,9 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
 import androidx.appcompat.widget.Toolbar;
-import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.navigation.NavController;
@@ -31,8 +29,7 @@ import java.util.concurrent.Executors;
 import it.pioppi.ConstantUtils;
 import it.pioppi.R;
 import it.pioppi.business.dto.ItemDto;
-import it.pioppi.business.fragment.ItemDetailFragment;
-import it.pioppi.business.viewmodel.ItemViewModel;
+import it.pioppi.business.viewmodel.GeneralItemViewModel;
 import it.pioppi.database.AppDatabase;
 import it.pioppi.database.dao.ItemFTSEntityDao;
 import it.pioppi.database.mapper.EntityDtoMapper;
@@ -40,7 +37,7 @@ import it.pioppi.database.mapper.EntityDtoMapper;
 public class MainActivity extends AppCompatActivity {
 
     private NavController navController;
-    private ItemViewModel itemViewModel;
+    private GeneralItemViewModel generalItemViewModel;
     private ItemFTSEntityDao itemFTSEntityDao;
     private ExecutorService executorService;
 
@@ -66,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
         NavigationUI.setupActionBarWithNavController(this, navController);
 
         // Initialize ViewModel and database
-        itemViewModel = new ViewModelProvider(this).get(ItemViewModel.class);
+        generalItemViewModel = new ViewModelProvider(this).get(GeneralItemViewModel.class);
         AppDatabase appDatabase = AppDatabase.getInstance(this);
         itemFTSEntityDao = appDatabase.itemFTSEntityDao();
         executorService = Executors.newSingleThreadExecutor();
@@ -111,7 +108,7 @@ public class MainActivity extends AppCompatActivity {
             public boolean onQueryTextChange(String newText) {
                 executorService.submit(() -> {
                     List<ItemDto> items = EntityDtoMapper.dtosToEntitiesForItemDto(itemFTSEntityDao.searchForItem(newText));
-                    runOnUiThread(() -> itemViewModel.setItems(items));
+                    runOnUiThread(() -> generalItemViewModel.setItems(items));
                 });
                 return true;
             }

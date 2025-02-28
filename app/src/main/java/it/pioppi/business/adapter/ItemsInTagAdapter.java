@@ -106,6 +106,28 @@ public class ItemsInTagAdapter extends RecyclerView.Adapter<ItemsInTagAdapter.It
         notifyDataSetChanged();
     }
 
+    private void updateItem(ItemDto updatedItem) {
+        if (itemDtos != null) {
+            for (int i = 0; i < itemDtos.size(); i++) {
+                if (itemDtos.get(i).getId().equals(updatedItem.getId())) {
+                    itemDtos.set(i, updatedItem);
+                    break;
+                }
+            }
+        }
+    }
+
+    private void updateItemDetail(ItemDetailDto updatedItemDetail) {
+        if (itemDetailDtos != null) {
+            for (int i = 0; i < itemDetailDtos.size(); i++) {
+                if (itemDetailDtos.get(i).getItemId().equals(updatedItemDetail.getItemId())) {
+                    itemDetailDtos.set(i, updatedItemDetail);
+                    break;
+                }
+            }
+        }
+    }
+
     public static class ItemTagsViewHolder extends RecyclerView.ViewHolder {
         public ConstraintLayout itemContainer;
         public TextView tagName;

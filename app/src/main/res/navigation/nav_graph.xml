@@ -30,8 +30,8 @@
     <fragment
         android:id="@+id/itemTagsFragment"
         android:name="it.pioppi.business.fragment.ItemTagsFragment"
-        android:label="Ingredienti"
-        tools:layout="@layout/fragment_item_tags" >
+        android:label="Tag"
+        tools:layout="@layout/fragment_item_tags">
         <action
             android:id="@+id/action_itemTagsFragment_to_itemDetailFragment"
             app:destination="@id/itemDetailFragment" />

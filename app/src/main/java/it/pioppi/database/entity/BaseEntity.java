@@ -4,6 +4,9 @@ import androidx.room.ColumnInfo;
 
 import java.time.LocalDateTime;
 
+import it.pioppi.DateTimeUtils;
+import it.pioppi.database.typeconverters.Converters;
+
 public class BaseEntity {
 
     @ColumnInfo(name = "creation_date")

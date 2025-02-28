@@ -4,6 +4,7 @@ import android.app.SearchManager;
 import android.content.Context;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.SearchView;
 import androidx.core.view.MenuProvider;
@@ -34,35 +35,30 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import it.pioppi.DateTimeUtils;
 import it.pioppi.R;
 import it.pioppi.business.adapter.ItemTagsAdapter;
 import it.pioppi.business.adapter.ItemsInTagAdapter;
 import it.pioppi.business.dto.ItemDetailDto;
 import it.pioppi.business.dto.ItemDto;
 import it.pioppi.business.dto.ItemTagDto;
-import it.pioppi.business.viewmodel.ItemTagsViewModel;
-import it.pioppi.business.viewmodel.ItemViewModel;
+import it.pioppi.business.viewmodel.GeneralItemViewModel;
 import it.pioppi.database.AppDatabase;
 import it.pioppi.database.mapper.EntityDtoMapper;
-import it.pioppi.database.entity.ItemEntity;
 import it.pioppi.database.entity.ItemDetailEntity;
 import it.pioppi.database.entity.ItemTagEntity;
 import it.pioppi.database.entity.ItemTagJoinEntity;
-import it.pioppi.database.entity.QuantityTypeEntity;
-import it.pioppi.database.model.ItemStatus;
-import it.pioppi.database.repository.ItemEntityRepository;
+import it.pioppi.database.typeconverters.Converters;
 
 public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItemClickListener, ItemsInTagAdapter.OnItemClickListener, Searchable {
     private AppDatabase appDatabase;
     private ItemTagsAdapter itemTagsAdapter;
     private ExecutorService executorService;
-    private ItemTagsViewModel itemTagsViewModel;
+    private GeneralItemViewModel generalItemViewModel;
     private RecyclerView recyclerViewTags;
     private UUID itemId;
-    private ItemEntityRepository itemEntityRepository;
 
     public ItemTagsFragment() {
         // Required empty public constructor
@@ -73,8 +69,7 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
         super.onCreate(savedInstanceState);
         appDatabase = AppDatabase.getInstance(getContext());
         executorService = Executors.newSingleThreadExecutor();
-        itemEntityRepository = new ItemEntityRepository(requireActivity().getApplication());
-        itemTagsViewModel = new ViewModelProvider(requireActivity()).get(ItemTagsViewModel.class);
+        generalItemViewModel = new ViewModelProvider(requireActivity()).get(GeneralItemViewModel.class);
 
         Bundle bundle = getArguments();
         if (bundle != null) {
@@ -83,12 +78,10 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
 
         try {
 
-            List<ItemTagDto> itemTagDtos = fetchItemTagsDtos(itemId);
-            List<ItemDto> itemDtos = fetchItemTags(itemId);
+            List<ItemTagDto> itemTagDtos = generalItemViewModel.getItemTags().getValue();
+            List<ItemDto> itemDtos = generalItemViewModel.getItems().getValue();
             List<ItemDetailDto> itemDetailDtos = fetchItemDetails(itemDtos);
-            itemTagsViewModel.setItemTags(itemTagDtos);
-            itemTagsViewModel.setItems(itemDtos);
-            itemTagsViewModel.setItemDetails(itemDetailDtos);
+
             itemTagsAdapter = new ItemTagsAdapter(itemTagDtos, itemDtos, itemDetailDtos,
                     this, getContext());
         } catch (ExecutionException | InterruptedException e) {
@@ -132,19 +125,6 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
         return itemDtos;
     }
 
-    private List<ItemDto> fetchItemTags(UUID itemId) throws ExecutionException, InterruptedException {
-        List<ItemDto> itemDtos = new ArrayList<>();
-        Future<?> future = executorService.submit(() -> {
-            List<ItemEntity> itemTagsForItem = appDatabase.itemTagEntityDao().getItemsWithSameTag(itemId);
-            itemTagsForItem.forEach(itemEntity -> {
-                ItemDto itemDto = EntityDtoMapper.entityToDto(itemEntity);
-                itemDtos.add(itemDto);
-            });
-        });
-        future.get();
-        return itemDtos;
-    }
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_item_tags, container, false);
@@ -162,6 +142,24 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
         return view;
     }
 
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
+        generalItemViewModel.getItemTags().observe(getViewLifecycleOwner(), updatedTags -> {
+            itemTagsAdapter.setItemTagDtos(updatedTags);
+        });
+
+        generalItemViewModel.getItems().observe(getViewLifecycleOwner(), updatedItems -> {
+            itemTagsAdapter.setItemDtos(updatedItems);
+        });
+
+        generalItemViewModel.getItemDetails().observe(getViewLifecycleOwner(), updatedDetails -> {
+            itemTagsAdapter.setItemDetailDtos(updatedDetails);
+        });
+    }
+
+
     private void addNewTag(LayoutInflater inflater, ViewGroup container) {
         View dialogView = inflater.inflate(R.layout.new_tag_alert, container, false);
         EditText newTagEditText = dialogView.findViewById(R.id.new_tag_name);
@@ -178,7 +176,7 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
                 return;
             }
 
-            List<ItemTagDto> itemTagDtos = itemTagsViewModel.getItemTags().getValue();
+            List<ItemTagDto> itemTagDtos = generalItemViewModel.getItemTags().getValue();
             if (itemTagDtos == null) {
                 itemTagDtos = new ArrayList<>();
             }
@@ -196,7 +194,7 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
 
             itemTagDtos.add(newItemTag);
             List<ItemTagDto> updatedList = new ArrayList<>(itemTagDtos);
-            itemTagsViewModel.setItemTags(updatedList);
+            generalItemViewModel.setItemTags(updatedList);
             itemTagsAdapter.setItemTagDtos(updatedList);
 
             executorService.execute(() -> {
@@ -223,7 +221,7 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
         if (itemId != null) {
             try {
                 List<ItemTagDto> itemTagDtos = fetchItemTagsDtos(itemId);
-                itemTagsViewModel.setItemTags(itemTagDtos);
+                generalItemViewModel.setItemTags(itemTagDtos);
                 itemTagsAdapter.setItemTagDtos(itemTagDtos);
                 recyclerViewTags.setAdapter(itemTagsAdapter);
             } catch (ExecutionException | InterruptedException e) {
@@ -234,7 +232,7 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
 
     @Override
     public void onSearchQueryChanged(String query) {
-        List<ItemTagDto> itemTags = itemTagsViewModel.getItemTags().getValue();
+        List<ItemTagDto> itemTags = generalItemViewModel.getItemTags().getValue();
         if (itemTags != null) {
             List<ItemTagDto> filteredTags = itemTags.stream()
                     .filter(tag -> tag.getName().toLowerCase().contains(query.toLowerCase()))
@@ -247,57 +245,7 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
 
     private void addNewItem(String tagName) {
 
-        Integer nextId;
-        try {
-            nextId = appDatabase.itemFTSEntityDao().getNextId();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
 
-        LocalDateTime now = LocalDateTime.now();
-
-        ItemEntity newItem = new ItemEntity();
-        UUID itemId = UUID.randomUUID();
-        newItem.setId(itemId);
-        newItem.setFtsId(nextId);
-        newItem.setName(tagName);
-        newItem.setTotPortions(0L);
-        newItem.setStatus(ItemStatus.WHITE);
-        newItem.setCreationDate(now);
-
-        appDatabase.runInTransaction(() -> {
-            try {
-                itemEntityRepository.insert(newItem);
-            } catch (ExecutionException | InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        });
-
-        ItemDetailEntity itemDetailEntity = new ItemDetailEntity();
-        itemDetailEntity.setId(itemId);
-        itemDetailEntity.setItemId(newItem.getId());
-        itemDetailEntity.setCreationDate(now);
-
-        QuantityTypeEntity quantityTypeEntity = new QuantityTypeEntity();
-        quantityTypeEntity.setId(itemId);
-        quantityTypeEntity.setItemId(newItem.getId());
-        quantityTypeEntity.setCreationDate(now);
-
-        appDatabase.runInTransaction(() -> {
-            appDatabase.itemDetailEntityDao().insert(itemDetailEntity);
-            appDatabase.quantityTypeEntityDao().insert(quantityTypeEntity);
-        });
-
-        requireActivity().runOnUiThread(() -> {
-            ItemViewModel itemViewModel = new ViewModelProvider(requireActivity()).get(ItemViewModel.class);
-            List<ItemDto> currentItems = itemViewModel.getItems().getValue();
-            if (currentItems == null) {
-                currentItems = new ArrayList<>();
-            }
-            currentItems.add(EntityDtoMapper.entityToDto(newItem));
-            itemViewModel.setItems(currentItems);
-
-        });
     }
 
     private void setupMenuToolbar() {
@@ -310,34 +258,38 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
                 SearchManager searchManager = (SearchManager) requireActivity().getSystemService(Context.SEARCH_SERVICE);
                 SearchView searchView = (SearchView) searchItem.getActionView();
                 if (searchManager != null) {
-                    searchView.setSearchableInfo(searchManager.getSearchableInfo(requireActivity().getComponentName()));
+                    if (searchView != null) {
+                        searchView.setSearchableInfo(searchManager.getSearchableInfo(requireActivity().getComponentName()));
+                    }
                 }
 
-                searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
-                    @Override
-                    public boolean onQueryTextSubmit(String query) {
-                        return false;
-                    }
-
-                    @Override
-                    public boolean onQueryTextChange(String newText) {
-                        Fragment navHostFragment = requireActivity().getSupportFragmentManager().findFragmentById(R.id.nav_host_fragment);
-                        if (navHostFragment != null) {
-                            Fragment currentFragment = navHostFragment.getChildFragmentManager().getPrimaryNavigationFragment();
-                            if (currentFragment instanceof Searchable) {
-                                ((Searchable) currentFragment).onSearchQueryChanged(newText);
-                            }
+                if (searchView != null) {
+                    searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+                        @Override
+                        public boolean onQueryTextSubmit(String query) {
+                            return false;
                         }
-                        return true;
-                    }
-                });
+
+                        @Override
+                        public boolean onQueryTextChange(String newText) {
+                            Fragment navHostFragment = requireActivity().getSupportFragmentManager().findFragmentById(R.id.nav_host_fragment);
+                            if (navHostFragment != null) {
+                                Fragment currentFragment = navHostFragment.getChildFragmentManager().getPrimaryNavigationFragment();
+                                if (currentFragment instanceof Searchable) {
+                                    ((Searchable) currentFragment).onSearchQueryChanged(newText);
+                                }
+                            }
+                            return true;
+                        }
+                    });
+                }
             }
 
             @Override
             public boolean onMenuItemSelected(@NonNull MenuItem menuItem) {
                 int itemId = menuItem.getItemId();
                 if (itemId == R.id.delete_tag) {
-                    List<ItemTagDto> itemTagDtos = itemTagsViewModel.getItemTags().getValue();
+                    List<ItemTagDto> itemTagDtos = generalItemViewModel.getItemTags().getValue();
                     if (itemTagDtos == null) {
                         return false;
                     }
@@ -363,18 +315,27 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
                     });
 
                     List<ItemTagDto> updatedList = new ArrayList<>(itemTagDtos);
-                    itemTagsViewModel.setItemTags(updatedList);
+                    generalItemViewModel.setItemTags(updatedList);
                     itemTagsAdapter.setItemTagDtos(updatedList);
                     return true;
                 } else if (itemId == R.id.filter_tags) {
-                    Objects.requireNonNull(itemTagsViewModel.getItemTags().getValue()).sort(Comparator.comparing(ItemTagDto::getName));
-                    itemTagsAdapter.setItemTagDtos(itemTagsViewModel.getItemTags().getValue());
+                    Objects.requireNonNull(generalItemViewModel.getItemTags().getValue()).sort(Comparator.comparing(ItemTagDto::getName));
+                    itemTagsAdapter.setItemTagDtos(generalItemViewModel.getItemTags().getValue());
                     return true;
                 }
                 return false;
             }
         }, getViewLifecycleOwner(), Lifecycle.State.RESUMED);
     }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (itemTagsAdapter != null) {
+            itemTagsAdapter.notifyDataSetChanged();
+        }
+    }
+
 
     @Override
     public void onDestroy() {

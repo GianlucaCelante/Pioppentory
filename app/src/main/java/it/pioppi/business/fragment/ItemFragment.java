@@ -45,9 +45,11 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import it.pioppi.ConstantUtils;
+import it.pioppi.DateTimeUtils;
 import it.pioppi.R;
 import it.pioppi.business.adapter.PreviewItemsAdapter;
-import it.pioppi.business.viewmodel.ItemViewModel;
+import it.pioppi.business.dto.ItemDetailDto;
+import it.pioppi.business.viewmodel.GeneralItemViewModel;
 import it.pioppi.business.adapter.ItemAdapter;
 import it.pioppi.business.dto.ItemDto;
 import it.pioppi.database.AppDatabase;
@@ -59,13 +61,14 @@ import it.pioppi.database.entity.ItemEntity;
 import it.pioppi.database.model.ItemStatus;
 import it.pioppi.database.entity.QuantityTypeEntity;
 import it.pioppi.database.repository.ItemEntityRepository;
+import it.pioppi.database.typeconverters.Converters;
 
 public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickListener, ItemAdapter.OnLongItemClickListener, Searchable {
 
     private AppDatabase appDatabase;
     private ItemAdapter itemAdapter;
     private ExecutorService executorService;
-    private ItemViewModel itemViewModel;
+    private GeneralItemViewModel generalItemViewModel;
     private RecyclerView recyclerView;
     private ItemEntityRepository itemEntityRepository;
     private AlertDialog newItemDialog;
@@ -76,12 +79,16 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
         appDatabase = AppDatabase.getInstance(getContext());
         executorService = Executors.newSingleThreadExecutor();
         itemEntityRepository = new ItemEntityRepository(requireActivity().getApplication());
-        itemViewModel = new ViewModelProvider(requireActivity()).get(ItemViewModel.class);
+        generalItemViewModel = new ViewModelProvider(requireActivity()).get(GeneralItemViewModel.class);
 
         try {
             List<ItemDto> itemDtoList = loadItems();
-            itemViewModel.setItems(itemDtoList);
+            List <ItemDetailDto> itemDetailDtoList = loadItemDetails();
+
+            generalItemViewModel.setItems(itemDtoList);
+            generalItemViewModel.setItemDetails(itemDetailDtoList);
             Log.d("ItemFragment", "Items set in ViewModel: " + itemDtoList.size());
+            Log.d("ItemFragment", "ItemDetails set in ViewModel: " + itemDetailDtoList.size());
         } catch (ExecutionException | InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -94,7 +101,7 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
         recyclerView = view.findViewById(R.id.recycler_view_items);
         itemAdapter = new ItemAdapter(new ArrayList<>(), this, this, getContext());
 
-        itemViewModel.getFilteredItems().observe(getViewLifecycleOwner(), itemList -> {
+        generalItemViewModel.getFilteredItems().observe(getViewLifecycleOwner(), itemList -> {
             itemAdapter.setItemList(itemList);
             Log.d("ItemFragment", "Observed items: " + itemList.size());
             recyclerView.setLayoutManager(new GridLayoutManager(getContext(), ConstantUtils.GRID_LAYOUT_NUMBER_COLUMNS));
@@ -105,7 +112,7 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
         setupMenuToolbar();
 
         FloatingActionButton fab = view.findViewById(R.id.new_item_fab);
-        fab.setOnClickListener(v -> addNewItem(inflater, itemViewModel));
+        fab.setOnClickListener(v -> addNewItem(inflater, generalItemViewModel));
 
         return view;
     }
@@ -126,13 +133,13 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                 searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
                     @Override
                     public boolean onQueryTextSubmit(String query) {
-                        itemViewModel.setQuery(query);
+                        generalItemViewModel.setQuery(query);
                         return false;
                     }
 
                     @Override
                     public boolean onQueryTextChange(String newText) {
-                        itemViewModel.setQuery(newText);
+                        generalItemViewModel.setQuery(newText);
                         return true;
                     }
                 });
@@ -175,7 +182,7 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
 
     private void previewItems() {
         // Filtra gli ItemDto con ItemStatus.BLUE
-        List<ItemDto> blueItems = Objects.requireNonNull(itemViewModel.getItems().getValue()).stream()
+        List<ItemDto> blueItems = Objects.requireNonNull(generalItemViewModel.getItems().getValue()).stream()
                 .filter(item -> item.getStatus() == ItemStatus.BLUE)
                 .collect(Collectors.toList());
 
@@ -216,7 +223,7 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                 resetItemStatus(itemList);
 
                 requireActivity().runOnUiThread(() -> {
-                    itemViewModel.setItems(itemViewModel.getItems().getValue());
+                    generalItemViewModel.setItems(generalItemViewModel.getItems().getValue());
                     itemAdapter.notifyDataSetChanged();
                     Toast.makeText(getContext(), "Chiusura dell'inventario salvata con successo.", Toast.LENGTH_SHORT).show();
                     dialog.dismiss();
@@ -247,9 +254,7 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
             try {
                 LocalDateTime closureDate = LocalDateTime.now();
 
-                // Per ogni elemento nella lista, creiamo un record da salvare
                 for (ItemDto item : itemList) {
-                    // Recupera eventuali dettagli aggiuntivi necessari (es. quantityPresent, quantityOrdered)
                     ItemWithDetailEntity itemEntity = appDatabase.itemEntityDao().getItemWithDetail(item.getId());
 
                     ItemHistoryEntity historyRecord = new ItemHistoryEntity();
@@ -272,9 +277,9 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
         });
     }
 
-    private void addNewItem(@NonNull LayoutInflater inflater, ItemViewModel itemViewModel) {
+    private void addNewItem(@NonNull LayoutInflater inflater, GeneralItemViewModel generalItemViewModel) {
 
-        List<ItemDto> items = itemViewModel.getItems().getValue();
+        List<ItemDto> items = generalItemViewModel.getItems().getValue();
 
         View dialogView = inflater.inflate(R.layout.new_item_alert, null);
         EditText newItemNameEditText = dialogView.findViewById(R.id.new_item_name);
@@ -337,8 +342,7 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                             }
                         });
 
-                        // Aggiorna la lista degli item e l'interfaccia utente
-                        items.add(EntityDtoMapper.entityToDto(newItem));
+                        generalItemViewModel.updateItem(EntityDtoMapper.entityToDto(newItem));
                         requireActivity().runOnUiThread(() -> {
                             itemAdapter.setItemList(items);
                             newItemDialog.dismiss();
@@ -365,6 +369,20 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
         });
         future.get();
         return itemDtos;
+    }
+
+    private List<ItemDetailDto> loadItemDetails() throws ExecutionException, InterruptedException {
+        List<ItemDetailDto> itemDetailDtos = new ArrayList<>();
+        Future<?> future = executorService.submit(() -> {
+            List<ItemDetailEntity> itemDetailEntities = appDatabase.itemDetailEntityDao().getAllItemDetails();
+
+            itemDetailEntities.forEach(itemDetailEntity -> {
+                ItemDetailDto itemDto = EntityDtoMapper.detailEntityToDto(itemDetailEntity);
+                itemDetailDtos.add(itemDto);
+            });
+        });
+        future.get();
+        return itemDetailDtos;
     }
 
     @Override
@@ -400,13 +418,13 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                         itemEntityRepository.delete(itemEntity);
 
                         requireActivity().runOnUiThread(() -> {
-                            List<ItemDto> currentList = itemViewModel.getItems().getValue();
+                            List<ItemDto> currentList = generalItemViewModel.getItems().getValue();
                             if (currentList != null) {
                                 List<ItemDto> updatedList = new ArrayList<>(currentList);
                                 int index = updatedList.indexOf(itemDto);
                                 if (index != RecyclerView.NO_POSITION) {
                                     updatedList.remove(index);
-                                    itemViewModel.setItems(updatedList);
+                                    generalItemViewModel.setItems(updatedList);
                                     itemAdapter.setItemList(updatedList);
                                     recyclerView.setAdapter(itemAdapter);
                                     Toast.makeText(getContext(), "Elemento eliminato", Toast.LENGTH_SHORT).show();
@@ -423,15 +441,15 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
     }
 
     private void filterItemsByNameAscending() {
-        Objects.requireNonNull(itemViewModel.getItems().getValue()).sort(Comparator.comparing(ItemDto::getName, String.CASE_INSENSITIVE_ORDER));
-        itemAdapter.setItemList(itemViewModel.getItems().getValue());
+        Objects.requireNonNull(generalItemViewModel.getItems().getValue()).sort(Comparator.comparing(ItemDto::getName, String.CASE_INSENSITIVE_ORDER));
+        itemAdapter.setItemList(generalItemViewModel.getItems().getValue());
         recyclerView.setLayoutManager(new GridLayoutManager(getContext(), ConstantUtils.GRID_LAYOUT_NUMBER_COLUMNS));
         recyclerView.setAdapter(itemAdapter);
     }
 
     private void filterItemsByNameDescending() {
-        Objects.requireNonNull(itemViewModel.getItems().getValue()).sort(Comparator.comparing(ItemDto::getName, String.CASE_INSENSITIVE_ORDER).reversed());
-        itemAdapter.setItemList(itemViewModel.getItems().getValue());
+        Objects.requireNonNull(generalItemViewModel.getItems().getValue()).sort(Comparator.comparing(ItemDto::getName, String.CASE_INSENSITIVE_ORDER).reversed());
+        itemAdapter.setItemList(generalItemViewModel.getItems().getValue());
         recyclerView.setLayoutManager(new GridLayoutManager(getContext(), ConstantUtils.GRID_LAYOUT_NUMBER_COLUMNS));
         recyclerView.setAdapter(itemAdapter);
     }
@@ -445,13 +463,6 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
         recyclerView.setAdapter(itemAdapter);*/
     }
 
-    private void hideKeyboard(View view) {
-        InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-        if (imm != null) {
-            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
-        }
-    }
-
     private void openKeyboard(View view) {
         InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
         if (imm != null) {
@@ -461,6 +472,6 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
 
     @Override
     public void onSearchQueryChanged(String query) {
-        itemViewModel.setQuery(query);
+        generalItemViewModel.setQuery(query);
     }
 }

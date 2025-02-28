@@ -52,7 +52,9 @@ public class ItemTagsAdapter extends RecyclerView.Adapter<ItemTagsAdapter.ItemTa
 
     @Override
     public void onBindViewHolder(@NonNull ItemTagsViewHolder holder, int position) {
+
         ItemTagDto itemTagDto = itemTagDtos.get(position);
+
         holder.tagName.setText(itemTagDto.getName() != null ? itemTagDto.getName() : "");
         holder.checkBox.setOnCheckedChangeListener((buttonView, isChecked) -> itemTagDto.setSelected(isChecked));
         holder.checkBox.setChecked(itemTagDto.isSelected());
@@ -61,9 +63,19 @@ public class ItemTagsAdapter extends RecyclerView.Adapter<ItemTagsAdapter.ItemTa
             holder.recyclerView.setLayoutManager(new LinearLayoutManager(context));
         }
 
-        ItemsInTagAdapter innerAdapter = new ItemsInTagAdapter(Collections.singletonList(itemTagDto),
-                itemDtos, itemDetailDtos, listenerInTags, context);
-        holder.recyclerView.setAdapter(innerAdapter);
+        if (holder.nestedAdapter != null) {
+            holder.nestedAdapter.setItemDtos(itemDtos);
+            holder.nestedAdapter.setItemDetailDtos(itemDetailDtos);
+        } else {
+            ItemsInTagAdapter nestedAdapter = new ItemsInTagAdapter(
+                    Collections.singletonList(itemTagDto),
+                    itemDtos,
+                    itemDetailDtos,
+                    listenerInTags,
+                    context);
+            holder.nestedAdapter = nestedAdapter;
+            holder.recyclerView.setAdapter(nestedAdapter);
+        }
 
         holder.tagName.setOnClickListener(v -> {
             if(holder.recyclerView.getVisibility() == View.VISIBLE){
@@ -84,10 +96,21 @@ public class ItemTagsAdapter extends RecyclerView.Adapter<ItemTagsAdapter.ItemTa
         notifyDataSetChanged();
     }
 
+    public void setItemDtos(List<ItemDto> itemDtos) {
+        this.itemDtos = new ArrayList<>(itemDtos);
+        notifyDataSetChanged();
+    }
+
+    public void setItemDetailDtos(List<ItemDetailDto> itemDetailDtos) {
+        this.itemDetailDtos = new ArrayList<>(itemDetailDtos);
+        notifyDataSetChanged();
+    }
+
     public static class ItemTagsViewHolder extends RecyclerView.ViewHolder {
         public TextView tagName;
         public MaterialCheckBox checkBox;
         public RecyclerView recyclerView;
+        public ItemsInTagAdapter nestedAdapter;
 
         public ItemTagsViewHolder(View itemView) {
             super(itemView);

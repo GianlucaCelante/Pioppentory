@@ -35,11 +35,15 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -48,6 +52,7 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import it.pioppi.ConstantUtils;
+import it.pioppi.DateTimeUtils;
 import it.pioppi.R;
 import it.pioppi.business.adapter.EnumAdapter;
 import it.pioppi.business.dto.ItemDetailDto;
@@ -55,7 +60,7 @@ import it.pioppi.business.dto.ItemDto;
 import it.pioppi.business.dto.ItemWithDetailAndQuantityTypeDto;
 import it.pioppi.business.dto.ProviderDto;
 import it.pioppi.business.dto.QuantityTypeDto;
-import it.pioppi.business.viewmodel.ItemViewModel;
+import it.pioppi.business.viewmodel.GeneralItemViewModel;
 import it.pioppi.database.AppDatabase;
 import it.pioppi.database.dao.ItemDetailEntityDao;
 import it.pioppi.database.dao.ItemEntityDao;
@@ -71,16 +76,18 @@ import it.pioppi.database.model.ItemStatus;
 import it.pioppi.database.entity.ProviderEntity;
 import it.pioppi.database.entity.QuantityTypeEntity;
 import it.pioppi.database.repository.ItemEntityRepository;
+import it.pioppi.database.typeconverters.Converters;
 
 public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLongClickListener, EnumAdapter.OnTextChangeListener  {
 
     private AppDatabase appDatabase;
     private ExecutorService executorService;
-    private ItemWithDetailAndQuantityTypeDto itemWithDetailAndProviderAndQuantityTypeDto;
     private RecyclerView quantityTypesAvailable;
     private RecyclerView quantityTypesToBeOrdered;
-    private ItemViewModel itemViewModel;
     private ItemEntityRepository itemEntityRepository;
+    private GeneralItemViewModel generalItemViewModel;
+
+    private UUID itemId;
 
 
     @Override
@@ -88,7 +95,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         super.onCreate(savedInstanceState);
         appDatabase = AppDatabase.getInstance(getContext());
         executorService = Executors.newSingleThreadExecutor();
-        itemViewModel = new ViewModelProvider(requireActivity()).get(ItemViewModel.class);
+        generalItemViewModel = new ViewModelProvider(requireActivity()).get(GeneralItemViewModel.class);
         itemEntityRepository = new ItemEntityRepository(requireActivity().getApplication());
         setHasOptionsMenu(true);
 
@@ -100,36 +107,29 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
 
         View view = inflater.inflate(R.layout.fragment_item_detail, container, false);
 
-        UUID itemId;
-        String barcode;
         Bundle bundle = getArguments();
         if (bundle != null) {
-
             try {
                 if(bundle.getString(ConstantUtils.ITEM_ID) != null) {
                     itemId = UUID.fromString(bundle.getString(ConstantUtils.ITEM_ID));
-                    itemWithDetailAndProviderAndQuantityTypeDto = fetchItemWithDetailAndQuantityTypeById(itemId);
-
+                } else if(bundle.getString(ConstantUtils.SCANNED_CODE) != null) {
+                    itemId = fetchItemWithDetailByBarcode(bundle.getString(ConstantUtils.SCANNED_CODE));
                 } else {
-                    barcode = bundle.getString(ConstantUtils.SCANNED_CODE);
+                    throw new IllegalArgumentException("Item details not found");
+                }
+                ItemWithDetailAndQuantityTypeDto dto = fetchItemWithDetailAndQuantityTypeById(itemId);
 
-                        if (barcode != null) {
-                            UUID itemIdByBarcode = fetchItemWithDetailByBarcode(barcode);
-                            itemWithDetailAndProviderAndQuantityTypeDto = fetchItemWithDetailAndQuantityTypeById(itemIdByBarcode);
-                            itemId = itemIdByBarcode;
-
-                        } else {
-                            throw new IllegalArgumentException("Item details not found");
-                        }}
-
+                generalItemViewModel.updateItem(dto.getItem());
+                generalItemViewModel.updateItemDetail(dto.getItemDetail());
+                generalItemViewModel.setQuantityTypes(dto.getQuantityTypes());
             } catch (ExecutionException | InterruptedException e) {
                 throw new RuntimeException(e);
             }
-
         } else {
             Toast.makeText(requireContext(), "Errore nel caricamento dell'item, Item non esiste", Toast.LENGTH_SHORT).show();
             return view;
         }
+
         // Set up touch listener to hide keyboard when touch happens outside EditText
         setupUI(view);
 
@@ -152,18 +152,21 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         quantityTypesAvailable = setupRecyclerViewAndButtonForQuantityTypes(view, inflater, R.id.recycler_view_quantity_available, R.id.add_quantity_type_available, QuantityPurpose.AVAILABLE);
         quantityTypesToBeOrdered = setupRecyclerViewAndButtonForQuantityTypes(view, inflater, R.id.recycler_view_quantity_to_be_ordered, R.id.add_quantity_type_to_be_ordered, QuantityPurpose.TO_BE_ORDERED);
 
-        ItemWithDetailAndQuantityTypeDto itemWithDetailAndProviderAndQuantityTypeDtoPrefilled = prefillFields(view);
+        prefillFields(view);
 
         CalendarView deliveryDateCalendarView = view.findViewById(R.id.delivery_date);
-        deliveryDateCalendarView.setOnDateChangeListener((deliveryDate, year, month, dayOfMonth) -> itemWithDetailAndProviderAndQuantityTypeDtoPrefilled.getItemDetail().setDeliveryDate(
-                LocalDateTime.of(year, month + 1, dayOfMonth, 0, 0)));
+        deliveryDateCalendarView.setOnDateChangeListener((deliveryDate, year, month, dayOfMonth) -> Objects.requireNonNull(generalItemViewModel.getItemDetails().getValue())
+                .stream()
+                .filter(itemDetail -> itemDetail.getItemId().equals(itemId))
+                .findFirst()
+                .ifPresent(itemDetailDto -> itemDetailDto.setDeliveryDate(LocalDateTime.of(year, month + 1, dayOfMonth, 0, 0))));
 
         updatePortionsNeededForWeekendWhenPortionsRequiredOnSaturdayAndOnSundayChanged(view);
 
         FloatingActionButton saveButton = view.findViewById(R.id.save_button);
         saveButton.setOnClickListener(v -> {
             try {
-                saveAll(view, itemWithDetailAndProviderAndQuantityTypeDtoPrefilled);
+                saveAll(view);
             } catch (ExecutionException | InterruptedException e) {
                 throw new RuntimeException(e);
             }
@@ -217,14 +220,22 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         onTextChanged();
     }
 
-    private void saveAll(View view, ItemWithDetailAndQuantityTypeDto itemWithDetailAndProviderAndQuantityTypeDto) throws ExecutionException, InterruptedException {
+    private void saveAll(View view) throws ExecutionException, InterruptedException {
 
         QuantityTypeEntityDao quantityTypeEntityDao = appDatabase.quantityTypeEntityDao();
         ItemDetailEntityDao itemDetailEntityDao = appDatabase.itemDetailEntityDao();
 
-        ItemDto item = itemWithDetailAndProviderAndQuantityTypeDto.getItem() != null ? itemWithDetailAndProviderAndQuantityTypeDto.getItem() : new ItemDto();
-        ItemDetailDto itemDetail = itemWithDetailAndProviderAndQuantityTypeDto.getItemDetail() != null ? itemWithDetailAndProviderAndQuantityTypeDto.getItemDetail() : new ItemDetailDto();
-        List<QuantityTypeDto> quantityTypes = itemWithDetailAndProviderAndQuantityTypeDto.getQuantityTypes() != null ? itemWithDetailAndProviderAndQuantityTypeDto.getQuantityTypes() : new ArrayList<>();
+        ItemDto item = Objects.requireNonNull(generalItemViewModel.getItems().getValue()).stream()
+                .filter(itemDto -> itemDto.getId().equals(itemId))
+                .findFirst().orElse(null);
+
+        ItemDetailDto itemDetail = Objects.requireNonNull(generalItemViewModel.getItemDetails().getValue()).stream()
+                .filter(detail -> detail.getItemId().equals(itemId))
+                .findFirst().orElse(null);
+
+        List<QuantityTypeDto> quantityTypes = Objects.requireNonNull(generalItemViewModel.getQuantityTypes().getValue()).stream()
+                .filter(quantityTypeDto -> quantityTypeDto.getItemId().equals(itemId))
+                .collect(Collectors.toList());
 
         TextView portionsPerWeekendTextView = view.findViewById(R.id.portions_per_weekend);
         TextView portionsRequiredOnSaturdayTextView = view.findViewById(R.id.portions_required_on_saturday);
@@ -248,7 +259,9 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
             executorService.submit(() -> {
                 ProviderEntityDao providerEntityDao = appDatabase.providerEntityDao();
                 ProviderDto provider = EntityDtoMapper.entityToDto(providerEntityDao.getProviderByName(providerName));
-                item.setProviderId(provider.getId());
+                if (item != null) {
+                    item.setProviderId(provider.getId());
+                }
             }).get();
         }
 
@@ -258,7 +271,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         Integer portionsRequiredOnSunday = parseIntegerValueToTextView(portionsRequiredOnSundayTextView);
         Integer portionsOnHoliday = parseIntegerValueToTextView(portionsOnHolidayTextView);
         Integer maxPortionsSold = parseIntegerValueToTextView(maxPortionsSoldTextView);
-        LocalDateTime deliveryDate = itemDetail.getDeliveryDate();
+        LocalDateTime deliveryDate = itemDetail != null ? itemDetail.getDeliveryDate() : null;
 
         // ITEM
         Long totPortionsAvailable = calculateTotPortions(quantityTypes, QuantityPurpose.AVAILABLE);
@@ -268,13 +281,15 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         String itemName = itemNameTextView.getText().toString();
         String barcode = barcodeEditText.getText().toString();
 
+        LocalDateTime now = LocalDateTime.now();
+
         ItemDto finalItem = new ItemDto();
-        finalItem.setId(item.getId());
+        finalItem.setId(item != null ? item.getId() : null);
         finalItem.setName(itemName);
-        finalItem.setFtsId(item.getFtsId());
+        finalItem.setFtsId(item != null ? item.getFtsId() : null);
         finalItem.setCreationDate(item.getCreationDate());
-        finalItem.setLastUpdateDate(LocalDateTime.now());
-        finalItem.setCheckDate(LocalDateTime.now());
+        finalItem.setLastUpdateDate(now);
+        finalItem.setCheckDate(now);
         finalItem.setStatus(ItemStatus.BLUE);
         finalItem.setTotPortions(totPortionsAvailable);
         finalItem.setBarcode(barcode);
@@ -282,18 +297,18 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         finalItem.setProviderId(item.getProviderId());
 
         ItemDetailDto finalItemDetail = new ItemDetailDto();
-        finalItemDetail.setId(itemDetail.getId());
-        finalItemDetail.setItemId(itemDetail.getItemId());
+        finalItemDetail.setId(itemDetail != null ? itemDetail.getId() : null);
+        finalItemDetail.setItemId(itemDetail != null ? itemDetail.getItemId() : null);
         finalItemDetail.setPortionsPerWeekend(portionsPerWeekend);
         finalItemDetail.setPortionsRequiredOnSaturday(portionsRequiredOnSaturday);
         finalItemDetail.setPortionsRequiredOnSunday(portionsRequiredOnSunday);
         finalItemDetail.setPortionsOnHoliday(portionsOnHoliday);
         finalItemDetail.setMaxPortionsSold(maxPortionsSold);
         finalItemDetail.setDeliveryDate(deliveryDate);
-        finalItemDetail.setCreationDate(itemDetail.getCreationDate());
-        finalItemDetail.setLastUpdateDate(LocalDateTime.now());
+        finalItemDetail.setCreationDate(itemDetail != null ? itemDetail.getCreationDate() : null);
+        finalItemDetail.setLastUpdateDate(now);
         finalItemDetail.setQuantityToBeOrdered(totPortionsToBeOrdered);
-        finalItemDetail.setOrderedQuantity(itemDetail.getOrderedQuantity());
+        finalItemDetail.setOrderedQuantity(itemDetail != null ? itemDetail.getOrderedQuantity() : null);
         finalItemDetail.setItemId(finalItem.getId());
 
         List<QuantityTypeDto> finalQuantityTypes = new ArrayList<>();
@@ -307,7 +322,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
             finalQuantityType.setPurpose(quantityTypeDto.getPurpose());
             finalQuantityType.setUnitsPerQuantityType(quantityTypeDto.getUnitsPerQuantityType());
             finalQuantityType.setCreationDate(quantityTypeDto.getCreationDate());
-            finalQuantityType.setLastUpdateDate(LocalDateTime.now());
+            finalQuantityType.setLastUpdateDate(now);
             finalQuantityTypes.add(finalQuantityType);
         }
 
@@ -337,7 +352,9 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
 
         future.get();
 
-        itemViewModel.updateItem(finalItem);
+        generalItemViewModel.updateItem(finalItem);
+        generalItemViewModel.updateItemDetail(finalItemDetail);
+        generalItemViewModel.setQuantityTypes(finalQuantityTypes);
 
         Toast.makeText(requireContext(), "Prodotto salvato", Toast.LENGTH_SHORT).show();
         NavHostFragment.findNavController(this).popBackStack();
@@ -397,10 +414,15 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
                 }
 
                 Integer portionsPerWeekend = saturdayPortions + sundayPortions;
-                if(itemWithDetailAndProviderAndQuantityTypeDto.getItemDetail() != null) {
-                    itemWithDetailAndProviderAndQuantityTypeDto.getItemDetail().setPortionsRequiredOnSaturday(saturdayPortions);
-                    itemWithDetailAndProviderAndQuantityTypeDto.getItemDetail().setPortionsRequiredOnSunday(sundayPortions);
-                    itemWithDetailAndProviderAndQuantityTypeDto.getItemDetail().setPortionsPerWeekend(portionsPerWeekend);
+
+                ItemDetailDto itemDetail = Objects.requireNonNull(generalItemViewModel.getItemDetails().getValue()).stream()
+                        .filter(detail -> detail.getItemId().equals(itemId))
+                        .findFirst().orElse(null);
+
+                if(itemDetail != null) {
+                    itemDetail.setPortionsRequiredOnSaturday(saturdayPortions);
+                    itemDetail.setPortionsRequiredOnSunday(sundayPortions);
+                    itemDetail.setPortionsPerWeekend(portionsPerWeekend);
                     portionsPerWeekendTextView.setText(String.valueOf(portionsPerWeekend));
 
                 }
@@ -488,7 +510,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
 
 
     private RecyclerView setupRecyclerViewAndButtonForQuantityTypes(View view, LayoutInflater inflater, int recyclerViewId, int buttonId, QuantityPurpose purpose) {
-        List<QuantityTypeDto> filteredQuantityTypes = itemWithDetailAndProviderAndQuantityTypeDto.getQuantityTypes().stream()
+        List<QuantityTypeDto> filteredQuantityTypes = Objects.requireNonNull(generalItemViewModel.getQuantityTypes().getValue()).stream()
                 .filter(quantityTypeDto -> purpose.equals(quantityTypeDto.getPurpose()))
                 .collect(Collectors.toList());
 
@@ -527,7 +549,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
                 .setPositiveButton("Aggiungi", (dialog, id) -> {
                     QuantityTypeDto quantityTypeDto = new QuantityTypeDto();
                     quantityTypeDto.setId(UUID.randomUUID());
-                    quantityTypeDto.setItemId(itemWithDetailAndProviderAndQuantityTypeDto.getItem().getId());
+                    quantityTypeDto.setItemId(itemId);
                     quantityTypeDto.setPurpose(purpose);
                     quantityTypeDto.setCreationDate(LocalDateTime.now());
 
@@ -552,7 +574,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
 
                     if (!adapter.containsQuantityType(quantityTypeDto)) {
                         adapter.addQuantityType(quantityTypeDto);
-                        itemWithDetailAndProviderAndQuantityTypeDto.getQuantityTypes().add(quantityTypeDto);
+                        generalItemViewModel.getQuantityTypes().getValue().add(quantityTypeDto);
                         recyclerView.smoothScrollToPosition(adapter.getItemCount() - 1);
                         onTextChanged();
                     } else {
@@ -621,10 +643,15 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         return future.get();
     }
 
-    protected ItemWithDetailAndQuantityTypeDto prefillFields(View view) {
+    protected void prefillFields(View view) {
 
         Spinner providerSpinner = view.findViewById(R.id.provider_spinner);
-        UUID providerId = itemWithDetailAndProviderAndQuantityTypeDto.getItem().getProviderId();
+
+        ItemDto itemDto = Objects.requireNonNull(generalItemViewModel.getItems().getValue()).stream()
+                .filter(item -> item.getId().equals(itemId))
+                .findFirst().orElse(null);
+
+        UUID providerId = itemDto != null ? itemDto.getProviderId() : null;
 
         executorService.submit(() -> {
             ProviderEntityDao providerEntityDao = appDatabase.providerEntityDao();
@@ -641,20 +668,22 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
             }
         });
 
-        ItemDto item = itemWithDetailAndProviderAndQuantityTypeDto.getItem();
-        if (item != null) {
+        if (itemDto != null) {
             EditText itemNameTextView = view.findViewById(R.id.item_name_card_detail);
             TextView totPortionsAvailableTextView = view.findViewById(R.id.tot_portions_avalaible);
             EditText barcodeEditText = view.findViewById(R.id.barcode);
             TextView noteTextView = view.findViewById(R.id.note);
 
-            itemNameTextView.setText(item.getName());
-            totPortionsAvailableTextView.setText(String.valueOf(item.getTotPortions()));
-            barcodeEditText.setText(item.getBarcode());
-            noteTextView.setText(item.getNote());
+            itemNameTextView.setText(itemDto.getName());
+            totPortionsAvailableTextView.setText(String.valueOf(itemDto.getTotPortions()));
+            barcodeEditText.setText(itemDto.getBarcode());
+            noteTextView.setText(itemDto.getNote());
         }
 
-        ItemDetailDto itemDetail = itemWithDetailAndProviderAndQuantityTypeDto.getItemDetail();
+        ItemDetailDto itemDetail = Objects.requireNonNull(generalItemViewModel.getItemDetails().getValue()).stream()
+                .filter(detail -> detail.getItemId().equals(itemId))
+                .findFirst().orElse(null);
+
         if (itemDetail != null) {
 
             TextView totPortionsToBeOrderedTextView = view.findViewById(R.id.tot_portions_to_be_ordered);
@@ -682,12 +711,16 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
             CalendarView deliveryDateCalendarView = view.findViewById(R.id.delivery_date);
             LocalDateTime deliveryDate = itemDetail.getDeliveryDate();
             if (deliveryDate != null) {
-                deliveryDateCalendarView.setDate(deliveryDate.toInstant(ZoneOffset.UTC).toEpochMilli());
+                deliveryDateCalendarView.setDate(
+                        deliveryDate.atZone(ZoneId.of("Europe/Rome"))
+                                .toInstant()
+                                .toEpochMilli()
+                );
             }
 
         }
 
-        List<QuantityTypeDto> quantityTypes = itemWithDetailAndProviderAndQuantityTypeDto.getQuantityTypes();
+        List<QuantityTypeDto> quantityTypes = generalItemViewModel.getQuantityTypes().getValue();
         if(quantityTypes != null) {
             List<QuantityTypeDto> quantityTypeAvailable = quantityTypes.stream()
                     .filter(quantityType -> QuantityPurpose.AVAILABLE.equals(quantityType.getPurpose()))
@@ -709,12 +742,6 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
 
         }
 
-        ItemWithDetailAndQuantityTypeDto itemWithDetailAndProviderAndQuantityTypeDtoPrefilled = new ItemWithDetailAndQuantityTypeDto();
-        itemWithDetailAndProviderAndQuantityTypeDtoPrefilled.setItem(item);
-        itemWithDetailAndProviderAndQuantityTypeDtoPrefilled.setItemDetail(itemDetail);
-        itemWithDetailAndProviderAndQuantityTypeDtoPrefilled.setQuantityTypes(quantityTypes);
-
-        return itemWithDetailAndProviderAndQuantityTypeDtoPrefilled;
     }
 
     @Override
@@ -731,7 +758,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         });
         future.get();
 
-        itemWithDetailAndProviderAndQuantityTypeDto.getQuantityTypes()
+        generalItemViewModel.getQuantityTypes().getValue()
                 .removeIf(q -> q.getId().equals(quantityTypeDto.getId()));
 
         Toast.makeText(requireContext(), "Deleted", Toast.LENGTH_SHORT).show();
@@ -746,7 +773,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         TextView portionsPerWeekendTextView = requireView().findViewById(R.id.portions_per_weekend);
         CardView itemNameAndTotPortionsCardView = requireView().findViewById(R.id.item_name_tot_portions);
 
-        List<QuantityTypeDto> quantityTypeDtos = itemWithDetailAndProviderAndQuantityTypeDto.getQuantityTypes();
+        List<QuantityTypeDto> quantityTypeDtos = generalItemViewModel.getQuantityTypes().getValue();
         Long totPortionsAvailable = calculateTotPortions(quantityTypeDtos, QuantityPurpose.AVAILABLE);
         Long totPortionsToBeOrdered = calculateTotPortions(quantityTypeDtos, QuantityPurpose.TO_BE_ORDERED);
         long totPortionsAvailablePlusOrdered = totPortionsAvailable + totPortionsToBeOrdered;

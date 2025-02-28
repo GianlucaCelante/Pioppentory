@@ -36,6 +36,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,12 +47,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import it.pioppi.ConstantUtils;
+import it.pioppi.DateTimeUtils;
 import it.pioppi.R;
 import it.pioppi.business.adapter.BluetoothDevicesAdapter;
 import it.pioppi.business.dto.BluetoothDeviceDto;
 import it.pioppi.business.dto.BluetoothSocketHolder;
 import it.pioppi.business.service.BluetoothScannerService;
 import it.pioppi.business.viewmodel.BluetoothDeviceViewModel;
+import it.pioppi.database.typeconverters.Converters;
 
 public class OptionsFragment extends Fragment implements BluetoothDevicesAdapter.OnItemClickListener, BluetoothDevicesAdapter.OnLongItemClickListener {
 
@@ -136,7 +139,7 @@ public class OptionsFragment extends Fragment implements BluetoothDevicesAdapter
         newDevice.setName(deviceName);
         newDevice.setAddress(deviceAddress);
         newDevice.setCreationDate(LocalDateTime.now());
-        newDevice.setDetected(detected); // Imposta come rilevato
+        newDevice.setDetected(detected);
 
         List<BluetoothDeviceDto> currentDevices = bluetoothDeviceViewModel.getNearbyBluetoothDevices().getValue();
         if (currentDevices == null) {
