@@ -15,6 +15,8 @@ import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -22,6 +24,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -31,7 +34,9 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -47,6 +52,7 @@ import it.pioppi.business.dto.ItemDto;
 import it.pioppi.business.dto.ItemTagDto;
 import it.pioppi.business.viewmodel.GeneralItemViewModel;
 import it.pioppi.database.AppDatabase;
+import it.pioppi.database.entity.ItemEntity;
 import it.pioppi.database.mapper.EntityDtoMapper;
 import it.pioppi.database.entity.ItemDetailEntity;
 import it.pioppi.database.entity.ItemTagEntity;
@@ -59,6 +65,9 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
     private GeneralItemViewModel generalItemViewModel;
     private RecyclerView recyclerViewTags;
     private UUID itemId;
+    private List<ItemDto> itemDtos;
+    private List<ItemDetailDto> itemDetailDtos;
+    private Map<UUID, Set<UUID>> itemTagJoins;
 
     public ItemTagsFragment() {
         // Required empty public constructor
@@ -78,15 +87,37 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
 
         try {
 
-            List<ItemTagDto> itemTagDtos = generalItemViewModel.getItemTags().getValue();
-            List<ItemDto> itemDtos = generalItemViewModel.getItems().getValue();
-            List<ItemDetailDto> itemDetailDtos = fetchItemDetails(itemDtos);
+            List<ItemTagDto> itemTagDtos = fetchItemTagsDtos(itemId);
+            itemDtos = fetchItemsForTags(itemTagDtos);
+            itemDetailDtos = fetchItemDetails(itemDtos);
+            itemTagJoins = generalItemViewModel.getItemTagJoins();
 
-            itemTagsAdapter = new ItemTagsAdapter(itemTagDtos, itemDtos, itemDetailDtos,
-                    this, getContext());
+            itemTagsAdapter = new ItemTagsAdapter(itemTagDtos, itemDtos, itemDetailDtos, itemTagJoins,
+                    this, this, getContext());
         } catch (ExecutionException | InterruptedException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private List<ItemDto> fetchItemsForTags(List<ItemTagDto> itemTagDtos) {
+
+        List<ItemDto> itemDtos = new ArrayList<>();
+        itemTagDtos.forEach(itemTagDto -> {
+            try {
+                Future<?> future = executorService.submit(() -> {
+
+                    List<ItemEntity> itemsForTag = appDatabase.itemTagEntityDao().getItemsForTag(itemTagDto.getId());
+                    itemsForTag.forEach(itemEntity -> {
+                        ItemDto itemDto = EntityDtoMapper.entityToDto(itemEntity);
+                        itemDtos.add(itemDto);
+                    });
+                });
+                future.get();
+            } catch (ExecutionException | InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        return itemDtos;
     }
 
     private List<ItemDetailDto> fetchItemDetails(List<ItemDto> itemDtos) throws ExecutionException, InterruptedException {
@@ -151,12 +182,21 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
         });
 
         generalItemViewModel.getItems().observe(getViewLifecycleOwner(), updatedItems -> {
-            itemTagsAdapter.setItemDtos(updatedItems);
+            List<ItemDto> filtered = updatedItems.stream()
+                    .filter(item -> itemDtos.stream()
+                            .anyMatch(dto -> dto.getId().equals(item.getId())))
+                    .collect(Collectors.toList());
+            itemTagsAdapter.setItemDtos(filtered);
         });
 
         generalItemViewModel.getItemDetails().observe(getViewLifecycleOwner(), updatedDetails -> {
-            itemTagsAdapter.setItemDetailDtos(updatedDetails);
+            List<ItemDetailDto> filteredDetails = updatedDetails.stream()
+                    .filter(detail -> itemDtos.stream()
+                            .anyMatch(item -> item.getId().equals(detail.getItemId())))
+                    .collect(Collectors.toList());
+            itemTagsAdapter.setItemDetailDtos(filteredDetails);
         });
+
     }
 
 
@@ -357,4 +397,29 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
 
     }
 
+    @Override
+    public void onRemoveItemFromTag(ItemDto item, ItemTagDto tag) throws ExecutionException, InterruptedException {
+        if (item == null || tag == null) {
+            return;
+        }
+
+        Set<UUID> itemsId = itemTagJoins.get(tag.getId());
+        if (itemsId != null) {
+
+            itemsId.remove(item.getId());
+            Future<?> submit = executorService.submit(() -> appDatabase.itemTagJoinDao()
+                    .delete(tag.getId(), item.getId()));
+            submit.get();
+        }
+        requireActivity().runOnUiThread(() -> {
+            itemTagsAdapter.notifyDataSetChanged();
+        });
+    }
+
+    @Override
+    public void onAddItemsToTag(ItemTagDto item) throws ExecutionException, InterruptedException {
+
+        //TODO: alert dialog che mostra uno spinner di tutti gli item per associazione item a tag + insert tabella join
+
+    }
 }

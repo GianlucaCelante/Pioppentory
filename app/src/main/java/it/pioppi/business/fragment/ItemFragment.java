@@ -36,8 +36,12 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -49,11 +53,13 @@ import it.pioppi.ConstantUtils;
 import it.pioppi.R;
 import it.pioppi.business.adapter.PreviewItemsAdapter;
 import it.pioppi.business.dto.ItemDetailDto;
+import it.pioppi.business.dto.ItemTagJoinDto;
 import it.pioppi.business.viewmodel.GeneralItemViewModel;
 import it.pioppi.business.adapter.ItemAdapter;
 import it.pioppi.business.dto.ItemDto;
 import it.pioppi.database.AppDatabase;
 import it.pioppi.database.entity.ItemHistoryEntity;
+import it.pioppi.database.entity.ItemTagJoinEntity;
 import it.pioppi.database.entity.ItemWithDetailEntity;
 import it.pioppi.database.mapper.EntityDtoMapper;
 import it.pioppi.database.entity.ItemDetailEntity;
@@ -61,6 +67,7 @@ import it.pioppi.database.entity.ItemEntity;
 import it.pioppi.database.model.ItemStatus;
 import it.pioppi.database.entity.QuantityTypeEntity;
 import it.pioppi.database.repository.ItemEntityRepository;
+import kotlin.collections.MapAccessorsKt;
 
 public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickListener, ItemAdapter.OnLongItemClickListener, Searchable {
 
@@ -84,6 +91,13 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
             List<ItemDto> itemDtoList = loadItems();
             List <ItemDetailDto> itemDetailDtoList = loadItemDetails();
 
+            List<ItemTagJoinDto> itemTagJoinDtoList = loadItemTagJoin();
+            Map<UUID, Set<UUID>> itemTagJoinMap = new HashMap<>();
+            for (ItemTagJoinDto join : itemTagJoinDtoList) {
+                itemTagJoinMap.computeIfAbsent(join.getTagId(), k -> new HashSet<>()).add(join.getItemId());
+            }
+
+            generalItemViewModel.setItemTagJoins(itemTagJoinMap);
             generalItemViewModel.setItems(itemDtoList);
             generalItemViewModel.setItemDetails(itemDetailDtoList);
             Log.d("ItemFragment", "Items set in ViewModel: " + itemDtoList.size());
@@ -91,6 +105,21 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
         } catch (ExecutionException | InterruptedException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private List<ItemTagJoinDto> loadItemTagJoin() throws ExecutionException, InterruptedException {
+
+        List<ItemTagJoinDto> itemTagJoinDtos = new ArrayList<>();
+        Future<?> future = executorService.submit(() -> {
+            List<ItemTagJoinEntity> itemTagJoinEntities = appDatabase.itemTagJoinDao().getAll();
+
+            itemTagJoinEntities.forEach(itemTagJoinEntity -> {
+                ItemTagJoinDto itemTagJoinDto = EntityDtoMapper.entityToDto(itemTagJoinEntity);
+                itemTagJoinDtos.add(itemTagJoinDto);
+            });
+        });
+        future.get();
+        return itemTagJoinDtos;
     }
 
     @Override
@@ -170,7 +199,6 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                     filterItemsByStatus(ItemStatus.RED);
                     return true;
                 } else if (itemId == R.id.filter_by_status_green) {
-                    filterItemsByStatus(ItemStatus.GREEN);
                     filterItemsByStatus(ItemStatus.GREEN);
                     return true;
                 }

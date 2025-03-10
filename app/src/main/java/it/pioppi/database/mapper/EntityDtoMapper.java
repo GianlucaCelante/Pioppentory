@@ -8,6 +8,7 @@ import it.pioppi.business.dto.ItemDto;
 import it.pioppi.business.dto.ItemFTSDto;
 import it.pioppi.business.dto.ItemHistoryDto;
 import it.pioppi.business.dto.ItemTagDto;
+import it.pioppi.business.dto.ItemTagJoinDto;
 import it.pioppi.business.dto.ItemWithProviderDto;
 import it.pioppi.business.dto.ProviderDto;
 import it.pioppi.business.dto.QuantityTypeDto;
@@ -16,6 +17,7 @@ import it.pioppi.database.entity.ItemEntity;
 import it.pioppi.database.entity.ItemFTSEntity;
 import it.pioppi.database.entity.ItemHistoryEntity;
 import it.pioppi.database.entity.ItemTagEntity;
+import it.pioppi.database.entity.ItemTagJoinEntity;
 import it.pioppi.database.entity.ItemWithProviderEntity;
 import it.pioppi.database.entity.ProviderEntity;
 import it.pioppi.database.entity.QuantityTypeEntity;
@@ -23,7 +25,7 @@ import it.pioppi.database.entity.QuantityTypeEntity;
 public class EntityDtoMapper {
 
     public static ItemEntity dtoToEntity(ItemDto itemDto) {
-        if(itemDto == null) {
+        if (itemDto == null) {
             return null;
         }
         ItemEntity itemEntity = new ItemEntity();
@@ -42,7 +44,7 @@ public class EntityDtoMapper {
     }
 
     public static List<ItemEntity> dtoToEntity(List<ItemDto> itemDtos) {
-        if(itemDtos == null) {
+        if (itemDtos == null) {
             return new ArrayList<>();
         }
         List<ItemEntity> itemEntities = new ArrayList<>();
@@ -53,7 +55,7 @@ public class EntityDtoMapper {
     }
 
     public static ItemDto entityToDto(ItemEntity itemEntity) {
-        if(itemEntity == null) {
+        if (itemEntity == null) {
             return null;
         }
         ItemDto itemDto = new ItemDto();
@@ -72,7 +74,7 @@ public class EntityDtoMapper {
     }
 
     public static List<ItemDto> entityToDto(List<ItemEntity> itemEntities) {
-        if(itemEntities == null) {
+        if (itemEntities == null) {
             return new ArrayList<>();
         }
         List<ItemDto> itemDtos = new ArrayList<>();
@@ -83,7 +85,7 @@ public class EntityDtoMapper {
     }
 
     public static ItemDetailEntity detailDtoToEntity(ItemDetailDto itemDetailDto) {
-        if(itemDetailDto == null) {
+        if (itemDetailDto == null) {
             return null;
         }
         ItemDetailEntity itemDetailEntity = new ItemDetailEntity();
@@ -103,7 +105,7 @@ public class EntityDtoMapper {
     }
 
     public static ItemDetailDto detailEntityToDto(ItemDetailEntity itemDetailEntity) {
-        if(itemDetailEntity == null) {
+        if (itemDetailEntity == null) {
             return null;
         }
         ItemDetailDto itemDetailDto = new ItemDetailDto();
@@ -123,7 +125,7 @@ public class EntityDtoMapper {
     }
 
     public static ProviderDto entityToDto(ProviderEntity providerEntity) {
-        if(providerEntity == null) {
+        if (providerEntity == null) {
             return null;
         }
         ProviderDto providerDto = new ProviderDto();
@@ -137,7 +139,7 @@ public class EntityDtoMapper {
     }
 
     public static ProviderEntity dtoToEntity(ProviderDto providerDto) {
-        if(providerDto == null) {
+        if (providerDto == null) {
             return null;
         }
         ProviderEntity providerEntity = new ProviderEntity();
@@ -152,7 +154,7 @@ public class EntityDtoMapper {
     }
 
     public static QuantityTypeDto entityToDto(QuantityTypeEntity quantityTypeEntity) {
-        if(quantityTypeEntity == null) {
+        if (quantityTypeEntity == null) {
             return null;
         }
         QuantityTypeDto quantityItemDto = new QuantityTypeDto();
@@ -180,7 +182,7 @@ public class EntityDtoMapper {
     }
 
     public static QuantityTypeEntity dtoToEntity(QuantityTypeDto quantityItemDto) {
-        if(quantityItemDto == null) {
+        if (quantityItemDto == null) {
             return null;
         }
         QuantityTypeEntity quantityTypeEntity = new QuantityTypeEntity();
@@ -197,7 +199,7 @@ public class EntityDtoMapper {
     }
 
     public static List<QuantityTypeEntity> dtosToEntitiesForQuantityTypes(List<QuantityTypeDto> quantityTypeDtos) {
-        if(quantityTypeDtos == null) {
+        if (quantityTypeDtos == null) {
             return new ArrayList<>();
         }
         List<QuantityTypeEntity> quantityTypeEntities = new ArrayList<>();
@@ -273,7 +275,7 @@ public class EntityDtoMapper {
     }
 
     public static ItemTagEntity dtoToEntity(ItemTagDto itemTagDto) {
-        if(itemTagDto == null) {
+        if (itemTagDto == null) {
             return null;
         }
         ItemTagEntity itemTagEntity = new ItemTagEntity();
@@ -285,7 +287,7 @@ public class EntityDtoMapper {
     }
 
     public static ItemTagDto entityToDto(ItemTagEntity itemTagEntity) {
-        if(itemTagEntity == null) {
+        if (itemTagEntity == null) {
             return null;
         }
         ItemTagDto itemTagDto = new ItemTagDto();
@@ -297,7 +299,7 @@ public class EntityDtoMapper {
     }
 
     public static List<ItemTagEntity> dtosToEntitiesItemTags(List<ItemTagDto> itemTagDtos) {
-        if(itemTagDtos == null) {
+        if (itemTagDtos == null) {
             return new ArrayList<>();
         }
         List<ItemTagEntity> itemTagEntities = new ArrayList<>();
@@ -308,7 +310,7 @@ public class EntityDtoMapper {
     }
 
     public static List<ItemTagDto> entitiesToDtosItemTags(List<ItemTagEntity> itemTagEntities) {
-        if(itemTagEntities == null) {
+        if (itemTagEntities == null) {
             return new ArrayList<>();
         }
         List<ItemTagDto> itemTagDtos = new ArrayList<>();
@@ -319,7 +321,7 @@ public class EntityDtoMapper {
     }
 
     public static ItemFTSEntity dtoToEntity(ItemFTSDto itemFTSDto) {
-        if(itemFTSDto == null) {
+        if (itemFTSDto == null) {
             return null;
         }
         ItemFTSEntity itemFTSEntity = new ItemFTSEntity();
@@ -330,14 +332,14 @@ public class EntityDtoMapper {
     }
 
     public static ItemFTSDto entityToDto(ItemFTSEntity itemFTSEntity) {
-        if(itemFTSEntity == null) {
+        if (itemFTSEntity == null) {
             return null;
         }
         return new ItemFTSDto(itemFTSEntity.getId(), itemFTSEntity.getName(), itemFTSEntity.getBarcode());
     }
 
     public static List<ItemFTSEntity> dtosToEntitiesItemFTS(List<ItemFTSDto> itemFTSDtos) {
-        if(itemFTSDtos == null) {
+        if (itemFTSDtos == null) {
             return new ArrayList<>();
         }
         List<ItemFTSEntity> itemFTSEntities = new ArrayList<>();
@@ -348,7 +350,7 @@ public class EntityDtoMapper {
     }
 
     public static List<ItemFTSDto> entitiesToDtosItemFTS(List<ItemFTSEntity> itemFTSEntities) {
-        if(itemFTSEntities == null) {
+        if (itemFTSEntities == null) {
             return new ArrayList<>();
         }
         List<ItemFTSDto> itemFTSDtos = new ArrayList<>();
@@ -360,7 +362,7 @@ public class EntityDtoMapper {
 
     public static List<ItemDto> dtosToEntitiesForItemDto(List<ItemEntity> itemEntities) {
 
-        if(itemEntities == null) {
+        if (itemEntities == null) {
             return new ArrayList<>();
         }
         List<ItemDto> itemDtos = new ArrayList<>();
@@ -372,7 +374,7 @@ public class EntityDtoMapper {
 
     public static List<ItemEntity> entitiesToDtosForItemEntity(List<ItemDto> itemDtos) {
 
-        if(itemDtos == null) {
+        if (itemDtos == null) {
             return new ArrayList<>();
         }
         List<ItemEntity> itemEntities = new ArrayList<>();
@@ -383,7 +385,7 @@ public class EntityDtoMapper {
     }
 
     public static List<ItemHistoryEntity> mapItemHistoryDtoListToEntityList(List<ItemHistoryDto> itemHistoryDtos) {
-        if(itemHistoryDtos == null) {
+        if (itemHistoryDtos == null) {
             return new ArrayList<>();
         }
         List<ItemHistoryEntity> itemHistoryEntities = new ArrayList<>();
@@ -394,7 +396,7 @@ public class EntityDtoMapper {
     }
 
     public static ItemHistoryEntity mapItemHistoryDtoToEntity(ItemHistoryDto itemHistoryDto) {
-        if(itemHistoryDto == null) {
+        if (itemHistoryDto == null) {
             return null;
         }
         ItemHistoryEntity itemHistoryEntity = new ItemHistoryEntity();
@@ -412,7 +414,7 @@ public class EntityDtoMapper {
     }
 
     public static List<ItemHistoryDto> mapItemHistoryEntityListToDtoList(List<ItemHistoryEntity> itemHistoryEntities) {
-        if(itemHistoryEntities == null) {
+        if (itemHistoryEntities == null) {
             return new ArrayList<>();
         }
         List<ItemHistoryDto> itemHistoryDtos = new ArrayList<>();
@@ -423,7 +425,7 @@ public class EntityDtoMapper {
     }
 
     public static ItemHistoryDto mapItemHistoryEntityToDto(ItemHistoryEntity itemHistoryEntity) {
-        if(itemHistoryEntity == null) {
+        if (itemHistoryEntity == null) {
             return null;
         }
         ItemHistoryDto itemHistoryDto = new ItemHistoryDto();
@@ -439,4 +441,47 @@ public class EntityDtoMapper {
         itemHistoryDto.setNote(itemHistoryEntity.getNote());
         return itemHistoryDto;
     }
+
+    public static ItemTagJoinEntity dtoToEntity(ItemTagJoinDto itemTagDto) {
+        if (itemTagDto == null) {
+            return null;
+        }
+        ItemTagJoinEntity itemTagJoinEntity = new ItemTagJoinEntity(itemTagDto.getItemId(), itemTagDto.getTagId());
+        itemTagJoinEntity.setItemId(itemTagDto.getItemId());
+        itemTagJoinEntity.setTagId(itemTagDto.getTagId());
+        return itemTagJoinEntity;
+    }
+
+    public static ItemTagJoinDto entityToDto(ItemTagJoinEntity itemTagJoinEntity) {
+        if (itemTagJoinEntity == null) {
+            return null;
+        }
+        ItemTagJoinDto itemTagJoinDto = new ItemTagJoinDto(itemTagJoinEntity.getItemId(), itemTagJoinEntity.getTagId());
+        itemTagJoinDto.setItemId(itemTagJoinEntity.getItemId());
+        itemTagJoinDto.setTagId(itemTagJoinEntity.getTagId());
+        return itemTagJoinDto;
+    }
+
+    public static List<ItemTagJoinEntity> dtosToEntitiesItemTagJoins(List<ItemTagJoinDto> itemTagJoinDtos) {
+        if (itemTagJoinDtos == null) {
+            return new ArrayList<>();
+        }
+        List<ItemTagJoinEntity> itemTagJoinEntities = new ArrayList<>();
+        for (ItemTagJoinDto itemTagJoinDto : itemTagJoinDtos) {
+            itemTagJoinEntities.add(dtoToEntity(itemTagJoinDto));
+        }
+        return itemTagJoinEntities;
+    }
+
+    public static List<ItemTagJoinDto> entitiesToDtosItemTagJoins(List<ItemTagJoinEntity> itemTagJoinEntities) {
+        if (itemTagJoinEntities == null) {
+            return new ArrayList<>();
+        }
+        List<ItemTagJoinDto> itemTagJoinDtos = new ArrayList<>();
+        for (ItemTagJoinEntity itemTagJoinEntity : itemTagJoinEntities) {
+            itemTagJoinDtos.add(entityToDto(itemTagJoinEntity));
+        }
+        return itemTagJoinDtos;
+    }
+
 }

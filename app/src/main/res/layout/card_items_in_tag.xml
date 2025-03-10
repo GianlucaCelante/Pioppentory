@@ -18,7 +18,7 @@
         android:textAlignment="center"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/button_assign" />
+        app:layout_constraintEnd_toStartOf="@+id/remove_item_from_tag_button" />
 
     <TextView
         android:id="@+id/text_portions_per_weekend_label"
@@ -42,7 +42,7 @@
         android:textStyle="bold"
         app:layout_constraintStart_toEndOf="@id/text_portions_per_weekend_label"
         app:layout_constraintTop_toBottomOf="@id/text_item_name"
-        app:layout_constraintEnd_toStartOf="@+id/button_assign" />
+        app:layout_constraintEnd_toStartOf="@+id/remove_item_from_tag_button" />
 
     <TextView
         android:id="@+id/text_tot_portions_label"
@@ -65,7 +65,7 @@
         android:textStyle="bold"
         app:layout_constraintStart_toEndOf="@id/text_tot_portions_label"
         app:layout_constraintTop_toBottomOf="@id/text_portions_per_weekend_label"
-        app:layout_constraintEnd_toStartOf="@+id/button_assign" />
+        app:layout_constraintEnd_toStartOf="@+id/remove_item_from_tag_button" />
 
     <TextView
         android:id="@+id/text_last_update_label"
@@ -87,16 +87,15 @@
         android:textStyle="bold"
         app:layout_constraintTop_toBottomOf="@id/text_tot_portions_value"
         app:layout_constraintStart_toEndOf="@id/text_last_update_label"
-        app:layout_constraintEnd_toStartOf="@+id/button_assign"/>
+        app:layout_constraintEnd_toStartOf="@+id/remove_item_from_tag_button"/>
 
 
 
     <ImageButton
-        android:id="@+id/button_assign"
+        android:id="@+id/remove_item_from_tag_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:src="@drawable/minus_icon"
-        android:contentDescription="Assegna ad un altro tag"
         android:background="?android:attr/selectableItemBackgroundBorderless"
         android:layout_margin="8dp"
         app:layout_constraintTop_toTopOf="parent"

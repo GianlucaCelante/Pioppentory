@@ -13,6 +13,7 @@ import it.pioppi.database.dao.ItemEntityDao;
 import it.pioppi.database.dao.ItemFTSEntityDao;
 import it.pioppi.database.dao.ItemHistoryEntityDao;
 import it.pioppi.database.dao.ItemTagEntityDao;
+import it.pioppi.database.dao.ItemTagJoinEntityDao;
 import it.pioppi.database.dao.ProviderEntityDao;
 import it.pioppi.database.dao.QuantityTypeEntityDao;
 import it.pioppi.database.entity.ItemDetailEntity;
@@ -38,6 +39,7 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract ItemTagEntityDao itemTagEntityDao();
     public abstract ItemFTSEntityDao itemFTSEntityDao();
     public abstract ItemHistoryEntityDao itemHistoryEntityDao();
+    public abstract ItemTagJoinEntityDao itemTagJoinDao();
 
 
 
@@ -56,6 +58,5 @@ public abstract class AppDatabase extends RoomDatabase {
         }
         return INSTANCE;
     }
-
 
 }

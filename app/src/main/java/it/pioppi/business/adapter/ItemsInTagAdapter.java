@@ -4,6 +4,7 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -25,18 +26,19 @@ public class ItemsInTagAdapter extends RecyclerView.Adapter<ItemsInTagAdapter.It
 
     public interface OnItemClickListener {
         void onItemClick(ItemDto item) throws ExecutionException, InterruptedException;
+        void onRemoveItemFromTag(ItemDto item, ItemTagDto tag) throws ExecutionException, InterruptedException;
     }
 
-    private List<ItemTagDto> itemTagsDtos;
+    private final ItemTagDto currentTag;
     private List<ItemDto> itemDtos;
     private List<ItemDetailDto> itemDetailDtos;
     private final OnItemClickListener listener;
     private final Context context;
 
-    public ItemsInTagAdapter(List<ItemTagDto> itemTagsDtos, List<ItemDto> itemDtos, List<ItemDetailDto> itemDetailDto, OnItemClickListener listener, Context context) {
-        this.itemTagsDtos = itemTagsDtos;
+    public ItemsInTagAdapter(ItemTagDto currentTag, List<ItemDto> itemDtos, List<ItemDetailDto> itemDetailDtos, OnItemClickListener listener, Context context) {
+        this.currentTag = currentTag;
         this.itemDtos = itemDtos;
-        this.itemDetailDtos = itemDetailDto;
+        this.itemDetailDtos = itemDetailDtos;
         this.listener = listener;
         this.context = context;
     }
@@ -52,7 +54,7 @@ public class ItemsInTagAdapter extends RecyclerView.Adapter<ItemsInTagAdapter.It
     public void onBindViewHolder(@NonNull ItemTagsViewHolder holder, int position) {
         ItemDto itemDto = itemDtos.get(position);
         ItemDetailDto itemDetailDto = itemDetailDtos.stream()
-                .filter(itemDetailDto1 -> itemDetailDto1.getItemId().equals(itemDto.getId()))
+                .filter(detail -> detail.getItemId().equals(itemDto.getId()))
                 .findFirst()
                 .orElse(null);
 
@@ -68,11 +70,8 @@ public class ItemsInTagAdapter extends RecyclerView.Adapter<ItemsInTagAdapter.It
         }
 
         if (itemDetailDto != null) {
-            if (itemDto.getTotPortions() >= itemDetailDto.getPortionsPerWeekend()) {
-                holder.itemContainer.setBackgroundColor(ContextCompat.getColor(context, R.color.green));
-            } else {
-                holder.itemContainer.setBackgroundColor(ContextCompat.getColor(context, R.color.red));
-            }
+            int bgColor = itemDto.getTotPortions() >= itemDetailDto.getPortionsPerWeekend() ? R.color.green : R.color.red;
+            holder.itemContainer.setBackgroundColor(ContextCompat.getColor(context, bgColor));
         }
 
         holder.itemContainer.setOnClickListener(v -> {
@@ -83,6 +82,13 @@ public class ItemsInTagAdapter extends RecyclerView.Adapter<ItemsInTagAdapter.It
             }
         });
 
+        holder.removeItemFromTagButton.setOnClickListener(v -> {
+            try {
+                listener.onRemoveItemFromTag(itemDto, currentTag);
+            } catch (ExecutionException | InterruptedException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     @Override
@@ -90,13 +96,8 @@ public class ItemsInTagAdapter extends RecyclerView.Adapter<ItemsInTagAdapter.It
         return this.itemDtos.size();
     }
 
-    public void setItemTags(List<ItemTagDto> itemTagDtos) {
-        this.itemTagsDtos = new ArrayList<>(itemTagDtos);
-        notifyDataSetChanged();
-    }
-
-    public void setItemDtos(List<ItemDto> itemTagDtos) {
-        this.itemDtos = new ArrayList<>(itemTagDtos);
+    public void setItemDtos(List<ItemDto> itemDtos) {
+        this.itemDtos = new ArrayList<>(itemDtos);
         notifyDataSetChanged();
     }
 
@@ -105,34 +106,13 @@ public class ItemsInTagAdapter extends RecyclerView.Adapter<ItemsInTagAdapter.It
         notifyDataSetChanged();
     }
 
-    private void updateItem(ItemDto updatedItem) {
-        if (itemDtos != null) {
-            for (int i = 0; i < itemDtos.size(); i++) {
-                if (itemDtos.get(i).getId().equals(updatedItem.getId())) {
-                    itemDtos.set(i, updatedItem);
-                    break;
-                }
-            }
-        }
-    }
-
-    private void updateItemDetail(ItemDetailDto updatedItemDetail) {
-        if (itemDetailDtos != null) {
-            for (int i = 0; i < itemDetailDtos.size(); i++) {
-                if (itemDetailDtos.get(i).getItemId().equals(updatedItemDetail.getItemId())) {
-                    itemDetailDtos.set(i, updatedItemDetail);
-                    break;
-                }
-            }
-        }
-    }
-
     public static class ItemTagsViewHolder extends RecyclerView.ViewHolder {
         public ConstraintLayout itemContainer;
         public TextView tagName;
         public TextView portionsNeededOnWeekendTextView;
         public TextView totPortions;
         public TextView lastUpdate;
+        public ImageButton removeItemFromTagButton;
 
         public ItemTagsViewHolder(View itemView) {
             super(itemView);
@@ -141,7 +121,7 @@ public class ItemsInTagAdapter extends RecyclerView.Adapter<ItemsInTagAdapter.It
             portionsNeededOnWeekendTextView = itemView.findViewById(R.id.text_portions_per_weekend_value);
             totPortions = itemView.findViewById(R.id.text_tot_portions_value);
             lastUpdate = itemView.findViewById(R.id.text_last_update_value);
-
+            removeItemFromTagButton = itemView.findViewById(R.id.remove_item_from_tag_button);
         }
     }
 }

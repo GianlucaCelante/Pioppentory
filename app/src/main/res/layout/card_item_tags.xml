@@ -31,21 +31,33 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:gravity="center_vertical"
-                    android:padding="8dp"
+                    android:layout_margin="8dp"
                     android:text="Tag"
                     android:textSize="24sp"
                     android:textStyle="bold"
                     constraints:layout_constraintStart_toStartOf="parent"
                     constraints:layout_constraintTop_toTopOf="parent"
                     constraints:layout_constraintBottom_toBottomOf="parent"
-                    constraints:layout_constraintEnd_toStartOf="@+id/selected_tag" />
+                    constraints:layout_constraintEnd_toStartOf="@+id/add_item_to_tag" />
+
+                <ImageButton
+                    android:id="@+id/add_item_to_tag"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="8dp"
+                    android:src="@drawable/plus_icon"
+                    android:background="?android:attr/selectableItemBackgroundBorderless"
+                    constraints:layout_constraintEnd_toStartOf="@+id/selected_tag"
+                    constraints:layout_constraintTop_toTopOf="parent"
+                    constraints:layout_constraintBottom_toBottomOf="parent"
+                    />
 
                 <com.google.android.material.checkbox.MaterialCheckBox
                     android:id="@+id/selected_tag"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@color/grey_lighter"
-                    android:padding="8dp"
+                    android:layout_margin="8dp"
                     constraints:layout_constraintEnd_toEndOf="parent"
                     constraints:layout_constraintTop_toTopOf="parent"
                     constraints:layout_constraintBottom_toBottomOf="parent" />

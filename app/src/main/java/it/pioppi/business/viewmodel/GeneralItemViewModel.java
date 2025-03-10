@@ -6,11 +6,15 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import it.pioppi.business.dto.ItemDto;
 import it.pioppi.business.dto.ItemTagDto;
 import it.pioppi.business.dto.ItemDetailDto;
+import it.pioppi.business.dto.ItemTagJoinDto;
 import it.pioppi.business.dto.QuantityTypeDto;
 
 public class GeneralItemViewModel extends ViewModel {
@@ -22,6 +26,7 @@ public class GeneralItemViewModel extends ViewModel {
     // Gestione degli ItemTags e degli ItemDetails
     private final MutableLiveData<List<ItemTagDto>> itemTags = new MutableLiveData<>();
     private final MutableLiveData<List<ItemDetailDto>> itemDetails = new MutableLiveData<>();
+    private final MutableLiveData<Map<UUID, Set<UUID>>> itemTagJoins = new MutableLiveData<>();
     private final MutableLiveData<List<QuantityTypeDto>> quantityTypes = new MutableLiveData<>();
 
     public GeneralItemViewModel() {
@@ -137,5 +142,20 @@ public class GeneralItemViewModel extends ViewModel {
             }
         }
     }
+
+    public void setItemTagJoins(Map<UUID, Set<UUID>> itemTagJoins) {
+        this.itemTagJoins.setValue(itemTagJoins);
+    }
+
+    public Map<UUID, Set<UUID>> getItemTagJoins() {
+        return itemTagJoins.getValue();
+    }
+
+    public boolean itemBelongsToTag(UUID itemId, UUID tagId) {
+        Set<UUID> itemsForTag = itemTagJoins.getValue().get(tagId);
+        return itemsForTag != null && itemsForTag.contains(itemId);
+    }
+
+
 
 }
