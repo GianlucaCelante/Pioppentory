@@ -18,8 +18,8 @@ import it.pioppi.ConstantUtils;
         foreignKeys = {
                 @ForeignKey(entity = ItemEntity.class,
                         parentColumns = "id",
-                        childColumns = "item_id",
-                        onDelete = ForeignKey.CASCADE),
+                        childColumns = "item_id"
+                ),
                 @ForeignKey(entity = ItemTagEntity.class,
                         parentColumns = "id",
                         childColumns = "tag_id",

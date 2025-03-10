@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import it.pioppi.R;
@@ -29,7 +28,7 @@ import it.pioppi.business.dto.ItemTagDto;
 public class ItemTagsAdapter extends RecyclerView.Adapter<ItemTagsAdapter.ItemTagsViewHolder> {
 
     public interface OnItemClickListener {
-        void onAddItemsToTag(ItemTagDto item) throws ExecutionException, InterruptedException;
+        void onAddItemsToTag(ItemTagDto item);
     }
 
     private List<ItemTagDto> itemTagDtos;
@@ -90,13 +89,7 @@ public class ItemTagsAdapter extends RecyclerView.Adapter<ItemTagsAdapter.ItemTa
             }
         });
 
-        holder.addItemsToTagButton.setOnClickListener(v -> {
-            try {
-                listener.onAddItemsToTag(itemTagDto);
-            } catch (ExecutionException | InterruptedException e) {
-                e.printStackTrace();
-            }
-        });
+        holder.addItemsToTagButton.setOnClickListener(v -> listener.onAddItemsToTag(itemTagDto));
     }
 
     @Override

@@ -70,7 +70,8 @@ public class ItemsInTagAdapter extends RecyclerView.Adapter<ItemsInTagAdapter.It
         }
 
         if (itemDetailDto != null) {
-            int bgColor = itemDto.getTotPortions() >= itemDetailDto.getPortionsPerWeekend() ? R.color.green : R.color.red;
+            Long totPortions = itemDto.getTotPortions() != null ? itemDto.getTotPortions() : 0L;
+            int bgColor = totPortions >= itemDetailDto.getPortionsPerWeekend() ? R.color.green : R.color.red;
             holder.itemContainer.setBackgroundColor(ContextCompat.getColor(context, bgColor));
         }
 

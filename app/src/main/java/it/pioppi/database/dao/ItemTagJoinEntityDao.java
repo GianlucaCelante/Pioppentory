@@ -12,27 +12,27 @@ import java.util.List;
 import java.util.UUID;
 
 import it.pioppi.database.entity.ItemEntity;
-import it.pioppi.database.entity.ItemTagEntity;
+import it.pioppi.database.entity.ItemTagJoinEntity;
 import it.pioppi.database.entity.ItemTagJoinEntity;
 
 @Dao
-public interface ItemTagJoinEntityDao extends BaseDao<ItemTagEntity> {
+public interface ItemTagJoinEntityDao extends BaseDao<ItemTagJoinEntity> {
 
     @Override
     @Update
-    void update(ItemTagEntity entity);
+    void update(ItemTagJoinEntity entity);
 
     @Override
     @Delete
-    void delete(ItemTagEntity entity);
+    void delete(ItemTagJoinEntity entity);
 
     @Override
     @Insert
-    void insert(ItemTagEntity entity);
+    void insert(ItemTagJoinEntity entity);
 
     @Override
     @Upsert
-    void upsert(ItemTagEntity entity);
+    void upsert(ItemTagJoinEntity entity);
 
     @Query("DELETE FROM item_tag_join WHERE tag_id = :tagId AND item_id = :itemId")
     void delete(UUID tagId, UUID itemId);
