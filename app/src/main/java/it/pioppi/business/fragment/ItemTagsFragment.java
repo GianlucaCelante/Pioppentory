@@ -6,6 +6,7 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
 import androidx.core.view.MenuProvider;
 import androidx.fragment.app.Fragment;
@@ -195,6 +196,21 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
+        generalItemViewModel.getItems().observe(getViewLifecycleOwner(), items -> {
+            if (items != null) {
+                // Trova l'item corrispondente all'itemId
+                Optional<ItemDto> maybeItem = items.stream()
+                        .filter(item -> item.getId().equals(itemId))
+                        .findFirst();
+                if (maybeItem.isPresent()) {
+                    String itemName = maybeItem.get().getName();
+                    Objects.requireNonNull(((AppCompatActivity) requireActivity()).getSupportActionBar()).setTitle(itemName);
+                } else {
+                    Objects.requireNonNull(((AppCompatActivity) requireActivity()).getSupportActionBar()).setTitle("Titolo di Default");
+                }
+            }
+        });
 
         generalItemViewModel.getItemTags().observe(getViewLifecycleOwner(), updatedTags -> {
             itemTagsAdapter.setItemTagDtos(updatedTags);
