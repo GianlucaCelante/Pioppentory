@@ -40,4 +40,6 @@ public interface ItemTagJoinEntityDao extends BaseDao<ItemTagJoinEntity> {
     @Query("SELECT * FROM item_tag_join")
     List<ItemTagJoinEntity> getAll();
 
+    @Query("SELECT item_id FROM item_tag_join WHERE tag_id = :tagId")
+    List<UUID> getItemIdsForTag(UUID tagId);
 }

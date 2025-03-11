@@ -29,9 +29,12 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -84,6 +87,13 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
         try {
 
             List<ItemTagDto> itemTagDtos = fetchItemTagsDtos(itemId);
+            // Salva la lista filtrata nel ViewModel per il dettaglio corrente
+            generalItemViewModel.setItemTags(itemTagDtos);
+
+            // Carica anche la lista globale di tag dal database
+            List<ItemTagDto> allTags = fetchAllItemTagsDtos();
+            generalItemViewModel.setAllItemTags(allTags);
+
             itemDtos = fetchItemsForTags(itemTagDtos);
             itemDetailDtos = fetchItemDetails(itemDtos);
             itemTagJoins = generalItemViewModel.getItemTagJoins();
@@ -152,6 +162,19 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
         return itemDtos;
     }
 
+    private List<ItemTagDto> fetchAllItemTagsDtos() throws ExecutionException, InterruptedException {
+        List<ItemTagDto> itemDtos = new ArrayList<>();
+        Future<?> future = executorService.submit(() -> {
+            List<ItemTagEntity> itemTagsForItem = appDatabase.itemTagEntityDao().getItemTags();
+            itemTagsForItem.forEach(itemEntity -> {
+                ItemTagDto itemDto = EntityDtoMapper.entityToDto(itemEntity);
+                itemDtos.add(itemDto);
+            });
+        });
+        future.get();
+        return itemDtos;
+    }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_item_tags, container, false);
@@ -199,11 +222,9 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
         Context context = getContext();
         if (context == null) return;
 
-        // Primo dialog: richiesta del nome del tag
         AlertDialog.Builder tagNameDialogBuilder = new AlertDialog.Builder(context);
         tagNameDialogBuilder.setTitle("Inserisci nome del tag");
 
-        // Creiamo un EditText dinamicamente (senza layout custom)
         final EditText tagNameEditText = new EditText(context);
         tagNameEditText.setHint("Tag name");
         tagNameEditText.setPadding(16, 16, 16, 16);
@@ -216,11 +237,30 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
                 Toast.makeText(context, "Il nome del tag non può essere vuoto", Toast.LENGTH_SHORT).show();
                 return;
             }
-            // Passa al dialog per la selezione multipla degli item
+            // Utilizza la lista globale di tag per il controllo
+            List<ItemTagDto> globalTags = generalItemViewModel.getAllItemTags().getValue();
+            if (globalTags != null) {
+                Optional<ItemTagDto> maybeTag = globalTags.stream()
+                        .filter(tag -> tag.getName().equalsIgnoreCase(tagName))
+                        .findFirst();
+                if (maybeTag.isPresent()) {
+                    new AlertDialog.Builder(context)
+                            .setTitle("Tag esistente")
+                            .setMessage("Il tag \"" + tagName + "\" esiste già. Vuoi usarlo? Verrà associato questo elemento se non già presente.")
+                            .setPositiveButton("Sì", (d, w) -> {
+                                importExistingTag(maybeTag.get());
+                            })
+                            .setNegativeButton("No, annulla", (d, w) -> {
+                                Toast.makeText(context, "Operazione annullata", Toast.LENGTH_SHORT).show();
+                            })
+                            .create().show();
+                    return;
+                }
+            }
+            // Se il tag non esiste, procedi con la creazione di un nuovo tag
             showItemMultiSelectionDialog(tagName);
         });
         tagNameDialogBuilder.setNegativeButton("Annulla", (dialog, which) -> dialog.dismiss());
-
         tagNameDialogBuilder.create().show();
     }
 
@@ -228,13 +268,11 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
         Context context = getContext();
         if (context == null) return;
 
-        // Recupera la lista di tutti gli item dal ViewModel
         List<ItemDto> allItems = generalItemViewModel.getItems().getValue();
         if (allItems == null) {
             allItems = new ArrayList<>();
         }
 
-        // Prepara l'array dei nomi per il dialog e l'array booleano per la selezione
         String[] itemNames = allItems.stream()
                 .map(item -> item.getName() != null ? item.getName() : "Item senza nome")
                 .toArray(String[]::new);
@@ -248,7 +286,6 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
 
         List<ItemDto> finalAllItems = allItems;
         multiSelectDialogBuilder.setPositiveButton("Crea Tag", (dialog, which) -> {
-            // Genera un nuovo UUID per il tag
             UUID newTagId = UUID.randomUUID();
             final ItemTagDto newTag = new ItemTagDto();
             newTag.setId(newTagId);
@@ -266,13 +303,11 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
                     }
                 }
 
-                // Assicurati che il tag venga associato anche all'item corrente del fragment
+                // (Opzionale) Aggiungi anche l'item corrente se desiderato
                 if (itemId != null) {
-                    // Cerca l'item corrente nella lista degli allItems
                     boolean containsCurrent = selectedItems.stream()
                             .anyMatch(item -> item.getId().equals(itemId));
                     if (!containsCurrent) {
-                        // Trova l'item corrente e lo aggiunge se non è già selezionato
                         for (ItemDto item : finalAllItems) {
                             if (item.getId().equals(itemId)) {
                                 selectedItems.add(item);
@@ -282,29 +317,27 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
                     }
                 }
 
-                // Aggiorna (o crea) la mappa dei join nel ViewModel
+                // Aggiorna la mappa dei join
                 Map<UUID, Set<UUID>> currentJoins = generalItemViewModel.getItemTagJoins();
                 if (currentJoins == null) {
-                    currentJoins = new java.util.HashMap<>();
+                    currentJoins = new HashMap<>();
                 }
                 Set<UUID> joinSet = currentJoins.get(newTagId);
                 if (joinSet == null) {
-                    joinSet = new java.util.HashSet<>();
+                    joinSet = new HashSet<>();
                     currentJoins.put(newTagId, joinSet);
                 }
-
-                // Per ogni item selezionato, crea il record di join e aggiorna la mappa
                 for (ItemDto selectedItem : selectedItems) {
-                    joinSet.add(selectedItem.getId());
-                    ItemTagJoinEntity joinEntity = new ItemTagJoinEntity(selectedItem.getId(), newTagId);
-                    appDatabase.itemTagJoinDao().insert(joinEntity);
+                    // Inserisci solo se l'associazione non esiste già
+                    if (!joinSet.contains(selectedItem.getId())) {
+                        joinSet.add(selectedItem.getId());
+                        ItemTagJoinEntity joinEntity = new ItemTagJoinEntity(selectedItem.getId(), newTagId);
+                        appDatabase.itemTagJoinDao().insert(joinEntity);
+                    }
                 }
-
-                // Aggiorna il ViewModel e la UI sul thread principale
                 Map<UUID, Set<UUID>> finalCurrentJoins = currentJoins;
-
                 requireActivity().runOnUiThread(() -> {
-                    // Aggiorna la lista dei tag
+                    // Aggiorna la lista filtrata dei tag (dettaglio corrente)
                     List<ItemTagDto> currentTags = generalItemViewModel.getItemTags().getValue();
                     if (currentTags == null) {
                         currentTags = new ArrayList<>();
@@ -313,7 +346,14 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
                     generalItemViewModel.setItemTags(currentTags);
                     itemTagsAdapter.setItemTagDtos(currentTags);
 
-                    // Aggiorna la mappa dei join
+                    // Aggiorna anche la lista globale dei tag
+                    List<ItemTagDto> globalTags = generalItemViewModel.getAllItemTags().getValue();
+                    if (globalTags == null) {
+                        globalTags = new ArrayList<>();
+                    }
+                    globalTags.add(newTag);
+                    generalItemViewModel.setAllItemTags(globalTags);
+
                     generalItemViewModel.setItemTagJoins(finalCurrentJoins);
 
                     // Aggiorna anche la lista degli item associati
@@ -336,7 +376,6 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
                     generalItemViewModel.setItems(currentItems);
                     itemTagsAdapter.setItemDtos(currentItems);
 
-                    // Notifica all'adapter che i dati sono cambiati
                     itemTagsAdapter.notifyDataSetChanged();
 
                     Toast.makeText(context, "Tag creato correttamente", Toast.LENGTH_SHORT).show();
@@ -344,9 +383,76 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
             });
         });
         multiSelectDialogBuilder.setNegativeButton("Annulla", (dialog, which) -> dialog.dismiss());
-
         multiSelectDialogBuilder.create().show();
     }
+
+    private void importExistingTag(ItemTagDto existingTag) {
+        Context context = getContext();
+        if (context == null) return;
+
+        executorService.execute(() -> {
+            // Recupera dal database gli ID globali degli item associati al tag esistente
+            List<UUID> globalItemIds = appDatabase.itemTagJoinDao().getItemIdsForTag(existingTag.getId());
+            Set<UUID> globalJoinSet = new HashSet<>(globalItemIds);
+
+            // Aggiorna la mappa dei join nel ViewModel con i dati globali per il tag
+            Map<UUID, Set<UUID>> currentJoins = generalItemViewModel.getItemTagJoins();
+            if (currentJoins == null) {
+                currentJoins = new HashMap<>();
+            }
+            currentJoins.put(existingTag.getId(), globalJoinSet);
+
+            // Recupera gli ItemDto relativi agli ID ottenuti dal database
+            List<ItemDto> importedItems = new ArrayList<>();
+            for (UUID id : globalJoinSet) {
+                // Assumiamo che il DAO degli item abbia un metodo getItemById(id)
+                ItemEntity entity = appDatabase.itemEntityDao().getItemById(id);
+                if (entity != null) {
+                    importedItems.add(EntityDtoMapper.entityToDto(entity));
+                }
+            }
+
+            // Aggiorna la lista degli item relativi al dettaglio corrente unendo quelli già presenti
+            List<ItemDto> currentItems = generalItemViewModel.getItems().getValue();
+            if (currentItems == null) {
+                currentItems = new ArrayList<>();
+            }
+            for (ItemDto imported : importedItems) {
+                boolean exists = false;
+                for (ItemDto item : currentItems) {
+                    if (item.getId().equals(imported.getId())) {
+                        exists = true;
+                        break;
+                    }
+                }
+                if (!exists) {
+                    currentItems.add(imported);
+                }
+            }
+
+            Map<UUID, Set<UUID>> finalCurrentJoins = currentJoins;
+            List<ItemDto> finalCurrentItems = currentItems;
+            requireActivity().runOnUiThread(() -> {
+                // Se il tag non è già presente nel dettaglio corrente, aggiungilo
+                List<ItemTagDto> currentTags = generalItemViewModel.getItemTags().getValue();
+                if (currentTags == null) {
+                    currentTags = new ArrayList<>();
+                }
+                if (currentTags.stream().noneMatch(tag -> tag.getId().equals(existingTag.getId()))) {
+                    currentTags.add(existingTag);
+                    generalItemViewModel.setItemTags(currentTags);
+                    itemTagsAdapter.setItemTagDtos(currentTags);
+                }
+                // Aggiorna anche la lista degli item e la mappa dei join nel ViewModel
+                generalItemViewModel.setItems(finalCurrentItems);
+                itemTagsAdapter.setItemDtos(finalCurrentItems);
+                generalItemViewModel.setItemTagJoins(finalCurrentJoins);
+
+                Toast.makeText(context, "Tag importato correttamente", Toast.LENGTH_SHORT).show();
+            });
+        });
+    }
+
 
 
     protected void prefillFields() {

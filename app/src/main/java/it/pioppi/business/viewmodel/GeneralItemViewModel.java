@@ -24,6 +24,8 @@ public class GeneralItemViewModel extends ViewModel {
 
     // Gestione degli ItemTags e degli ItemDetails
     private final MutableLiveData<List<ItemTagDto>> itemTags = new MutableLiveData<>();
+    private final MutableLiveData<List<ItemTagDto>> allItemTags = new MutableLiveData<>();
+
     private final MutableLiveData<List<ItemDetailDto>> itemDetails = new MutableLiveData<>();
     private final MutableLiveData<Map<UUID, Set<UUID>>> itemTagJoins = new MutableLiveData<>();
     private final MutableLiveData<List<QuantityTypeDto>> quantityTypes = new MutableLiveData<>();
@@ -155,6 +157,11 @@ public class GeneralItemViewModel extends ViewModel {
         return itemsForTag != null && itemsForTag.contains(itemId);
     }
 
+    public LiveData<List<ItemTagDto>> getAllItemTags() {
+        return allItemTags;
+    }
 
-
+    public void setAllItemTags(List<ItemTagDto> allItemTags) {
+        this.allItemTags.setValue(allItemTags);
+    }
 }

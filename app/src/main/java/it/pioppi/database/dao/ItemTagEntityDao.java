@@ -34,8 +34,8 @@ public interface ItemTagEntityDao extends BaseDao<ItemTagEntity> {
     @Upsert
     void upsert(ItemTagEntity entity);
 
-    @Query("SELECT DISTINCT name FROM item_tag")
-    List<String> getItemTags();
+    @Query("SELECT * FROM item_tag")
+    List<ItemTagEntity> getItemTags();
 
     @Query("SELECT * FROM item_tag WHERE name = :name")
     ItemTagEntity getItemTagByName(String name);
