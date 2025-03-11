@@ -27,8 +27,6 @@ import android.widget.Toast;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -164,7 +162,7 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
         setupMenuToolbar();
 
         FloatingActionButton fab = view.findViewById(R.id.new_tag_fab);
-        fab.setOnClickListener(v -> addNewTag(inflater, container));
+        fab.setOnClickListener(v -> addNewTag());
 
         prefillFields();
 
@@ -197,130 +195,157 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
 
     }
 
+    private void addNewTag() {
+        Context context = getContext();
+        if (context == null) return;
 
-    private void addNewTag(LayoutInflater inflater, ViewGroup container) {
-        // STEP 1: Richiedi il nome del nuovo tag
-        View dialogView = inflater.inflate(R.layout.new_tag_alert, container, false);
-        EditText newTagEditText = dialogView.findViewById(R.id.new_tag_name);
-        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
-        builder.setView(dialogView)
-                .setTitle("Nuovo Tag")
-                .setPositiveButton("Continua", null)
-                .setNegativeButton("Annulla", (dialog, which) -> dialog.dismiss());
-        AlertDialog nameDialog = builder.create();
-        nameDialog.setOnShowListener(dlg -> {
-            nameDialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
-                String newTagName = newTagEditText.getText().toString().trim();
-                if (newTagName.isEmpty()) {
-                    Toast.makeText(getContext(), "Inserisci un nome per il nuovo tag", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                List<ItemTagDto> currentTags = generalItemViewModel.getItemTags().getValue();
-                if (currentTags == null) {
-                    currentTags = new ArrayList<>();
-                }
-                boolean isUnique = currentTags.stream()
-                        .noneMatch(tag -> tag.getName().equalsIgnoreCase(newTagName));
-                if (!isUnique) {
-                    Toast.makeText(getContext(), "Esiste già un tag con questo nome", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                // Se il nome è valido, chiudi il dialogo e passa al secondo step
-                nameDialog.dismiss();
-                // Procedi alla selezione degli item da associare
-                selectItemsForNewTag(newTagName, currentTags);
-            });
+        // Primo dialog: richiesta del nome del tag
+        AlertDialog.Builder tagNameDialogBuilder = new AlertDialog.Builder(context);
+        tagNameDialogBuilder.setTitle("Inserisci nome del tag");
+
+        // Creiamo un EditText dinamicamente (senza layout custom)
+        final EditText tagNameEditText = new EditText(context);
+        tagNameEditText.setHint("Tag name");
+        tagNameEditText.setPadding(16, 16, 16, 16);
+        tagNameEditText.setTextSize(20);
+        tagNameDialogBuilder.setView(tagNameEditText);
+
+        tagNameDialogBuilder.setPositiveButton("Avanti", (dialog, which) -> {
+            String tagName = tagNameEditText.getText().toString().trim();
+            if (tagName.isEmpty()) {
+                Toast.makeText(context, "Il nome del tag non può essere vuoto", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            // Passa al dialog per la selezione multipla degli item
+            showItemMultiSelectionDialog(tagName);
         });
-        nameDialog.show();
+        tagNameDialogBuilder.setNegativeButton("Annulla", (dialog, which) -> dialog.dismiss());
+
+        tagNameDialogBuilder.create().show();
     }
 
-    private void selectItemsForNewTag(String newTagName, List<ItemTagDto> currentTags) {
+    private void showItemMultiSelectionDialog(String tagName) {
         Context context = getContext();
-        if (context == null) {
-            return;
-        }
-        // Recupera tutti gli item dal ViewModel (ipotizziamo siano tutti disponibili)
+        if (context == null) return;
+
+        // Recupera la lista di tutti gli item dal ViewModel
         List<ItemDto> allItems = generalItemViewModel.getItems().getValue();
-        if (allItems == null || allItems.isEmpty()) {
-            Toast.makeText(context, "Nessun item disponibile", Toast.LENGTH_SHORT).show();
-            return;
+        if (allItems == null) {
+            allItems = new ArrayList<>();
         }
-        // Prepara l'array dei nomi degli item
+
+        // Prepara l'array dei nomi per il dialog e l'array booleano per la selezione
         String[] itemNames = allItems.stream()
                 .map(item -> item.getName() != null ? item.getName() : "Item senza nome")
                 .toArray(String[]::new);
-        boolean[] checkedItems = new boolean[itemNames.length]; // inizialmente tutti false
+        boolean[] checkedItems = new boolean[itemNames.length];
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        builder.setTitle("Seleziona almeno un item per il tag \"" + newTagName + "\"")
-                .setMultiChoiceItems(itemNames, checkedItems, (dialog, which, isChecked) -> {
-                    checkedItems[which] = isChecked;
-                })
-                .setPositiveButton("Crea Tag", null)
-                .setNegativeButton("Annulla", (dialog, which) -> dialog.dismiss());
+        AlertDialog.Builder multiSelectDialogBuilder = new AlertDialog.Builder(context);
+        multiSelectDialogBuilder.setTitle("Seleziona gli item per il tag");
+        multiSelectDialogBuilder.setMultiChoiceItems(itemNames, checkedItems, (dialog, which, isChecked) -> {
+            checkedItems[which] = isChecked;
+        });
 
-        AlertDialog itemsDialog = builder.create();
-        itemsDialog.setOnShowListener(dlg -> {
-            itemsDialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
-                // Raccogli gli item selezionati
+        List<ItemDto> finalAllItems = allItems;
+        multiSelectDialogBuilder.setPositiveButton("Crea Tag", (dialog, which) -> {
+            // Genera un nuovo UUID per il tag
+            UUID newTagId = UUID.randomUUID();
+            final ItemTagDto newTag = new ItemTagDto();
+            newTag.setId(newTagId);
+            newTag.setName(tagName);
+
+            executorService.execute(() -> {
+                // Inserisci il nuovo tag nel database
+                appDatabase.itemTagEntityDao().insert(EntityDtoMapper.dtoToEntity(newTag));
+
+                // Raccogli gli item selezionati dal dialog
                 List<ItemDto> selectedItems = new ArrayList<>();
                 for (int i = 0; i < checkedItems.length; i++) {
                     if (checkedItems[i]) {
-                        selectedItems.add(allItems.get(i));
+                        selectedItems.add(finalAllItems.get(i));
                     }
                 }
-                if (selectedItems.isEmpty()) {
-                    Toast.makeText(context, "Seleziona almeno un item", Toast.LENGTH_SHORT).show();
-                    return;
+
+                // Assicurati che il tag venga associato anche all'item corrente del fragment
+                if (itemId != null) {
+                    // Cerca l'item corrente nella lista degli allItems
+                    boolean containsCurrent = selectedItems.stream()
+                            .anyMatch(item -> item.getId().equals(itemId));
+                    if (!containsCurrent) {
+                        // Trova l'item corrente e lo aggiunge se non è già selezionato
+                        for (ItemDto item : finalAllItems) {
+                            if (item.getId().equals(itemId)) {
+                                selectedItems.add(item);
+                                break;
+                            }
+                        }
+                    }
                 }
-                itemsDialog.dismiss();
-                createNewTagWithItems(newTagName, selectedItems, currentTags);
+
+                // Aggiorna (o crea) la mappa dei join nel ViewModel
+                Map<UUID, Set<UUID>> currentJoins = generalItemViewModel.getItemTagJoins();
+                if (currentJoins == null) {
+                    currentJoins = new java.util.HashMap<>();
+                }
+                Set<UUID> joinSet = currentJoins.get(newTagId);
+                if (joinSet == null) {
+                    joinSet = new java.util.HashSet<>();
+                    currentJoins.put(newTagId, joinSet);
+                }
+
+                // Per ogni item selezionato, crea il record di join e aggiorna la mappa
+                for (ItemDto selectedItem : selectedItems) {
+                    joinSet.add(selectedItem.getId());
+                    ItemTagJoinEntity joinEntity = new ItemTagJoinEntity(selectedItem.getId(), newTagId);
+                    appDatabase.itemTagJoinDao().insert(joinEntity);
+                }
+
+                // Aggiorna il ViewModel e la UI sul thread principale
+                Map<UUID, Set<UUID>> finalCurrentJoins = currentJoins;
+
+                requireActivity().runOnUiThread(() -> {
+                    // Aggiorna la lista dei tag
+                    List<ItemTagDto> currentTags = generalItemViewModel.getItemTags().getValue();
+                    if (currentTags == null) {
+                        currentTags = new ArrayList<>();
+                    }
+                    currentTags.add(newTag);
+                    generalItemViewModel.setItemTags(currentTags);
+                    itemTagsAdapter.setItemTagDtos(currentTags);
+
+                    // Aggiorna la mappa dei join
+                    generalItemViewModel.setItemTagJoins(finalCurrentJoins);
+
+                    // Aggiorna anche la lista degli item associati
+                    List<ItemDto> currentItems = generalItemViewModel.getItems().getValue();
+                    if (currentItems == null) {
+                        currentItems = new ArrayList<>();
+                    }
+                    for (ItemDto selectedItem : selectedItems) {
+                        boolean exists = false;
+                        for (ItemDto item : currentItems) {
+                            if (item.getId().equals(selectedItem.getId())) {
+                                exists = true;
+                                break;
+                            }
+                        }
+                        if (!exists) {
+                            currentItems.add(selectedItem);
+                        }
+                    }
+                    generalItemViewModel.setItems(currentItems);
+                    itemTagsAdapter.setItemDtos(currentItems);
+
+                    // Notifica all'adapter che i dati sono cambiati
+                    itemTagsAdapter.notifyDataSetChanged();
+
+                    Toast.makeText(context, "Tag creato correttamente", Toast.LENGTH_SHORT).show();
+                });
             });
         });
-        itemsDialog.show();
-    }
+        multiSelectDialogBuilder.setNegativeButton("Annulla", (dialog, which) -> dialog.dismiss());
 
-    private void createNewTagWithItems(String tagName, List<ItemDto> selectedItems, List<ItemTagDto> currentTags) {
-        // Crea il nuovo tag
-        ItemTagDto newItemTag = new ItemTagDto();
-        newItemTag.setId(UUID.randomUUID());
-        newItemTag.setName(tagName);
-        newItemTag.setCreationDate(ZonedDateTime.now(ZoneId.of("Europe/Rome")));
-
-        // Aggiorna la lista dei tag nel ViewModel e nell'adapter
-        currentTags.add(newItemTag);
-        List<ItemTagDto> updatedTagList = new ArrayList<>(currentTags);
-        generalItemViewModel.setItemTags(updatedTagList);
-        itemTagsAdapter.setItemTagDtos(updatedTagList);
-
-        executorService.execute(() -> {
-            // Inserisci il nuovo tag nel database
-            ItemTagEntity newItemTagEntity = EntityDtoMapper.dtoToEntity(newItemTag);
-            appDatabase.itemTagEntityDao().insert(newItemTagEntity);
-
-            // Per ogni item selezionato, crea la join e aggiungi l'item alla lista globale se non già presente
-            for (ItemDto item : selectedItems) {
-                ItemTagJoinEntity joinEntity = new ItemTagJoinEntity(item.getId(), newItemTag.getId());
-                appDatabase.itemTagJoinDao().insert(joinEntity);
-
-                // Aggiorna la mappa delle join
-                Set<UUID> set = generalItemViewModel.getItemTagJoins().get(newItemTag.getId());
-                if (set == null) {
-                    set = new java.util.HashSet<>();
-                    generalItemViewModel.getItemTagJoins().put(newItemTag.getId(), set);
-                }
-                set.add(item.getId());
-
-                // Aggiungi l'item alla lista globale se non presente
-                if (!itemDtos.contains(item)) {
-                    itemDtos.add(item);
-                }
-            }
-            requireActivity().runOnUiThread(() -> {
-                Toast.makeText(getContext(), "Tag creato con " + selectedItems.size() + " item", Toast.LENGTH_SHORT).show();
-                itemTagsAdapter.notifyDataSetChanged();
-            });
-        });
+        multiSelectDialogBuilder.create().show();
     }
 
 

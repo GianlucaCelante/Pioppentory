@@ -14,7 +14,6 @@ import java.util.stream.Collectors;
 import it.pioppi.business.dto.ItemDto;
 import it.pioppi.business.dto.ItemTagDto;
 import it.pioppi.business.dto.ItemDetailDto;
-import it.pioppi.business.dto.ItemTagJoinDto;
 import it.pioppi.business.dto.QuantityTypeDto;
 
 public class GeneralItemViewModel extends ViewModel {

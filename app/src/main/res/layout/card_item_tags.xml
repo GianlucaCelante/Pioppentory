@@ -80,6 +80,7 @@
                     android:clipToPadding="false"
                     android:clipChildren="false"
                     android:overScrollMode="never"
+                    android:visibility="gone"
                     tools:listitem="@layout/card_items_in_tag"
                     />
 
