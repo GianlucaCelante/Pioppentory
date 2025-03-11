@@ -566,7 +566,8 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
                     itemTagsAdapter.setItemTagDtos(updatedList);
                     return true;
                 } else if (itemId == R.id.filter_tags) {
-                    Objects.requireNonNull(generalItemViewModel.getItemTags().getValue()).sort(Comparator.comparing(ItemTagDto::getName));
+                    Objects.requireNonNull(generalItemViewModel.getItemTags().getValue())
+                            .sort(Comparator.comparing(ItemTagDto::getName, String.CASE_INSENSITIVE_ORDER));
                     itemTagsAdapter.setItemTagDtos(generalItemViewModel.getItemTags().getValue());
                     return true;
                 }
