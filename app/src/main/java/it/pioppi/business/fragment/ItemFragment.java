@@ -318,7 +318,7 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                 .setPositiveButton("Aggiungi", null)
                 .setNegativeButton("Indietro", (dialog, id) -> dialog.cancel());
 
-        AlertDialog newItemDialog = builder.create();
+        newItemDialog = builder.create();
         newItemDialog.setOnShowListener(dlg -> {
             Button positiveButton = newItemDialog.getButton(AlertDialog.BUTTON_POSITIVE);
             positiveButton.setOnClickListener(v -> {

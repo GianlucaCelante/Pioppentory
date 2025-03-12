@@ -101,7 +101,6 @@ public class GeneralItemViewModel extends ViewModel {
         }
     }
 
-    // Metodi per ItemDetails (relativi ad ItemTagDto, se necessari)
     public LiveData<List<ItemDetailDto>> getItemDetails() {
         return itemDetails;
     }

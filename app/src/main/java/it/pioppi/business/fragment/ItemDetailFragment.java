@@ -120,6 +120,9 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
                 generalItemViewModel.setQuantityTypes(dto.getQuantityTypes());
             } catch (ExecutionException | InterruptedException e) {
                 throw new RuntimeException(e);
+            } catch (IllegalArgumentException ex) {
+                Toast.makeText(requireContext(), "Errore nel caricamento dell'item, Item non esiste", Toast.LENGTH_SHORT).show();
+                return view;
             }
         } else {
             Toast.makeText(requireContext(), "Errore nel caricamento dell'item, Item non esiste", Toast.LENGTH_SHORT).show();
@@ -632,7 +635,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
             if (itemId != null) {
                 return itemId;
             } else {
-                throw new IllegalArgumentException("Item not found with barcode: " + barcode);
+                throw new IllegalArgumentException();
             }
         });
 
