@@ -12,6 +12,7 @@ import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.google.android.material.card.MaterialCardView;
 
 import java.time.format.DateTimeFormatter;
@@ -78,6 +79,18 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
             return true;
         });
 
+        if(item.getImageUrl() != null && !item.getImageUrl().isEmpty()){
+            Glide.with(context)
+                    .load(item.getImageUrl())
+                    .placeholder(R.drawable.image_placeholder) // opzionale
+                    .error(R.drawable.image_placeholder) // opzionale
+                    .into(holder.itemImage);
+        } else {
+            // Se non c'è URL, puoi impostare un'immagine di default
+            holder.itemImage.setImageResource(R.drawable.
+                    image_placeholder);
+        }
+
         if (item.getStatus() != null) {
             switch (item.getStatus()) {
                 case WHITE:
@@ -119,6 +132,7 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
         public TextView checkDate;
         public ImageView hasNote;
         public MaterialCardView status;
+        public ImageView itemImage;
 
         public ItemViewHolder(View itemView) {
             super(itemView);
@@ -127,6 +141,7 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
             checkDate = itemView.findViewById(R.id.check_date);
             hasNote = itemView.findViewById(R.id.has_note);
             status = itemView.findViewById(R.id.card_item);
+            itemImage = itemView.findViewById(R.id.item_image);
         }
     }
 }

@@ -803,12 +803,12 @@ VALUES
 INSERT INTO QUANTITY_TYPE
   (id, quantity_type, quantity_type_description, quantity_type_available, quantity_type_purpose, units_per_quantity_type, creation_date, last_update, item_id)
 VALUES
-  ('7e0b2e6d-1f98-41ba-8833-952c8b3d2e86', 'STRATO', 'STRATO di The Pesca', 0, 'AVAILABLE', 264, '2025-02-18T21:39:42', NULL, '7e0b2e6d-1f98-41ba-8833-952c8b3d2e86');
+  ('7e0b2e6d-1f98-41ba-8833-952c8b3d2e86', 'STRATO', 'STRATO di The Pesca', 0, 'AVAILABLE', 264, '2025-02-18T21:39:42', NULL, '4dc51023-08d0-4e1e-918d-ec577d55bafb');
 
 INSERT INTO QUANTITY_TYPE
   (id, quantity_type, quantity_type_description, quantity_type_available, quantity_type_purpose, units_per_quantity_type, creation_date, last_update, item_id)
 VALUES
-  ('35021968-9da3-4f86-abac-f7a07b4cb269', 'PACCO', 'PACCO di The Pesca', 0, 'AVAILABLE', 24, '2025-02-18T21:39:42', NULL, '7e0b2e6d-1f98-41ba-8833-952c8b3d2e86');
+  ('35021968-9da3-4f86-abac-f7a07b4cb269', 'PACCO', 'PACCO di The Pesca', 0, 'AVAILABLE', 24, '2025-02-18T21:39:42', NULL, '4dc51023-08d0-4e1e-918d-ec577d55bafb');
 
 -- 126. Tiramisu Ct 6 Bott
 INSERT INTO QUANTITY_TYPE
@@ -1734,12 +1734,12 @@ VALUES
 INSERT INTO QUANTITY_TYPE
   (id, quantity_type, quantity_type_description, quantity_type_available, quantity_type_purpose, units_per_quantity_type, creation_date, last_update, item_id)
 VALUES
-  ('fa8953a0-3782-4af0-8af6-be2c47560966', 'STRATO', 'STRATO di The Pesca', 0, 'TO_BE_ORDERED', 264, '2025-02-18T21:39:42', NULL, '7e0b2e6d-1f98-41ba-8833-952c8b3d2e86');
+  ('fa8953a0-3782-4af0-8af6-be2c47560966', 'STRATO', 'STRATO di The Pesca', 0, 'TO_BE_ORDERED', 264, '2025-02-18T21:39:42', NULL, '4dc51023-08d0-4e1e-918d-ec577d55bafb');
 
 INSERT INTO QUANTITY_TYPE
   (id, quantity_type, quantity_type_description, quantity_type_available, quantity_type_purpose, units_per_quantity_type, creation_date, last_update, item_id)
 VALUES
-  ('810439f1-b9fd-4559-87d9-8e850953ec26', 'PACCO', 'PACCO di The Pesca', 0, 'TO_BE_ORDERED', 24, '2025-02-18T21:39:42', NULL, '7e0b2e6d-1f98-41ba-8833-952c8b3d2e86');
+  ('810439f1-b9fd-4559-87d9-8e850953ec26', 'PACCO', 'PACCO di The Pesca', 0, 'TO_BE_ORDERED', 24, '2025-02-18T21:39:42', NULL, '4dc51023-08d0-4e1e-918d-ec577d55bafb');
 
 -- 126. Tiramisu Ct 6 Bott
 INSERT INTO QUANTITY_TYPE

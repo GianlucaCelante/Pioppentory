@@ -17,16 +17,16 @@ import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 import it.pioppi.business.dto.ItemHistoryDto;
-import it.pioppi.business.dto.ItemHistoryGroup;
+import it.pioppi.business.dto.ItemHistoryGroupDto;
 import it.pioppi.database.AppDatabase;
 import it.pioppi.database.entity.ItemHistoryEntity;
 import it.pioppi.database.mapper.EntityDtoMapper;
 
 public class ItemHistoryViewModel extends AndroidViewModel {
 
-    private MutableLiveData<List<ItemHistoryGroup>> itemHistoryGroups = new MutableLiveData<>();
-    private ExecutorService executorService = Executors.newSingleThreadExecutor();
-    private AppDatabase appDatabase;
+    private final MutableLiveData<List<ItemHistoryGroupDto>> itemHistoryGroups = new MutableLiveData<>();
+    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
+    private final AppDatabase appDatabase;
 
     public ItemHistoryViewModel(@NonNull Application application) {
         super(application);
@@ -34,30 +34,29 @@ public class ItemHistoryViewModel extends AndroidViewModel {
         loadItemHistoryGroups();
     }
 
-    public LiveData<List<ItemHistoryGroup>> getItemHistoryGroups() {
+    public LiveData<List<ItemHistoryGroupDto>> getItemHistoryGroups() {
         return itemHistoryGroups;
     }
 
     private void loadItemHistoryGroups() {
         executorService.execute(() -> {
-            List<ItemHistoryGroup> groupList = prepareData();
+            List<ItemHistoryGroupDto> groupList = prepareData();
             itemHistoryGroups.postValue(groupList);
         });
     }
 
-    private List<ItemHistoryGroup> prepareData() {
-        // Stesso codice di prima
+    private List<ItemHistoryGroupDto> prepareData() {
         List<ItemHistoryDto> allItemHistories = fetchAllItemHistories();
 
         Map<LocalDate, List<ItemHistoryDto>> groupedMap = allItemHistories.stream()
                 .collect(Collectors.groupingBy(ItemHistoryDto::getInventoryClosureDate));
 
-        List<ItemHistoryGroup> groupList = new ArrayList<>();
+        List<ItemHistoryGroupDto> groupList = new ArrayList<>();
         for (Map.Entry<LocalDate, List<ItemHistoryDto>> entry : groupedMap.entrySet()) {
-            groupList.add(new ItemHistoryGroup(entry.getKey(), entry.getValue()));
+            groupList.add(new ItemHistoryGroupDto(entry.getKey(), entry.getValue()));
         }
 
-        groupList.sort(Comparator.comparing(ItemHistoryGroup::getInventoryClosureDate).reversed());
+        groupList.sort(Comparator.comparing(ItemHistoryGroupDto::getInventoryClosureDate).reversed());
 
         return groupList;
     }
@@ -70,7 +69,6 @@ public class ItemHistoryViewModel extends AndroidViewModel {
     @Override
     protected void onCleared() {
         super.onCleared();
-        // Chiudi l'ExecutorService quando il ViewModel viene distrutto
         if (executorService != null && !executorService.isShutdown()) {
             executorService.shutdown();
         }

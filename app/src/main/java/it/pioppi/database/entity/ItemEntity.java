@@ -50,6 +50,8 @@ public class ItemEntity extends BaseEntity {
     private ZonedDateTime checkDate;
     @ColumnInfo(name = "note")
     private String note;
+    @ColumnInfo(name = "image_url")
+    private String imageUrl;
     @ColumnInfo(name = "provider_id")
     private UUID providerId;
 
@@ -60,7 +62,7 @@ public class ItemEntity extends BaseEntity {
 
     @Ignore
     public ItemEntity(@NotNull UUID id, Integer ftsId, String name, Long totPortions,
-                      ItemStatus status, String barcode, ZonedDateTime checkDate, String note, UUID providerId) {
+                      ItemStatus status, String barcode, ZonedDateTime checkDate, String note, String imageUrl, UUID providerId) {
         super();
         this.id = id;
         this.ftsId = ftsId;
@@ -70,6 +72,7 @@ public class ItemEntity extends BaseEntity {
         this.barcode = barcode;
         this.checkDate = checkDate;
         this.note = note;
+        this.imageUrl = imageUrl;
         this.providerId = providerId;
     }
 
@@ -138,6 +141,14 @@ public class ItemEntity extends BaseEntity {
 
     public void setNote(String note) {
         this.note = note;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 
     public UUID getProviderId() {

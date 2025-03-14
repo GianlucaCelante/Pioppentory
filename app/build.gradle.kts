@@ -96,4 +96,5 @@ dependencies {
     testImplementation ("io.mockk:mockk:1.12.0")
     implementation ("com.google.android.play:asset-delivery:2.2.2")
 
+    implementation ("com.github.bumptech.glide:glide:4.12.0")
 }

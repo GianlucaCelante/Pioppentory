@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS `ITEM` (
     `barcode` TEXT,
     `check_date` TEXT,
     `note` TEXT,
+    `image_url` TEXT,
     `creation_date` TEXT,
     `last_update` TEXT,
     `provider_id` TEXT,

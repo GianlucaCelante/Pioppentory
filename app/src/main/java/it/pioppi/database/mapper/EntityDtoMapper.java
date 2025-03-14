@@ -36,6 +36,7 @@ public class EntityDtoMapper {
         itemEntity.setStatus(itemDto.getStatus());
         itemEntity.setBarcode(itemDto.getBarcode());
         itemEntity.setNote(itemDto.getNote());
+        itemEntity.setImageUrl(itemDto.getImageUrl());
         itemEntity.setCheckDate(itemDto.getCheckDate());
         itemEntity.setCreationDate(itemDto.getCreationDate());
         itemEntity.setLastUpdate(itemDto.getLastUpdateDate());
@@ -66,6 +67,7 @@ public class EntityDtoMapper {
         itemDto.setStatus(itemEntity.getStatus());
         itemDto.setBarcode(itemEntity.getBarcode());
         itemDto.setNote(itemEntity.getNote());
+        itemDto.setImageUrl(itemEntity.getImageUrl());
         itemDto.setCheckDate(itemEntity.getCheckDate());
         itemDto.setCreationDate(itemEntity.getCreationDate());
         itemDto.setLastUpdateDate(itemEntity.getLastUpdate());

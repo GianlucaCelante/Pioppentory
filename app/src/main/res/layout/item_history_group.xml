@@ -10,7 +10,9 @@
         android:id="@+id/text_view_inventory_date"
         android:textStyle="bold"
         android:textSize="18sp"
-        android:padding="8dp"
+        android:layout_margin="8dp"
+        android:gravity="center"
+        android:background="@color/blue"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Inventory Date" />
@@ -20,7 +22,6 @@
         android:id="@+id/recycler_view_items_by_date"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:nestedScrollingEnabled="false"
         tools:listitem="@layout/item_history_item" />
 
 </LinearLayout>

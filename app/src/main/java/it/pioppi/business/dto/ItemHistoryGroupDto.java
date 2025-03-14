@@ -3,11 +3,11 @@ package it.pioppi.business.dto;
 import java.time.LocalDate;
 import java.util.List;
 
-public class ItemHistoryGroup {
+public class ItemHistoryGroupDto {
     private LocalDate inventoryClosureDate;
     private List<ItemHistoryDto> itemHistories;
 
-    public ItemHistoryGroup(LocalDate date, List<ItemHistoryDto> histories) {
+    public ItemHistoryGroupDto(LocalDate date, List<ItemHistoryDto> histories) {
         this.inventoryClosureDate = date;
         this.itemHistories = histories;
     }

@@ -21,12 +21,13 @@ public class ItemDto implements Parcelable {
     private String barcode;
     private ZonedDateTime checkDate;
     private String note;
+    private String imageUrl;
     private ZonedDateTime creationDate;
     private ZonedDateTime lastUpdateDate;
     private UUID providerId;
 
     public ItemDto(UUID id, Integer ftsId, String name, Long totPortions, ItemStatus status,
-                   String barcode, ZonedDateTime checkDate, String note,
+                   String barcode, ZonedDateTime checkDate, String note, String imageUrl,
                    ZonedDateTime creationDate, ZonedDateTime lastUpdateDate, UUID providerId) {
         this.id = id;
         this.ftsId = ftsId;
@@ -36,6 +37,7 @@ public class ItemDto implements Parcelable {
         this.barcode = barcode;
         this.checkDate = checkDate;
         this.note = note;
+        this.imageUrl = imageUrl;
         this.creationDate = creationDate;
         this.lastUpdateDate = lastUpdateDate;
         this.providerId = providerId;
@@ -51,6 +53,7 @@ public class ItemDto implements Parcelable {
         status = in.readByte() == 0 ? null : ItemStatus.valueOf(in.readString());
         barcode = in.readString();
         note = in.readString();
+        imageUrl = in.readString();
         checkDate = in.readByte() == 0 ? null : ZonedDateTime.parse(in.readString(), DateTimeFormatter.ISO_LOCAL_DATE_TIME);
         creationDate = in.readByte() == 0 ? null : ZonedDateTime.parse(in.readString(), DateTimeFormatter.ISO_LOCAL_DATE_TIME);
         lastUpdateDate = in.readByte() == 0 ? null : ZonedDateTime.parse(in.readString(), DateTimeFormatter.ISO_LOCAL_DATE_TIME);
@@ -134,6 +137,14 @@ public class ItemDto implements Parcelable {
         this.note = note;
     }
 
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+
     public ZonedDateTime getCreationDate() {
         return creationDate;
     }
@@ -192,6 +203,7 @@ public class ItemDto implements Parcelable {
         }
         parcel.writeString(barcode);
         parcel.writeString(note);
+        parcel.writeString(imageUrl);
         if (checkDate == null) {
             parcel.writeByte((byte) 0);
         } else {

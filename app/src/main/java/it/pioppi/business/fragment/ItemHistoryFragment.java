@@ -15,9 +15,8 @@ import android.view.ViewGroup;
 import it.pioppi.R;
 import it.pioppi.business.adapter.ItemHistoryGroupAdapter;
 import it.pioppi.business.viewmodel.ItemHistoryViewModel;
-import it.pioppi.business.dto.ItemHistoryGroup;
 
-public class ItemHistoryFragment extends Fragment implements Searchable {
+public class ItemHistoryFragment extends Fragment {
 
     private RecyclerView recyclerViewItemHistory;
     private ItemHistoryGroupAdapter groupAdapter;
@@ -46,8 +45,5 @@ public class ItemHistoryFragment extends Fragment implements Searchable {
         return view;
     }
 
-    @Override
-    public void onSearchQueryChanged(String query) {
-        // Implementa la logica di ricerca se necessario
-    }
+
 }
