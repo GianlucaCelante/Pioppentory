@@ -35,11 +35,13 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -84,7 +86,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
     private GeneralItemViewModel generalItemViewModel;
 
     private UUID itemId;
-
+    private long selectedDateMillis;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -154,11 +156,13 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         prefillFields(view);
 
         CalendarView deliveryDateCalendarView = view.findViewById(R.id.delivery_date);
-        deliveryDateCalendarView.setOnDateChangeListener((deliveryDate, year, month, dayOfMonth) -> Objects.requireNonNull(generalItemViewModel.getItemDetails().getValue())
-                .stream()
-                .filter(itemDetail -> itemDetail.getItemId().equals(itemId))
-                .findFirst()
-                .ifPresent(itemDetailDto -> itemDetailDto.setDeliveryDate(ZonedDateTime.of(LocalDateTime.of(year, month + 1, dayOfMonth, 0, 0), ZoneId.systemDefault()))));
+        selectedDateMillis = deliveryDateCalendarView.getDate();
+
+        deliveryDateCalendarView.setOnDateChangeListener((view1, year, month, dayOfMonth) -> {
+            Calendar calendar = Calendar.getInstance();
+            calendar.set(year, month, dayOfMonth);
+            selectedDateMillis = calendar.getTimeInMillis();
+        });
 
         updatePortionsNeededForWeekendWhenPortionsRequiredOnSaturdayAndOnSundayChanged(view);
 
@@ -270,9 +274,11 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         Integer portionsRequiredOnSunday = parseIntegerValueToTextView(portionsRequiredOnSundayTextView);
         Integer portionsOnHoliday = parseIntegerValueToTextView(portionsOnHolidayTextView);
         Integer maxPortionsSold = parseIntegerValueToTextView(maxPortionsSoldTextView);
-        ZonedDateTime deliveryDate = itemDetail != null ? itemDetail.getDeliveryDate() : null;
-
-        // ITEM
+        ZonedDateTime deliveryDate = ZonedDateTime.ofInstant(
+                Instant.ofEpochMilli(selectedDateMillis),
+                ZoneId.of("Europe/Rome")
+        );
+                // ITEM
         Long totPortionsAvailable = calculateTotPortions(quantityTypes, QuantityPurpose.AVAILABLE);
         Long totPortionsToBeOrdered = calculateTotPortions(quantityTypes, QuantityPurpose.TO_BE_ORDERED);
 
@@ -710,7 +716,9 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
             CalendarView deliveryDateCalendarView = view.findViewById(R.id.delivery_date);
             ZonedDateTime deliveryDate = itemDetail.getDeliveryDate();
             if (deliveryDate != null) {
-                deliveryDateCalendarView.setDate(deliveryDate.toInstant().toEpochMilli());
+                long dateMillis = deliveryDate.toInstant().toEpochMilli();
+                deliveryDateCalendarView.setDate(dateMillis);
+                selectedDateMillis = dateMillis;
             }
 
         }

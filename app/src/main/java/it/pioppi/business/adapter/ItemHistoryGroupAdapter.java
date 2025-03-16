@@ -38,7 +38,7 @@ public class ItemHistoryGroupAdapter extends RecyclerView.Adapter<ItemHistoryGro
 
         // Set up the child RecyclerView
         ItemHistoryItemAdapter entryAdapter = new ItemHistoryItemAdapter(group.getItemHistories());
-        holder.recyclerViewItems.setLayoutManager(new LinearLayoutManager(holder.recyclerViewItems.getContext()));
+        holder.recyclerViewItems.setLayoutManager(new LinearLayoutManager(holder.recyclerViewItems.getContext(), LinearLayoutManager.HORIZONTAL, false));
         holder.recyclerViewItems.setAdapter(entryAdapter);
     }
 

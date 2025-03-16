@@ -10,12 +10,13 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
 
+import it.pioppi.DateTimeUtils;
 import it.pioppi.R;
 import it.pioppi.business.dto.ItemHistoryDto;
 
 public class ItemHistoryItemAdapter extends RecyclerView.Adapter<ItemHistoryItemAdapter.EntryViewHolder> {
 
-    private List<ItemHistoryDto> itemHistoryList;
+    private final List<ItemHistoryDto> itemHistoryList;
 
     public ItemHistoryItemAdapter(List<ItemHistoryDto> itemHistoryList) {
         this.itemHistoryList = itemHistoryList;
@@ -33,8 +34,11 @@ public class ItemHistoryItemAdapter extends RecyclerView.Adapter<ItemHistoryItem
     public void onBindViewHolder(@NonNull EntryViewHolder holder, int position) {
         ItemHistoryDto itemHistory = itemHistoryList.get(position);
         holder.textViewItemName.setText(itemHistory.getItemName());
-        holder.textViewQuantityPresent.setText("Quantity Present: " + itemHistory.getQuantityPresent());
-        holder.textViewQuantityOrdered.setText("Quantity Ordered: " + itemHistory.getQuantityOrdered());
+        holder.textViewQuantityPresent.setText("Quantità presente: " + itemHistory.getQuantityPresent());
+        holder.textViewQuantityOrdered.setText("Quantità da ordinare: " + itemHistory.getQuantityOrdered());
+        holder.textViewPortionsPerWeekend.setText("Fabbisogno weekend: " + itemHistory.getPortionsPerWeekend());
+        holder.textViewDeliveryDate.setText("Data consegna: " + DateTimeUtils.formatForDisplay(itemHistory.getDeliveryDate()));
+        holder.textViewProviderName.setText("Fornitore: " + itemHistory.getProviderName());
         holder.textViewNote.setText("Note: " + itemHistory.getNote());
     }
 
@@ -43,11 +47,14 @@ public class ItemHistoryItemAdapter extends RecyclerView.Adapter<ItemHistoryItem
         return itemHistoryList.size();
     }
 
-    static class EntryViewHolder extends RecyclerView.ViewHolder {
+    public static class EntryViewHolder extends RecyclerView.ViewHolder {
         TextView textViewItemName;
         TextView textViewQuantityPresent;
         TextView textViewQuantityOrdered;
         TextView textViewNote;
+        TextView textViewPortionsPerWeekend;
+        TextView textViewDeliveryDate;
+        TextView textViewProviderName;
 
         public EntryViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -55,6 +62,9 @@ public class ItemHistoryItemAdapter extends RecyclerView.Adapter<ItemHistoryItem
             textViewQuantityPresent = itemView.findViewById(R.id.text_view_quantity_present);
             textViewQuantityOrdered = itemView.findViewById(R.id.text_view_quantity_ordered);
             textViewNote = itemView.findViewById(R.id.text_view_note);
+            textViewPortionsPerWeekend = itemView.findViewById(R.id.text_view_portions_per_weekend);
+            textViewDeliveryDate = itemView.findViewById(R.id.text_view_delivery_date);
+            textViewProviderName = itemView.findViewById(R.id.text_view_provider_name);
         }
     }
 }

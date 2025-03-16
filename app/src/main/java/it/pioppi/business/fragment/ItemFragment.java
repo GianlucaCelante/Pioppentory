@@ -34,6 +34,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -50,6 +51,7 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import it.pioppi.ConstantUtils;
+import it.pioppi.DateTimeUtils;
 import it.pioppi.R;
 import it.pioppi.business.adapter.PreviewItemsAdapter;
 import it.pioppi.business.dto.ItemDetailDto;
@@ -61,6 +63,7 @@ import it.pioppi.database.AppDatabase;
 import it.pioppi.database.entity.ItemHistoryEntity;
 import it.pioppi.database.entity.ItemTagJoinEntity;
 import it.pioppi.database.entity.ItemWithDetailEntity;
+import it.pioppi.database.entity.ProviderEntity;
 import it.pioppi.database.mapper.EntityDtoMapper;
 import it.pioppi.database.entity.ItemDetailEntity;
 import it.pioppi.database.entity.ItemEntity;
@@ -210,7 +213,7 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
     private void previewItems() {
         // Filtra gli ItemDto con ItemStatus.BLUE
         List<ItemDto> blueItems = Objects.requireNonNull(generalItemViewModel.getItems().getValue()).stream()
-                .filter(item -> item.getStatus() == ItemStatus.BLUE)
+                .filter(item -> ItemStatus.BLUE.equals(item.getStatus()))
                 .collect(Collectors.toList());
 
         if (blueItems.isEmpty()) {
@@ -226,7 +229,6 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
         AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
         builder.setTitle("Elementi Modificati");
 
-        // Infla il layout del dialog
         LayoutInflater inflater = requireActivity().getLayoutInflater();
         View dialogView = inflater.inflate(R.layout.dialog_preview_items, null);
         builder.setView(dialogView);
@@ -279,23 +281,35 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
     private void saveItemHistory(List<ItemDto> itemList) {
         executorService.execute(() -> {
             try {
-                ZonedDateTime closureDate = ZonedDateTime.now(ZoneId.of("Europe/Rome"));
+
+                ZonedDateTime closureDate = ZonedDateTime.now(ZoneId.of("Europe/Rome")).truncatedTo(ChronoUnit.DAYS);
 
                 for (ItemDto item : itemList) {
+
+                    ItemHistoryEntity itemHistoryByItemName = appDatabase.itemHistoryEntityDao().getItemHistoryByItemNameInClosureDate(item.getName(), String.valueOf(LocalDate.from(closureDate)));
                     ItemWithDetailEntity itemEntity = appDatabase.itemEntityDao().getItemWithDetail(item.getId());
+                    ProviderEntity providerEntity = appDatabase.providerEntityDao().getProviderById(itemEntity.item.getProviderId());
 
                     ItemHistoryEntity historyRecord = new ItemHistoryEntity();
-                    historyRecord.setId(UUID.randomUUID());
+
+                    if(itemHistoryByItemName != null) {
+                        historyRecord.setId(itemHistoryByItemName.getId());
+                    } else {
+                        historyRecord.setId(UUID.randomUUID());
+                    }
+
                     historyRecord.setInventoryClosureDate(LocalDate.from(closureDate));
                     historyRecord.setItemName(item.getName());
                     historyRecord.setBarcode(item.getBarcode());
-                    historyRecord.setQuantityPresent(item.getTotPortions()); // O il campo appropriato
-                    historyRecord.setQuantityOrdered(itemEntity != null ? itemEntity.itemDetail.getQuantityToBeOrdered() : 0L);
+                    historyRecord.setQuantityPresent(item.getTotPortions());
+                    historyRecord.setQuantityOrdered(itemEntity.itemDetail.getQuantityToBeOrdered());
+                    historyRecord.setPortionsPerWeekend(Long.valueOf(itemEntity.itemDetail.getPortionsPerWeekend()));
+                    historyRecord.setDeliveryDate(LocalDate.from(itemEntity.itemDetail.getDeliveryDate()));
+                    historyRecord.setProviderName(providerEntity != null ? providerEntity.getName() : null);
                     historyRecord.setNote(item.getNote());
                     historyRecord.setCreationDate(closureDate);
                     historyRecord.setLastUpdate(closureDate);
-
-                    appDatabase.itemHistoryEntityDao().insert(historyRecord);
+                    appDatabase.itemHistoryEntityDao().upsert(historyRecord);
                 }
 
             } catch (Exception e) {

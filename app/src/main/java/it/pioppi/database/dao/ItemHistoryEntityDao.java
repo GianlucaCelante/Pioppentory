@@ -40,4 +40,6 @@ public interface ItemHistoryEntityDao extends BaseDao<ItemHistoryEntity> {
     @Query("SELECT * FROM item_history WHERE id = :itemId")
     List<ItemHistoryEntity> getItemHistoryByItemId(UUID itemId);
 
+    @Query("SELECT * FROM item_history WHERE item_name = :itemName AND inventory_closure_date = :closureDate")
+    ItemHistoryEntity getItemHistoryByItemNameInClosureDate(String itemName, String closureDate);
 }

@@ -34,6 +34,24 @@
             android:layout_height="wrap_content"
             android:text="Quantità da ordinare: 0" />
 
+        <TextView
+            android:id="@+id/text_view_portions_per_weekend"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Fabbisogno weekend: 0" />
+
+        <TextView
+            android:id="@+id/text_view_delivery_date"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Data di consegna: " />
+
+        <TextView
+            android:id="@+id/text_view_provider_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Fornitore: " />
+
         <!-- Note -->
         <TextView
             android:id="@+id/text_view_note"
