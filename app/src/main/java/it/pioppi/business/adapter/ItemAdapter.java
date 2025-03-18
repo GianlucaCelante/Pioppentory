@@ -82,13 +82,13 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
         if(item.getImageUrl() != null && !item.getImageUrl().isEmpty()){
             Glide.with(context)
                     .load(item.getImageUrl())
-                    .placeholder(R.drawable.image_placeholder) // opzionale
-                    .error(R.drawable.image_placeholder) // opzionale
+                    .placeholder(R.drawable.placeholder_thin) // opzionale
+                    .error(R.drawable.placeholder_thin) // opzionale
                     .into(holder.itemImage);
         } else {
             // Se non c'è URL, puoi impostare un'immagine di default
             holder.itemImage.setImageResource(R.drawable.
-                    image_placeholder);
+                    placeholder_thin);
         }
 
         if (item.getStatus() != null) {

@@ -1,3 +1,5 @@
+import com.android.build.api.dsl.Packaging
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
@@ -18,6 +20,13 @@ android {
         javaCompileOptions {
             annotationProcessorOptions {
                 argument("room.schemaLocation", "$projectDir/schemas")
+            }
+        }
+
+        packaging {
+            resources {
+                excludes.add("META-INF/INDEX.LIST")
+                excludes.add("META-INF/DEPENDENCIES")
             }
         }
     }
@@ -50,6 +59,7 @@ dependencies {
     implementation(libs.material)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
+    implementation(libs.androidx.lifecycle.livedata)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -97,4 +107,9 @@ dependencies {
     implementation ("com.google.android.play:asset-delivery:2.2.2")
 
     implementation ("com.github.bumptech.glide:glide:4.12.0")
+
+    // Google Drive integration
+    implementation(libs.play.services.auth)
+    implementation(libs.google.api.client.android)
+    implementation(libs.google.api.services.drive)
 }

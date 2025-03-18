@@ -5,18 +5,38 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
-    <!-- Date Header -->
-    <TextView
-        android:id="@+id/text_view_inventory_date"
-        android:textStyle="bold"
-        android:textSize="18sp"
-        android:layout_margin="8dp"
-        android:gravity="center"
-        android:background="@color/blue"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Inventory Date" />
+        android:orientation="horizontal"
+        android:weightSum="15"
+        android:background="@color/blue"
+        android:padding="8dp">
 
+        <!-- Date Header -->
+        <TextView
+            android:id="@+id/text_view_inventory_date"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:layout_margin="8dp"
+            android:gravity="center"
+            android:layout_weight="14"
+            android:text="Inventory Date" />
+
+        <ImageButton
+            android:id="@+id/export_to_excel"
+            android:layout_width="0dp"
+            android:layout_height="30dp"
+            android:src="@drawable/excel_file"
+            android:layout_weight="1"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:layout_margin="8dp"
+        />
+
+
+    </LinearLayout>
     <!-- RecyclerView for items under this date -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_view_items_by_date"
