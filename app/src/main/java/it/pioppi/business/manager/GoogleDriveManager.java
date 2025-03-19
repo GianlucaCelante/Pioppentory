@@ -1,8 +1,10 @@
 package it.pioppi.business.manager;
 
+import com.google.api.client.http.ByteArrayContent;
 import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.model.File;
 import com.google.api.services.drive.model.FileList;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Collections;
 import android.app.Activity;
@@ -48,40 +50,78 @@ public class GoogleDriveManager {
     }
 
     /**
-     * Esegue l'upload del CSV su Google Drive, inserendolo nella cartella "Pioppentory".
-     * Il file verrà creato con il nome specificato (ad es. "<dataChiusura>-report.csv").
+     * Scarica il contenuto di un file dato il suo ID.
      *
-     * @param fileName   Il nome del file, ad esempio "2025-03-17-report.csv".
-     * @param csvContent Il contenuto CSV da caricare.
+     * @param fileId ID del file su Drive.
+     * @return Il contenuto del file come String.
+     * @throws IOException
+     */
+    private String downloadFileContent(String fileId) throws IOException {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        driveService.files().get(fileId).executeMediaAndDownloadTo(outputStream);
+        return outputStream.toString("UTF-8");
+    }
+
+    /**
+     * Esegue l'upload del CSV su Google Drive, inserendolo nella cartella "Pioppentory".
+     * Se esiste già un file con lo stesso nome, unisce i contenuti e aggiorna il file.
+     * Il file verrà creato con il nome specificato (es. "2025-03-17-report.csv").
+     *
+     * @param fileName   Il nome del file.
+     * @param csvContent Il nuovo contenuto CSV.
      * @param context    Il contesto (usato per mostrare Toast sul main thread).
      */
     public void uploadCsv(String fileName, String csvContent, Context context) {
         new Thread(() -> {
             try {
-                // Assicurati che la cartella esista (questo chiama getToken e deve essere in background)
+                // Assicurati che la cartella esista
                 ensureFolderExists();
 
-                byte[] fileContent = csvContent.getBytes();
-                // Crea i metadati del file con il parent impostato sulla cartella "Pioppentory"
-                File fileMetadata = new File();
-                fileMetadata.setName(fileName);
-                fileMetadata.setMimeType(MIME_TYPE_CSV);
-                if (folderId != null) {
-                    fileMetadata.setParents(Collections.singletonList(folderId));
-                }
-                driveServiceHelper.uploadFile(fileMetadata, fileContent, new DriveServiceHelper.UploadCallback() {
-                    @Override
-                    public void onUploadSuccess(String fileId) {
-                        ((Activity) context).runOnUiThread(() ->
-                                Toast.makeText(context, "CSV caricato su Drive: " + fileName, Toast.LENGTH_LONG).show());
-                    }
+                // Verifica se esiste già un file con lo stesso nome nella cartella
+                String query = "name = '" + fileName + "' and '" + folderId + "' in parents and trashed = false";
+                FileList fileList = driveService.files().list()
+                        .setQ(query)
+                        .setSpaces("drive")
+                        .setFields("files(id, name)")
+                        .execute();
 
-                    @Override
-                    public void onUploadFailed(Exception e) {
-                        ((Activity) context).runOnUiThread(() ->
-                                Toast.makeText(context, "Errore durante l'upload su Drive", Toast.LENGTH_SHORT).show());
+                if (fileList.getFiles() != null && !fileList.getFiles().isEmpty()) {
+                    // Il file esiste: scarica il contenuto e uniscilo con il nuovo CSV
+                    String existingFileId = fileList.getFiles().get(0).getId();
+                    String existingContent = downloadFileContent(existingFileId);
+                    String mergedContent = ExportToCsvManager.mergeCsvContents(existingContent, csvContent);
+
+                    // Aggiorna il file esistente con il contenuto unito
+                    ByteArrayContent updatedContent = new ByteArrayContent(MIME_TYPE_CSV, mergedContent.getBytes());
+                    File updatedFile = driveService.files().update(existingFileId, null, updatedContent)
+                            .setFields("id")
+                            .execute();
+                    final String updatedFileId = updatedFile.getId();
+                    ((Activity) context).runOnUiThread(() ->
+                            Toast.makeText(context, "CSV aggiornato su Drive: " + fileName, Toast.LENGTH_LONG).show());
+                } else {
+                    // Il file non esiste: crea un nuovo file con il parent impostato
+                    byte[] fileContent = csvContent.getBytes();
+                    File fileMetadata = new File();
+                    fileMetadata.setName(fileName);
+                    fileMetadata.setMimeType(MIME_TYPE_CSV);
+                    if (folderId != null) {
+                        fileMetadata.setParents(Collections.singletonList(folderId));
                     }
-                });
+                    driveServiceHelper.uploadFile(fileMetadata, fileContent, new DriveServiceHelper.UploadCallback() {
+                        @Override
+                        public void onUploadSuccess(String fileId) {
+                            ((Activity) context).runOnUiThread(() ->
+                                    Toast.makeText(context, "CSV caricato su Drive: " + fileName, Toast.LENGTH_LONG).show());
+                        }
+
+                        @Override
+                        public void onUploadFailed(Exception e) {
+                            ((Activity) context).runOnUiThread(() ->
+                                    Toast.makeText(context, "Errore durante l'upload su Drive", Toast.LENGTH_SHORT).show());
+                        }
+                    });
+                }
             } catch (IOException e) {
                 e.printStackTrace();
                 ((Activity) context).runOnUiThread(() ->

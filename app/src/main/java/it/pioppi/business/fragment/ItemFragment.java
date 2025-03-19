@@ -51,7 +51,6 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import it.pioppi.ConstantUtils;
-import it.pioppi.DateTimeUtils;
 import it.pioppi.R;
 import it.pioppi.business.adapter.PreviewItemsAdapter;
 import it.pioppi.business.dto.ItemDetailDto;
@@ -70,7 +69,6 @@ import it.pioppi.database.entity.ItemEntity;
 import it.pioppi.database.model.ItemStatus;
 import it.pioppi.database.entity.QuantityTypeEntity;
 import it.pioppi.database.repository.ItemEntityRepository;
-import kotlin.collections.MapAccessorsKt;
 
 public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickListener, ItemAdapter.OnLongItemClickListener, Searchable {
 

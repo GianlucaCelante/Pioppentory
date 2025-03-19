@@ -11,7 +11,6 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.util.Collections;
 import java.util.List;
 
 import it.pioppi.DateTimeUtils;
@@ -24,15 +23,13 @@ public class ItemHistoryGroupAdapter extends RecyclerView.Adapter<ItemHistoryGro
 
     private static final String SUFFIX_FILE_NAME = "-report.csv";
     private final List<ItemHistoryGroupDto> groupList;
-    private GoogleDriveManager googleDriveManager; // Manager per l'upload su Drive
+    private GoogleDriveManager googleDriveManager;
 
-    // Costruttore aggiornato
     public ItemHistoryGroupAdapter(List<ItemHistoryGroupDto> groupList, GoogleDriveManager googleDriveManager) {
         this.groupList = groupList;
         this.googleDriveManager = googleDriveManager;
     }
 
-    // Setter per GoogleDriveManager (se necessario)
     public void setGoogleDriveManager(GoogleDriveManager manager) {
         this.googleDriveManager = manager;
     }
