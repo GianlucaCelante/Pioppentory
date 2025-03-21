@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import it.pioppi.R;
-import it.pioppi.business.dto.ItemDto;
+import it.pioppi.business.dto.item.ItemDto;
 
 public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder> {
 

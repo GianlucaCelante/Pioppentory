@@ -21,9 +21,9 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import it.pioppi.R;
-import it.pioppi.business.dto.ItemDetailDto;
-import it.pioppi.business.dto.ItemDto;
-import it.pioppi.business.dto.ItemTagDto;
+import it.pioppi.business.dto.item.detail.ItemDetailDto;
+import it.pioppi.business.dto.item.ItemDto;
+import it.pioppi.business.dto.item.tag.ItemTagDto;
 
 public class ItemTagsAdapter extends RecyclerView.Adapter<ItemTagsAdapter.ItemTagsViewHolder> {
 

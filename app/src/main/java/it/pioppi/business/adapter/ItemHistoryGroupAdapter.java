@@ -13,9 +13,9 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
 
-import it.pioppi.DateTimeUtils;
+import it.pioppi.utils.DateTimeUtils;
 import it.pioppi.R;
-import it.pioppi.business.dto.ItemHistoryGroupDto;
+import it.pioppi.business.dto.history.ItemHistoryGroupDto;
 import it.pioppi.business.manager.ExportToCsvManager;
 import it.pioppi.business.manager.GoogleDriveManager;
 
@@ -67,7 +67,7 @@ public class ItemHistoryGroupAdapter extends RecyclerView.Adapter<ItemHistoryGro
                         String fileName = group.getInventoryClosureDate() + SUFFIX_FILE_NAME;
 
                         if (googleDriveManager != null) {
-                            googleDriveManager.uploadCsv(fileName, csvContent, v.getContext());
+                            googleDriveManager.uploadFile(fileName, csvContent, v.getContext(), GoogleDriveManager.MIME_TYPE_CSV);
                         } else {
                             Toast.makeText(v.getContext(), "Google Drive non è inizializzato", Toast.LENGTH_SHORT).show();
                         }

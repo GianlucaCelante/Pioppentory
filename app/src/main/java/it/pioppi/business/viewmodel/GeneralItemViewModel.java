@@ -11,10 +11,10 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import it.pioppi.business.dto.ItemDto;
-import it.pioppi.business.dto.ItemTagDto;
-import it.pioppi.business.dto.ItemDetailDto;
-import it.pioppi.business.dto.QuantityTypeDto;
+import it.pioppi.business.dto.item.ItemDto;
+import it.pioppi.business.dto.item.tag.ItemTagDto;
+import it.pioppi.business.dto.item.detail.ItemDetailDto;
+import it.pioppi.business.dto.item.quantity.QuantityTypeDto;
 
 public class GeneralItemViewModel extends ViewModel {
 

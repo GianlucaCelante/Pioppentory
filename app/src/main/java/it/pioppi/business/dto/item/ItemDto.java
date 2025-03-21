@@ -1,4 +1,4 @@
-package it.pioppi.business.dto;
+package it.pioppi.business.dto.item;
 
 import android.os.Parcel;
 import android.os.Parcelable;

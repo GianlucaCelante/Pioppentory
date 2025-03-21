@@ -6,7 +6,7 @@ import androidx.lifecycle.ViewModel;
 
 import java.util.List;
 
-import it.pioppi.business.dto.BluetoothDeviceDto;
+import it.pioppi.business.dto.bluetooth.BluetoothDeviceDto;
 
 public class BluetoothDeviceViewModel extends ViewModel {
 

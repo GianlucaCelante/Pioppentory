@@ -17,12 +17,20 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
 import androidx.appcompat.widget.Toolbar;
+import androidx.lifecycle.Lifecycle;
+import androidx.lifecycle.LifecycleObserver;
+import androidx.lifecycle.OnLifecycleEvent;
+import androidx.lifecycle.ProcessLifecycleOwner;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.navigation.NavController;
 import androidx.navigation.NavOptions;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.NavigationUI;
+import androidx.work.BackoffPolicy;
+import androidx.work.ExistingWorkPolicy;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.WorkManager;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
@@ -40,15 +48,19 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
-import it.pioppi.ConstantUtils;
+import it.pioppi.utils.ConstantUtils;
 import it.pioppi.R;
-import it.pioppi.business.dto.ItemDto;
+import it.pioppi.business.dto.item.ItemDto;
 import it.pioppi.business.manager.GoogleDriveManager;
 import it.pioppi.business.viewmodel.GeneralItemViewModel;
 import it.pioppi.database.AppDatabase;
 import it.pioppi.database.dao.ItemFTSEntityDao;
 import it.pioppi.database.mapper.EntityDtoMapper;
+import it.pioppi.utils.LogUploadWorker;
+import it.pioppi.utils.LoggerManager;
+import it.pioppi.utils.GoogleDriveLogUploader;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -60,13 +72,15 @@ public class MainActivity extends AppCompatActivity {
     // Google Sign-In & Drive integration
     private static final String DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.file";
     private GoogleSignInClient googleSignInClient;
-    private Drive driveService;
     private GoogleDriveManager googleDriveManager;
     private ActivityResultLauncher<Intent> signInLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Inizializza LoggerManager (il LogUploader verrà settato dopo il Sign-In)
+        LoggerManager.init(this, "app_log.txt", true, null);
         setContentView(R.layout.activity_main);
 
         Log.d("MainActivity", "Registering BroadcastReceiver for scanned code events");
@@ -141,14 +155,17 @@ public class MainActivity extends AppCompatActivity {
                 Collections.singleton(DRIVE_SCOPE)
         );
         credential.setSelectedAccount(account.getAccount());
-        driveService = new Drive.Builder(
+        // Sostituisci con il nome della tua app
+        Drive driveService = new Drive.Builder(
                 new NetHttpTransport(),
                 new GsonFactory(),
                 credential)
-                .setApplicationName("MyDriveIntegrationApp") // Sostituisci con il nome della tua app
+                .setApplicationName("Pioppentory") // Sostituisci con il nome della tua app
                 .build();
 
         googleDriveManager = new GoogleDriveManager(driveService);
+        GoogleDriveLogUploader logUploader = new GoogleDriveLogUploader(googleDriveManager, this);
+        LoggerManager.getInstance().setLogUploader(logUploader);
         Toast.makeText(this, "Drive Service inizializzato", Toast.LENGTH_SHORT).show();
     }
 
@@ -168,7 +185,7 @@ public class MainActivity extends AppCompatActivity {
                 navController.navigate(R.id.itemHistoryFragment);
                 return true;
             } else if (itemId == R.id.nav_options) {
-                navController.navigate(R.id.optionsFragment);
+                navController.navigate(R.id.settingsFragment);
                 return true;
             }
             return false;

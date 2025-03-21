@@ -3,7 +3,6 @@ package it.pioppi.database.entity;
 import androidx.annotation.NonNull;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
-import androidx.room.ForeignKey;
 import androidx.room.Ignore;
 import androidx.room.Index;
 import androidx.room.PrimaryKey;
@@ -12,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 
-import it.pioppi.ConstantUtils;
+import it.pioppi.utils.ConstantUtils;
 
 @Entity(
         tableName = ConstantUtils.PROVIDER_TABLE_NAME,

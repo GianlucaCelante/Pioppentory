@@ -1,4 +1,4 @@
-package it.pioppi.business.dto;
+package it.pioppi.business.dto.provider;
 
 import java.time.ZonedDateTime;
 import java.util.UUID;

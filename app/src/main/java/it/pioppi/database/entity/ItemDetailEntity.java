@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
 import java.time.ZonedDateTime;
 import java.util.UUID;
 
-import it.pioppi.ConstantUtils;
+import it.pioppi.utils.ConstantUtils;
 
 @Entity(
         tableName = ConstantUtils.ITEM_DETAIL_TABLE_NAME,

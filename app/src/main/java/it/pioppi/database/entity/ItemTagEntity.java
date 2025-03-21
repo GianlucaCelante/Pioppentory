@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 
-import it.pioppi.ConstantUtils;
+import it.pioppi.utils.ConstantUtils;
 
 @Entity(
         tableName = ConstantUtils.ITEM_TAG_TABLE_NAME,

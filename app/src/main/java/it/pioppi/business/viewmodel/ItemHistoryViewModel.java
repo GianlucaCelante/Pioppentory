@@ -8,7 +8,6 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import java.time.LocalDate;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -17,8 +16,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
-import it.pioppi.business.dto.ItemHistoryDto;
-import it.pioppi.business.dto.ItemHistoryGroupDto;
+import it.pioppi.business.dto.history.ItemHistoryDto;
+import it.pioppi.business.dto.history.ItemHistoryGroupDto;
 import it.pioppi.database.AppDatabase;
 import it.pioppi.database.entity.ItemHistoryEntity;
 import it.pioppi.database.mapper.EntityDtoMapper;

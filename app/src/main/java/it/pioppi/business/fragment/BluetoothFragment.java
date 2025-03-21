@@ -1,7 +1,5 @@
 package it.pioppi.business.fragment;
 
-import static androidx.core.content.ContextCompat.registerReceiver;
-
 import android.Manifest;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
@@ -44,33 +42,32 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import it.pioppi.ConstantUtils;
+import it.pioppi.utils.ConstantUtils;
 import it.pioppi.R;
 import it.pioppi.business.adapter.BluetoothDevicesAdapter;
-import it.pioppi.business.dto.BluetoothDeviceDto;
-import it.pioppi.business.dto.BluetoothSocketHolder;
+import it.pioppi.business.dto.bluetooth.BluetoothDeviceDto;
+import it.pioppi.business.dto.bluetooth.BluetoothSocketHolder;
 import it.pioppi.business.service.BluetoothScannerService;
 import it.pioppi.business.viewmodel.BluetoothDeviceViewModel;
+import it.pioppi.utils.LoggerManager;
 
-public class OptionsFragment extends Fragment implements BluetoothDevicesAdapter.OnItemClickListener, BluetoothDevicesAdapter.OnLongItemClickListener {
+public class BluetoothFragment extends Fragment implements BluetoothDevicesAdapter.OnItemClickListener, BluetoothDevicesAdapter.OnLongItemClickListener {
 
     private BluetoothDevicesAdapter pairedDevicesAdapter;
     private BluetoothDevicesAdapter nearbyDevicesAdapter;
     private ExecutorService executorService;
     private BluetoothDeviceViewModel bluetoothDeviceViewModel;
-    private RecyclerView pairedBluetoothDevicesRecyclerView;
-    private RecyclerView nearbyBluetoothDevicesRecyclerView;
     private BluetoothAdapter bluetoothAdapter;
     private BroadcastReceiver receiver;
     private FloatingActionButton fabDiscoverDevices;
 
     private boolean isReceiverRegistered = false;
 
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
+        LoggerManager.getInstance().log("onCreate: Inizializzazione di BluetoothFragment", "INFO");
 
         executorService = Executors.newSingleThreadExecutor();
         bluetoothDeviceViewModel = new ViewModelProvider(requireActivity()).get(BluetoothDeviceViewModel.class);
@@ -80,10 +77,10 @@ public class OptionsFragment extends Fragment implements BluetoothDevicesAdapter
 
         if (bluetoothAdapter == null) {
             Toast.makeText(getContext(), "Il dispositivo non supporta il Bluetooth", Toast.LENGTH_SHORT).show();
+            LoggerManager.getInstance().log("onCreate: Il dispositivo non supporta il Bluetooth", "ERROR");
         } else {
             checkBluetoothPermissions();
         }
-
     }
 
     private void initializeReceiver() {
@@ -91,9 +88,11 @@ public class OptionsFragment extends Fragment implements BluetoothDevicesAdapter
             @Override
             public void onReceive(Context context, Intent intent) {
                 String action = intent.getAction();
+                LoggerManager.getInstance().log("initializeReceiver: Azione ricevuta - " + action, "DEBUG");
                 if (BluetoothDevice.ACTION_FOUND.equals(action)) {
                     BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                     if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                        LoggerManager.getInstance().log("initializeReceiver: Permesso BLUETOOTH_CONNECT non concesso", "WARN");
                         return;
                     }
                     String deviceName = device.getName();
@@ -102,6 +101,8 @@ public class OptionsFragment extends Fragment implements BluetoothDevicesAdapter
 
                 } else if (BluetoothAdapter.ACTION_DISCOVERY_STARTED.equals(action)) {
                     Toast.makeText(getContext(), "Ricerca dispositivi in corso...", Toast.LENGTH_LONG).show();
+                    LoggerManager.getInstance().log("Toast: Ricerca dispositivi in corso...", "INFO");
+                    LoggerManager.getInstance().log("initializeReceiver: Discovery avviata", "INFO");
                     resetDeviceDetection();
                     if (fabDiscoverDevices != null) {
                         fabDiscoverDevices.setEnabled(false);
@@ -109,8 +110,9 @@ public class OptionsFragment extends Fragment implements BluetoothDevicesAdapter
                     }
 
                 } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
-
                     Toast.makeText(getContext(), "Ricerca dispositivi Bluetooth terminata", Toast.LENGTH_SHORT).show();
+                    LoggerManager.getInstance().log("Toast: Ricerca dispositivi Bluetooth terminata", "INFO");
+                    LoggerManager.getInstance().log("initializeReceiver: Discovery terminata", "INFO");
                     removeUnseenDevices();
                     if (fabDiscoverDevices != null) {
                         fabDiscoverDevices.setEnabled(true);
@@ -122,6 +124,7 @@ public class OptionsFragment extends Fragment implements BluetoothDevicesAdapter
     }
 
     private void resetDeviceDetection() {
+        LoggerManager.getInstance().log("resetDeviceDetection: Reset flag rilevamento dispositivi", "DEBUG");
         List<BluetoothDeviceDto> currentDevices = bluetoothDeviceViewModel.getNearbyBluetoothDevices().getValue();
         if (currentDevices != null) {
             for (BluetoothDeviceDto device : currentDevices) {
@@ -131,6 +134,7 @@ public class OptionsFragment extends Fragment implements BluetoothDevicesAdapter
     }
 
     private void updateNearbyDevices(String deviceName, String deviceAddress, boolean detected) {
+        LoggerManager.getInstance().log("updateNearbyDevices: Aggiornamento dispositivo " + deviceName + " (" + deviceAddress + ")", "DEBUG");
         BluetoothDeviceDto newDevice = new BluetoothDeviceDto();
         newDevice.setName(deviceName);
         newDevice.setAddress(deviceAddress);
@@ -163,6 +167,7 @@ public class OptionsFragment extends Fragment implements BluetoothDevicesAdapter
     }
 
     private void removeUnseenDevices() {
+        LoggerManager.getInstance().log("removeUnseenDevices: Rimozione dispositivi non rilevati", "DEBUG");
         List<BluetoothDeviceDto> currentDevices = bluetoothDeviceViewModel.getNearbyBluetoothDevices().getValue();
         if (currentDevices != null) {
             // Rimuovi tutti i dispositivi che non sono stati rilevati durante l'ultima scansione
@@ -181,6 +186,7 @@ public class OptionsFragment extends Fragment implements BluetoothDevicesAdapter
     }
 
     private void checkBluetoothPermissions() {
+        LoggerManager.getInstance().log("checkBluetoothPermissions: Verifica permessi Bluetooth", "DEBUG");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED ||
                     ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED ||
@@ -204,15 +210,18 @@ public class OptionsFragment extends Fragment implements BluetoothDevicesAdapter
     }
 
     private void checkLocationEnabled() {
+        LoggerManager.getInstance().log("checkLocationEnabled: Verifica stato localizzazione", "DEBUG");
         LocationManager locationManager = (LocationManager) requireContext().getSystemService(Context.LOCATION_SERVICE);
         if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
             Toast.makeText(getContext(), "Abilita la localizzazione per cercare i dispositivi Bluetooth", Toast.LENGTH_SHORT).show();
+            LoggerManager.getInstance().log("Toast: Abilita la localizzazione per cercare i dispositivi Bluetooth", "WARN");
         }
     }
 
     private void startBluetoothDiscovery() {
-
+        LoggerManager.getInstance().log("startBluetoothDiscovery: Avvio ricerca dispositivi", "INFO");
         if (!checkAndRequestPermissions()) {
+            LoggerManager.getInstance().log("startBluetoothDiscovery: Permessi insufficienti", "ERROR");
             return;
         }
 
@@ -230,6 +239,7 @@ public class OptionsFragment extends Fragment implements BluetoothDevicesAdapter
                 }
             } else {
                 Toast.makeText(getContext(), "Impossibile avviare la ricerca", Toast.LENGTH_SHORT).show();
+                LoggerManager.getInstance().log("Toast: Impossibile avviare la ricerca", "ERROR");
                 if (fabDiscoverDevices != null) {
                     fabDiscoverDevices.setEnabled(true);
                     fabDiscoverDevices.setAlpha(1.0f);
@@ -237,21 +247,21 @@ public class OptionsFragment extends Fragment implements BluetoothDevicesAdapter
             }
 
         } catch (SecurityException e) {
-            e.printStackTrace();
+            LoggerManager.getInstance().logException(e);
         }
-
     }
 
     @Override
     public void onResume() {
         super.onResume();
+        LoggerManager.getInstance().log("onResume: BluetoothFragment in primo piano", "INFO");
         fetchPairedDevices();
     }
 
     @Override
     public void onPause() {
         super.onPause();
-
+        LoggerManager.getInstance().log("onPause: BluetoothFragment in background", "INFO");
         try {
             if (bluetoothAdapter != null && bluetoothAdapter.isDiscovering()) {
                 bluetoothAdapter.cancelDiscovery();
@@ -260,9 +270,8 @@ public class OptionsFragment extends Fragment implements BluetoothDevicesAdapter
                     fabDiscoverDevices.setAlpha(1.0f);
                 }
             }
-
         } catch (SecurityException e) {
-            e.printStackTrace();
+            LoggerManager.getInstance().logException(e);
         }
 
         if (isReceiverRegistered) {
@@ -273,18 +282,21 @@ public class OptionsFragment extends Fragment implements BluetoothDevicesAdapter
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        LoggerManager.getInstance().log("onRequestPermissionsResult: requestCode = " + requestCode, "DEBUG");
         if (requestCode == ConstantUtils.REQUEST_BLUETOOTH_PERMISSION) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 enableBluetooth();
                 fetchPairedDevices();
             } else {
                 Toast.makeText(getContext(), "Permesso Bluetooth negato", Toast.LENGTH_SHORT).show();
+                LoggerManager.getInstance().log("Toast: Permesso Bluetooth negato", "ERROR");
             }
         } else if (requestCode == ConstantUtils.REQUEST_LOCATION_PERMISSION) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 enableBluetooth();
             } else {
                 Toast.makeText(getContext(), "Permesso di localizzazione negato", Toast.LENGTH_SHORT).show();
+                LoggerManager.getInstance().log("Toast: Permesso di localizzazione negato", "ERROR");
             }
         }
     }
@@ -292,26 +304,28 @@ public class OptionsFragment extends Fragment implements BluetoothDevicesAdapter
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        LoggerManager.getInstance().log("onActivityResult: requestCode = " + requestCode + ", resultCode = " + resultCode, "DEBUG");
         if (requestCode == ConstantUtils.REQUEST_ENABLE_BT) {
             if (resultCode == Activity.RESULT_OK) {
                 // Il Bluetooth è abilitato
                 fetchPairedDevices();
             } else {
-                // L'utente ha rifiutato di abilitare il Bluetooth
                 Toast.makeText(getContext(), "Bluetooth non abilitato", Toast.LENGTH_SHORT).show();
+                LoggerManager.getInstance().log("Toast: Bluetooth non abilitato", "ERROR");
             }
         } else if (requestCode == ConstantUtils.REQUEST_DISCOVERABLE) {
             if (resultCode == Activity.RESULT_CANCELED) {
-                // L'utente ha rifiutato di rendere il dispositivo visibile
                 Toast.makeText(getContext(), "Visibilità Bluetooth non abilitata", Toast.LENGTH_SHORT).show();
+                LoggerManager.getInstance().log("Toast: Visibilità Bluetooth non abilitata", "WARN");
             } else {
-                // Il dispositivo è ora visibile per resultCode secondi
                 Toast.makeText(getContext(), "Il dispositivo è ora visibile per " + resultCode + " secondi", Toast.LENGTH_SHORT).show();
+                LoggerManager.getInstance().log("Toast: Il dispositivo è ora visibile per " + resultCode + " secondi", "INFO");
             }
         }
     }
 
     private void enableBluetooth() {
+        LoggerManager.getInstance().log("enableBluetooth: Verifica stato Bluetooth", "DEBUG");
         if (!bluetoothAdapter.isEnabled()) {
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableBtIntent, ConstantUtils.REQUEST_ENABLE_BT);
@@ -320,8 +334,8 @@ public class OptionsFragment extends Fragment implements BluetoothDevicesAdapter
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-
-        View view = inflater.inflate(R.layout.fragment_options, container, false);
+        LoggerManager.getInstance().log("onCreateView: Creazione view del fragment", "INFO");
+        View view = inflater.inflate(R.layout.fragment_bluetooth, container, false);
         initializeReceiver();
 
         IntentFilter filter = new IntentFilter();
@@ -334,8 +348,8 @@ public class OptionsFragment extends Fragment implements BluetoothDevicesAdapter
             isReceiverRegistered = true;  // Imposta il flag come true
         }
 
-        pairedBluetoothDevicesRecyclerView = view.findViewById(R.id.recycler_view_devices);
-        nearbyBluetoothDevicesRecyclerView = view.findViewById(R.id.recycler_view_nearby_devices);
+        RecyclerView pairedBluetoothDevicesRecyclerView = view.findViewById(R.id.recycler_view_devices);
+        RecyclerView nearbyBluetoothDevicesRecyclerView = view.findViewById(R.id.recycler_view_nearby_devices);
 
         pairedDevicesAdapter = new BluetoothDevicesAdapter(new ArrayList<>(), this, this);
         nearbyDevicesAdapter = new BluetoothDevicesAdapter(new ArrayList<>(), this, this);
@@ -364,6 +378,7 @@ public class OptionsFragment extends Fragment implements BluetoothDevicesAdapter
                 startBluetoothDiscovery();
             } else {
                 Toast.makeText(getContext(), "Bluetooth non attivo", Toast.LENGTH_SHORT).show();
+                LoggerManager.getInstance().log("Toast: Bluetooth non attivo", "ERROR");
             }
         });
 
@@ -373,6 +388,7 @@ public class OptionsFragment extends Fragment implements BluetoothDevicesAdapter
     @Override
     public void onDestroy() {
         super.onDestroy();
+        LoggerManager.getInstance().log("onDestroy: Chiusura del fragment", "INFO");
         executorService.shutdown();
 
         try {
@@ -384,7 +400,7 @@ public class OptionsFragment extends Fragment implements BluetoothDevicesAdapter
                 }
             }
         } catch (SecurityException e) {
-            e.printStackTrace();
+            LoggerManager.getInstance().logException(e);
         }
 
         if (isReceiverRegistered) {
@@ -393,11 +409,12 @@ public class OptionsFragment extends Fragment implements BluetoothDevicesAdapter
         }
     }
 
-
     @Override
     public void onItemClick(BluetoothDeviceDto bluetoothDevice) {
+        LoggerManager.getInstance().log("onItemClick: Dispositivo cliccato - " + (bluetoothDevice != null ? bluetoothDevice.getName() : "null"), "DEBUG");
         if (bluetoothDevice == null || bluetoothDevice.getAddress() == null) {
             Toast.makeText(getContext(), "Dispositivo non valido", Toast.LENGTH_SHORT).show();
+            LoggerManager.getInstance().log("Toast: Dispositivo non valido", "ERROR");
             return;
         }
 
@@ -414,6 +431,7 @@ public class OptionsFragment extends Fragment implements BluetoothDevicesAdapter
     }
 
     private void connectToDevice(BluetoothDeviceDto bluetoothDevice) {
+        LoggerManager.getInstance().log("connectToDevice: Tentativo di connessione a " + bluetoothDevice.getName(), "INFO");
         BluetoothDevice device = bluetoothAdapter.getRemoteDevice(bluetoothDevice.getAddress());
 
         if (device != null) {
@@ -460,25 +478,27 @@ public class OptionsFragment extends Fragment implements BluetoothDevicesAdapter
                     });
 
                 } catch (IOException e) {
-                    e.printStackTrace();
-                    // Gestisci l'errore (mostra un messaggio all'utente)
+                    LoggerManager.getInstance().logException(e);
                     requireActivity().runOnUiThread(() -> {
                         Toast.makeText(getContext(), "Errore durante la connessione al dispositivo", Toast.LENGTH_SHORT).show();
+                        LoggerManager.getInstance().log("Toast: Errore durante la connessione al dispositivo", "ERROR");
                     });
                 } catch (SecurityException e) {
-                    e.printStackTrace();
-                    // Gestisci l'errore (mostra un messaggio all'utente)
+                    LoggerManager.getInstance().logException(e);
                     requireActivity().runOnUiThread(() -> {
                         Toast.makeText(getContext(), "Errore di sicurezza", Toast.LENGTH_SHORT).show();
+                        LoggerManager.getInstance().log("Toast: Errore di sicurezza", "ERROR");
                     });
                 }
             }).start();
         } else {
             Toast.makeText(getContext(), "Dispositivo non trovato", Toast.LENGTH_SHORT).show();
+            LoggerManager.getInstance().log("Toast: Dispositivo non trovato", "ERROR");
         }
     }
 
     private void disconnectFromDevice(BluetoothDeviceDto bluetoothDevice) {
+        LoggerManager.getInstance().log("disconnectFromDevice: Disconnessione da " + bluetoothDevice.getName(), "INFO");
         // Chiudi il socket
         BluetoothSocketHolder socketHolder = BluetoothSocketHolder.getInstance();
         BluetoothSocket socket = socketHolder.getSocket();
@@ -488,7 +508,7 @@ public class OptionsFragment extends Fragment implements BluetoothDevicesAdapter
                 socket.close();
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            LoggerManager.getInstance().logException(e);
         }
 
         // Ferma il servizio
@@ -507,24 +527,28 @@ public class OptionsFragment extends Fragment implements BluetoothDevicesAdapter
             nearbyDevicesAdapter.notifyDataSetChanged();
 
             Toast.makeText(getContext(), "Disconnesso da " + bluetoothDevice.getName(), Toast.LENGTH_SHORT).show();
+            LoggerManager.getInstance().log("Toast: Disconnesso da " + bluetoothDevice.getName(), "INFO");
         });
     }
 
     private void stopBluetoothScannerService() {
+        LoggerManager.getInstance().log("stopBluetoothScannerService: Arresto del servizio", "DEBUG");
         Intent serviceIntent = new Intent(getContext(), BluetoothScannerService.class);
         requireContext().stopService(serviceIntent);
     }
 
     private void startBluetoothScannerService() {
+        LoggerManager.getInstance().log("startBluetoothScannerService: Avvio del servizio", "DEBUG");
         Intent serviceIntent = new Intent(getContext(), BluetoothScannerService.class);
         ContextCompat.startForegroundService(requireContext(), serviceIntent);
     }
 
-
     @Override
     public void onLongItemClick(BluetoothDeviceDto bluetoothDevice) {
+        LoggerManager.getInstance().log("onLongItemClick: Dispositivo lungo cliccato - " + bluetoothDevice.getName(), "DEBUG");
         if (bluetoothDevice == null || bluetoothDevice.getAddress() == null) {
             Toast.makeText(getContext(), "Dispositivo non valido", Toast.LENGTH_SHORT).show();
+            LoggerManager.getInstance().log("Toast: Dispositivo non valido", "ERROR");
             return;
         }
 
@@ -540,6 +564,7 @@ public class OptionsFragment extends Fragment implements BluetoothDevicesAdapter
 
     // Metodo per rimuovere un dispositivo associato
     private void removePairedDevice(BluetoothDeviceDto bluetoothDevice) {
+        LoggerManager.getInstance().log("removePairedDevice: Rimozione dispositivo " + bluetoothDevice.getName(), "INFO");
         // Rimuovi il dispositivo dal BluetoothAdapter se è associato
         BluetoothDevice device = bluetoothAdapter.getRemoteDevice(bluetoothDevice.getAddress());
         if (device != null) {
@@ -551,10 +576,12 @@ public class OptionsFragment extends Fragment implements BluetoothDevicesAdapter
                     pairedDevices.removeIf(d -> d.getAddress().equals(bluetoothDevice.getAddress()));
                     bluetoothDeviceViewModel.setPairedBluetoothDevices(pairedDevices);
                     Toast.makeText(getContext(), "Dispositivo rimosso", Toast.LENGTH_SHORT).show();
+                    LoggerManager.getInstance().log("Toast: Dispositivo rimosso", "INFO");
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                LoggerManager.getInstance().logException(e);
                 Toast.makeText(getContext(), "Errore nella rimozione del dispositivo", Toast.LENGTH_SHORT).show();
+                LoggerManager.getInstance().log("Toast: Errore nella rimozione del dispositivo", "ERROR");
             }
         }
     }
@@ -569,6 +596,7 @@ public class OptionsFragment extends Fragment implements BluetoothDevicesAdapter
     }
 
     private void fetchPairedDevices() {
+        LoggerManager.getInstance().log("fetchPairedDevices: Recupero dispositivi accoppiati", "INFO");
         // Verifica se il Bluetooth è abilitato
         if (bluetoothAdapter != null && !bluetoothAdapter.isEnabled()) {
             enableBluetooth();
@@ -578,6 +606,7 @@ public class OptionsFragment extends Fragment implements BluetoothDevicesAdapter
         // Verifica il permesso BLUETOOTH_CONNECT
         if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
             Toast.makeText(getContext(), "Permesso BLUETOOTH_CONNECT non concesso", Toast.LENGTH_SHORT).show();
+            LoggerManager.getInstance().log("Toast: Permesso BLUETOOTH_CONNECT non concesso", "ERROR");
             return;
         }
 
@@ -600,6 +629,7 @@ public class OptionsFragment extends Fragment implements BluetoothDevicesAdapter
     }
 
     private boolean checkAndRequestPermissions() {
+        LoggerManager.getInstance().log("checkAndRequestPermissions: Verifica permessi necessari", "DEBUG");
         List<String> permissionsNeeded = new ArrayList<>();
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -627,5 +657,4 @@ public class OptionsFragment extends Fragment implements BluetoothDevicesAdapter
 
         return true;
     }
-
 }

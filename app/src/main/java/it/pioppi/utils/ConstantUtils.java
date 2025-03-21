@@ -1,4 +1,4 @@
-package it.pioppi;
+package it.pioppi.utils;
 
 import java.util.UUID;
 

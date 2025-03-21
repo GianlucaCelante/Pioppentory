@@ -1,6 +1,9 @@
-package it.pioppi.business.dto;
+package it.pioppi.business.dto.item;
 
 import java.util.List;
+
+import it.pioppi.business.dto.item.detail.ItemDetailDto;
+import it.pioppi.business.dto.item.quantity.QuantityTypeDto;
 
 public class ItemWithDetailAndQuantityTypeDto {
 

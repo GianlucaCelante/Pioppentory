@@ -1,4 +1,4 @@
-package it.pioppi.business.dto;
+package it.pioppi.business.dto.bluetooth;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;

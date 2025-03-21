@@ -1,4 +1,4 @@
-package it.pioppi.business.dto;
+package it.pioppi.business.dto.history;
 
 import java.time.LocalDate;
 import java.util.List;

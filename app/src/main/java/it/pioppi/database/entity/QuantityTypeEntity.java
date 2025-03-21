@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 
-import it.pioppi.ConstantUtils;
+import it.pioppi.utils.ConstantUtils;
 import it.pioppi.database.model.QuantityPurpose;
 import it.pioppi.database.model.QuantityType;
 

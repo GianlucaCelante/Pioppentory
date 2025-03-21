@@ -44,13 +44,21 @@
         tools:layout="@layout/fragment_item_history" />
 
     <fragment
-        android:id="@+id/optionsFragment"
-        android:name="it.pioppi.business.fragment.OptionsFragment"
-        android:label="Opzioni"
-        tools:layout="@layout/fragment_options" />
+        android:id="@+id/settingsFragment"
+        android:name="it.pioppi.business.fragment.SettingsFragment"
+        android:label="Impostazioni"
+        tools:layout="@layout/fragment_settings" >
+        <action
+            android:id="@+id/action_settingsFragment_to_bluetoothFragment"
+            app:destination="@id/bluetoothFragment" />
+    </fragment>
 
     <!-- Azione globale per navigare al ItemDetailFragment -->
     <action
         android:id="@+id/action_global_to_itemDetailFragment"
         app:destination="@id/itemDetailFragment" />
+    <fragment
+        android:id="@+id/bluetoothFragment"
+        android:name="it.pioppi.business.fragment.BluetoothFragment"
+        android:label=""/>
 </navigation>

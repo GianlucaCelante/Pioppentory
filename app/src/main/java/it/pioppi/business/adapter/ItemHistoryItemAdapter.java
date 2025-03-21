@@ -10,9 +10,9 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
 
-import it.pioppi.DateTimeUtils;
+import it.pioppi.utils.DateTimeUtils;
 import it.pioppi.R;
-import it.pioppi.business.dto.ItemHistoryDto;
+import it.pioppi.business.dto.history.ItemHistoryDto;
 
 public class ItemHistoryItemAdapter extends RecyclerView.Adapter<ItemHistoryItemAdapter.EntryViewHolder> {
 

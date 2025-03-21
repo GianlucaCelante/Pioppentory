@@ -17,4 +17,5 @@
     <color name="green">#98FB98</color>
     <color name="connected_device_background">#2196F3</color> <!-- Blu -->
     <color name="default_background">#FFFFFF</color> <!-- Bianco -->
+    <color name="semi_transparent_white">#90FFFFFF</color>
 </resources>

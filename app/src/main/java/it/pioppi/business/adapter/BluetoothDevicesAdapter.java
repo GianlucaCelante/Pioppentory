@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import it.pioppi.R;
-import it.pioppi.business.dto.BluetoothDeviceDto;
+import it.pioppi.business.dto.bluetooth.BluetoothDeviceDto;
 
 public class BluetoothDevicesAdapter extends RecyclerView.Adapter<BluetoothDevicesAdapter.BluetoothDevicesViewHolder> {
 

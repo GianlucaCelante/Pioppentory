@@ -1,6 +1,6 @@
 package it.pioppi.database;
 
-import static it.pioppi.ConstantUtils.APP_DATABASE;
+import static it.pioppi.utils.ConstantUtils.APP_DATABASE;
 
 import android.content.Context;
 

@@ -11,7 +11,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 
 import it.pioppi.R;
-import it.pioppi.business.dto.ItemDto;
+import it.pioppi.business.dto.item.ItemDto;
 
 public class PreviewItemsAdapter extends RecyclerView.Adapter<PreviewItemsAdapter.ViewHolder> {
 

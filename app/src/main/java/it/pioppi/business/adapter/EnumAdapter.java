@@ -19,7 +19,7 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 import it.pioppi.R;
-import it.pioppi.business.dto.QuantityTypeDto;
+import it.pioppi.business.dto.item.quantity.QuantityTypeDto;
 import it.pioppi.business.manager.ItemDetailFragmentManager;
 import it.pioppi.database.model.QuantityType;
 

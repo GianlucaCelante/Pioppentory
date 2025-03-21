@@ -11,7 +11,7 @@ import java.time.LocalDate;
 import java.util.StringJoiner;
 import java.util.UUID;
 
-import it.pioppi.ConstantUtils;
+import it.pioppi.utils.ConstantUtils;
 
 @Entity(
         tableName = ConstantUtils.ITEM_HISTORY_TABLE_NAME,

@@ -5,6 +5,7 @@ import static it.pioppi.business.manager.ItemDetailFragmentManager.normalizeText
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -18,6 +19,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CalendarView;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -33,10 +35,12 @@ import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.imageview.ShapeableImageView;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -51,14 +55,15 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
-import it.pioppi.ConstantUtils;
+import it.pioppi.utils.ConstantUtils;
 import it.pioppi.R;
 import it.pioppi.business.adapter.EnumAdapter;
-import it.pioppi.business.dto.ItemDetailDto;
-import it.pioppi.business.dto.ItemDto;
-import it.pioppi.business.dto.ItemWithDetailAndQuantityTypeDto;
-import it.pioppi.business.dto.ProviderDto;
-import it.pioppi.business.dto.QuantityTypeDto;
+import it.pioppi.business.adapter.FullScreenImageDialogFragment;
+import it.pioppi.business.dto.item.detail.ItemDetailDto;
+import it.pioppi.business.dto.item.ItemDto;
+import it.pioppi.business.dto.item.ItemWithDetailAndQuantityTypeDto;
+import it.pioppi.business.dto.provider.ProviderDto;
+import it.pioppi.business.dto.item.quantity.QuantityTypeDto;
 import it.pioppi.business.viewmodel.GeneralItemViewModel;
 import it.pioppi.database.AppDatabase;
 import it.pioppi.database.dao.ItemDetailEntityDao;
@@ -75,6 +80,7 @@ import it.pioppi.database.model.ItemStatus;
 import it.pioppi.database.entity.ProviderEntity;
 import it.pioppi.database.entity.QuantityTypeEntity;
 import it.pioppi.database.repository.ItemEntityRepository;
+import it.pioppi.utils.LoggerManager;
 
 public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLongClickListener, EnumAdapter.OnTextChangeListener  {
 
@@ -96,13 +102,14 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         generalItemViewModel = new ViewModelProvider(requireActivity()).get(GeneralItemViewModel.class);
         itemEntityRepository = new ItemEntityRepository(requireActivity().getApplication());
         setHasOptionsMenu(true);
-
+        LoggerManager.getInstance().log("onCreate: Inizializzazione di ItemDetailFragment", "INFO");
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
+        LoggerManager.getInstance().log("onCreateView: Inizio creazione della view", "INFO");
         View view = inflater.inflate(R.layout.fragment_item_detail, container, false);
 
         Bundle bundle = getArguments();
@@ -115,19 +122,25 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
                 } else {
                     throw new IllegalArgumentException("Item details not found");
                 }
+                LoggerManager.getInstance().log("onCreateView: ItemId ottenuto: " + itemId, "DEBUG");
+
                 ItemWithDetailAndQuantityTypeDto dto = fetchItemWithDetailAndQuantityTypeById(itemId);
+                LoggerManager.getInstance().log("onCreateView: DTO ottenuto per l'item", "DEBUG");
 
                 generalItemViewModel.updateItem(dto.getItem());
                 generalItemViewModel.updateItemDetail(dto.getItemDetail());
                 generalItemViewModel.setQuantityTypes(dto.getQuantityTypes());
             } catch (ExecutionException | InterruptedException e) {
+                LoggerManager.getInstance().logException(e);
                 throw new RuntimeException(e);
             } catch (IllegalArgumentException ex) {
                 Toast.makeText(requireContext(), "Errore nel caricamento dell'item, Item non esiste", Toast.LENGTH_SHORT).show();
+                LoggerManager.getInstance().log("onCreateView: Errore nel caricamento dell'item, Item non esiste", "ERROR");
                 return view;
             }
         } else {
             Toast.makeText(requireContext(), "Errore nel caricamento dell'item, Item non esiste", Toast.LENGTH_SHORT).show();
+            LoggerManager.getInstance().log("onCreateView: Errore nel caricamento dell'item, Bundle null", "ERROR");
             return view;
         }
 
@@ -139,7 +152,9 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         try {
             providers = executorService.submit(() -> appDatabase.providerEntityDao().getProviderNames()).get()
                     .stream().sorted().collect(Collectors.toList());
+            LoggerManager.getInstance().log("onCreateView: Provider recuperati", "DEBUG");
         } catch (ExecutionException | InterruptedException e) {
+            LoggerManager.getInstance().logException(e);
             throw new RuntimeException(e);
         }
 
@@ -148,7 +163,10 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         Spinner providerSpinner = view.findViewById(R.id.provider_spinner);
         providerSpinner.setAdapter(spinnerAdapter);
         Button addProviderButton = view.findViewById(R.id.add_provider_button);
-        addProviderButton.setOnClickListener(v -> addProviderItem(inflater, spinnerAdapter, providerSpinner));
+        addProviderButton.setOnClickListener(v -> {
+            LoggerManager.getInstance().log("onCreateView: Clic sul pulsante per aggiungere fornitore", "DEBUG");
+            addProviderItem(inflater, spinnerAdapter, providerSpinner);
+        });
 
         quantityTypesAvailable = setupRecyclerViewAndButtonForQuantityTypes(view, inflater, R.id.recycler_view_quantity_available, R.id.add_quantity_type_available, QuantityPurpose.AVAILABLE);
         quantityTypesToBeOrdered = setupRecyclerViewAndButtonForQuantityTypes(view, inflater, R.id.recycler_view_quantity_to_be_ordered, R.id.add_quantity_type_to_be_ordered, QuantityPurpose.TO_BE_ORDERED);
@@ -162,25 +180,30 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
             Calendar calendar = Calendar.getInstance();
             calendar.set(year, month, dayOfMonth);
             selectedDateMillis = calendar.getTimeInMillis();
+            LoggerManager.getInstance().log("onCreateView: Data di consegna aggiornata", "DEBUG");
         });
 
         updatePortionsNeededForWeekendWhenPortionsRequiredOnSaturdayAndOnSundayChanged(view);
 
         FloatingActionButton saveButton = view.findViewById(R.id.save_button);
         saveButton.setOnClickListener(v -> {
+            LoggerManager.getInstance().log("onCreateView: Clic sul pulsante di salvataggio", "INFO");
             try {
+                ItemDto itemDto = new ItemDto();
+                itemDto.getId().equals(UUID.randomUUID());
                 saveAll(view);
             } catch (ExecutionException | InterruptedException e) {
+                LoggerManager.getInstance().logException(e);
                 throw new RuntimeException(e);
             }
         });
 
         Button itemTagsButton = view.findViewById(R.id.item_tags_button);
         itemTagsButton.setOnClickListener(v -> {
+            LoggerManager.getInstance().log("onCreateView: Clic sul pulsante per item tags", "DEBUG");
             Bundle bundleItemTags = new Bundle();
             bundleItemTags.putString("itemId", itemId.toString());
             NavHostFragment.findNavController(this).navigate(R.id.action_itemDetailFragment_to_itemTagsFragment, bundleItemTags);
-
         });
 
         EditText itemNameTextView = view.findViewById(R.id.item_name_card_detail);
@@ -188,23 +211,43 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         itemNameTextView.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                // Niente da loggare
             }
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
+                // Niente da loggare
             }
 
             @Override
             public void afterTextChanged(Editable s) {
                 String newItemName = s.toString().trim();
+                LoggerManager.getInstance().log("onCreateView: afterTextChanged: Nuovo nome item: " + newItemName, "DEBUG");
                 try {
                     checkIfItemNameExists(newItemName, currentItemName, saveButton);
                 } catch (ExecutionException | InterruptedException e) {
+                    LoggerManager.getInstance().logException(e);
                     throw new RuntimeException(e);
                 }
             }
         });
 
+        ShapeableImageView imagePreview = view.findViewById(R.id.item_image_preview);
+        imagePreview.setOnClickListener(v -> {
+            LoggerManager.getInstance().log("onCreateView: Clic sull'immagine per visualizzazione full screen", "DEBUG");
+            showFullImageDialog();
+        });
+
+        String imageUrl = generalItemViewModel.getItems().getValue().stream().filter(item -> item.getId().equals(itemId)).findFirst().get().getImageUrl();
+        if (imageUrl != null && !imageUrl.isEmpty()) {
+            Glide.with(requireContext())
+                    .load(imageUrl)
+                    .placeholder(R.drawable.camera)
+                    .into(imagePreview);
+            LoggerManager.getInstance().log("onCreateView: Immagine caricata", "DEBUG");
+        }
+
+        LoggerManager.getInstance().log("onCreateView: Vista creata con successo", "INFO");
         return view;
     }
 
@@ -213,6 +256,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         MenuItem searchItem = menu.findItem(R.id.action_search);
         if (searchItem != null) {
             searchItem.setVisible(false); // Nascondi l'elemento di ricerca
+            LoggerManager.getInstance().log("onPrepareOptionsMenu: Elemento di ricerca nascosto", "DEBUG");
         }
         super.onPrepareOptionsMenu(menu);
     }
@@ -220,10 +264,12 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        LoggerManager.getInstance().log("onViewCreated: Vista completata", "INFO");
         onTextChanged();
     }
 
     private void saveAll(View view) throws ExecutionException, InterruptedException {
+        LoggerManager.getInstance().log("saveAll: Inizio salvataggio dati", "INFO");
 
         QuantityTypeEntityDao quantityTypeEntityDao = appDatabase.quantityTypeEntityDao();
         ItemDetailEntityDao itemDetailEntityDao = appDatabase.itemDetailEntityDao();
@@ -250,7 +296,6 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         Spinner providerSpinner = view.findViewById(R.id.provider_spinner);
         EditText barcodeEditText = view.findViewById(R.id.barcode);
 
-        // PROVIDER
         String providerName;
         if(providerSpinner.getSelectedItem() != null) {
             providerName = providerSpinner.getSelectedItem().toString();
@@ -266,9 +311,9 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
                     item.setProviderId(provider.getId());
                 }
             }).get();
+            LoggerManager.getInstance().log("saveAll: Provider associato: " + providerName, "DEBUG");
         }
 
-        // ITEM_DETAIL
         Integer portionsPerWeekend = parseIntegerValueToTextView(portionsPerWeekendTextView);
         Integer portionsRequiredOnSaturday = parseIntegerValueToTextView(portionsRequiredOnSaturdayTextView);
         Integer portionsRequiredOnSunday = parseIntegerValueToTextView(portionsRequiredOnSundayTextView);
@@ -278,7 +323,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
                 Instant.ofEpochMilli(selectedDateMillis),
                 ZoneId.of("Europe/Rome")
         );
-                // ITEM
+
         Long totPortionsAvailable = calculateTotPortions(quantityTypes, QuantityPurpose.AVAILABLE);
         Long totPortionsToBeOrdered = calculateTotPortions(quantityTypes, QuantityPurpose.TO_BE_ORDERED);
 
@@ -362,10 +407,13 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         generalItemViewModel.setQuantityTypes(finalQuantityTypes);
 
         Toast.makeText(requireContext(), "Prodotto salvato", Toast.LENGTH_SHORT).show();
+        LoggerManager.getInstance().log("Toast: Prodotto salvato", "INFO");
+        LoggerManager.getInstance().log("saveAll: Salvataggio completato", "INFO");
         NavHostFragment.findNavController(this).popBackStack();
     }
 
     private void checkIfItemNameExists(String newItemName, String currentItemName, FloatingActionButton saveButton) throws ExecutionException, InterruptedException {
+        LoggerManager.getInstance().log("checkIfItemNameExists: Controllo esistenza nome item", "DEBUG");
         Future<?> future = executorService.submit(() -> {
             List<String> existingItems = appDatabase.itemEntityDao().getUniqueItemNames();
             boolean itemNameExists = existingItems.stream()
@@ -375,6 +423,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
                 if (itemNameExists && !newItemName.equalsIgnoreCase(currentItemName)) {
                     saveButton.setEnabled(false);
                     Toast.makeText(getContext(), "Esiste già un prodotto con questo nome", Toast.LENGTH_SHORT).show();
+                    LoggerManager.getInstance().log("Toast: Esiste già un prodotto con questo nome", "WARN");
                 } else {
                     saveButton.setEnabled(true);
                 }
@@ -385,14 +434,14 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
     }
 
     private void updatePortionsNeededForWeekendWhenPortionsRequiredOnSaturdayAndOnSundayChanged(View view) {
+        LoggerManager.getInstance().log("updatePortionsNeeded: Impostazione dei listener per aggiornare le porzioni", "DEBUG");
         EditText portionsNeededForSaturday = view.findViewById(R.id.portions_required_on_saturday);
         EditText portionsNeededForSunday = view.findViewById(R.id.portions_required_on_sunday);
         TextView portionsPerWeekendTextView = view.findViewById(R.id.portions_per_weekend);
 
         TextWatcher portionsTextWatcher = new TextWatcher() {
             @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            }
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
@@ -429,14 +478,12 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
                     itemDetail.setPortionsRequiredOnSunday(sundayPortions);
                     itemDetail.setPortionsPerWeekend(portionsPerWeekend);
                     portionsPerWeekendTextView.setText(String.valueOf(portionsPerWeekend));
-
+                    LoggerManager.getInstance().log("updatePortionsNeeded: Porzioni per weekend aggiornate a " + portionsPerWeekend, "DEBUG");
                 }
             }
 
             @Override
-            public void afterTextChanged(Editable s) {
-                // Nothing needed here
-            }
+            public void afterTextChanged(Editable s) { }
         };
 
         portionsNeededForSaturday.addTextChangedListener(portionsTextWatcher);
@@ -447,13 +494,10 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
 
         TextWatcher normalizeTextWatcher = new TextWatcher() {
             @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-                // Nothing needed here
-            }
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-
                 String normalizedTextPortionsOnHoliday = normalizeText(portionsOnHoliday.getText().toString());
                 if (!normalizedTextPortionsOnHoliday.equals(portionsOnHoliday.getText().toString())) {
                     portionsOnHoliday.setText(normalizedTextPortionsOnHoliday);
@@ -465,24 +509,21 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
                     maxPortionsSold.setText(normalizedMaxPortionsSold);
                     maxPortionsSold.setSelection(normalizedMaxPortionsSold.length());
                 }
-
             }
 
             @Override
-            public void afterTextChanged(Editable s) {
-                // Nothing needed here
-            }
+            public void afterTextChanged(Editable s) { }
         };
 
         portionsOnHoliday.addTextChangedListener(normalizeTextWatcher);
         maxPortionsSold.addTextChangedListener(normalizeTextWatcher);
-
     }
 
     private void hideKeyboard(View view) {
         InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
         if (imm != null) {
             imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+            LoggerManager.getInstance().log("hideKeyboard: Tastiera nascosta", "DEBUG");
         }
     }
 
@@ -490,12 +531,12 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
         if (imm != null) {
             imm.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT);
+            LoggerManager.getInstance().log("openKeyboard: Tastiera mostrata", "DEBUG");
         }
     }
 
     @SuppressLint("ClickableViewAccessibility")
     private void setupUI(View view) {
-        // Set up touch listener for non-text box views to hide keyboard.
         if (!(view instanceof EditText)) {
             view.setOnTouchListener((v, event) -> {
                 ItemDetailFragment.this.hideKeyboard(view);
@@ -503,18 +544,17 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
                 return false;
             });
         }
-
-        // If a layout container, iterate over children and seed recursion.
         if (view instanceof ViewGroup) {
             for (int i = 0; i < ((ViewGroup) view).getChildCount(); i++) {
                 View innerView = ((ViewGroup) view).getChildAt(i);
                 setupUI(innerView);
             }
         }
+        LoggerManager.getInstance().log("setupUI: Impostazione listener per nascondere tastiera", "DEBUG");
     }
 
-
     private RecyclerView setupRecyclerViewAndButtonForQuantityTypes(View view, LayoutInflater inflater, int recyclerViewId, int buttonId, QuantityPurpose purpose) {
+        LoggerManager.getInstance().log("setupRecyclerViewAndButtonForQuantityTypes: Setup per purpose " + purpose, "DEBUG");
         List<QuantityTypeDto> filteredQuantityTypes = Objects.requireNonNull(generalItemViewModel.getQuantityTypes().getValue()).stream()
                 .filter(quantityTypeDto -> purpose.equals(quantityTypeDto.getPurpose()))
                 .collect(Collectors.toList());
@@ -529,18 +569,18 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         return recyclerView;
     }
 
-
     private void addQuantityType(LayoutInflater inflater, RecyclerView recyclerView, EnumAdapter adapter, QuantityPurpose purpose) {
+        LoggerManager.getInstance().log("addQuantityType: Apertura dialog per aggiungere QuantityType", "DEBUG");
         List<QuantityTypeDto> existingQuantityTypes = adapter.getQuantityTypes();
         List<QuantityType> availableQuantityTypes = getAvailableQuantityTypes(existingQuantityTypes);
 
         if (availableQuantityTypes.isEmpty()) {
             Toast.makeText(requireContext(), "Tutti i tipi di quantità sono già presenti", Toast.LENGTH_SHORT).show();
+            LoggerManager.getInstance().log("Toast: Tutti i tipi di quantità sono già presenti", "WARN");
             return;
         }
 
         View dialogView = inflater.inflate(R.layout.dialog_add_quantity_type, null);
-
         Spinner spinner = dialogView.findViewById(R.id.quantity_type_spinner);
         EditText quantityAvailable = dialogView.findViewById(R.id.quantity_type_available);
         EditText unitsPerQuantityType = dialogView.findViewById(R.id.units_per_quantity_type);
@@ -551,48 +591,56 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
 
         AlertDialog.Builder builder = new AlertDialog.Builder(requireActivity());
         builder.setView(dialogView)
-                .setPositiveButton("Aggiungi", (dialog, id) -> {
-                    QuantityTypeDto quantityTypeDto = new QuantityTypeDto();
-                    quantityTypeDto.setId(UUID.randomUUID());
-                    quantityTypeDto.setItemId(itemId);
-                    quantityTypeDto.setPurpose(purpose);
-                    quantityTypeDto.setCreationDate(ZonedDateTime.now(ZoneId.of("Europe/Rome")));
-
-                    if (spinner.getSelectedItem() != null) {
-                        quantityTypeDto.setQuantityType((QuantityType) spinner.getSelectedItem());
-                        quantityTypeDto.setDescription(((QuantityType) spinner.getSelectedItem()).getDescription());
-                    }
-
-                    String quantityText = quantityAvailable.getText().toString();
-                    if (!quantityText.isEmpty()) {
-                        quantityTypeDto.setQuantity(Integer.parseInt(quantityText));
-                    } else {
-                        quantityTypeDto.setQuantity(0);
-                    }
-
-                    String unitsPerQuantityTypeText = unitsPerQuantityType.getText().toString();
-                    if (!unitsPerQuantityTypeText.isEmpty()) {
-                        quantityTypeDto.setUnitsPerQuantityType(Integer.parseInt(unitsPerQuantityTypeText));
-                    } else {
-                        quantityTypeDto.setUnitsPerQuantityType(0);
-                    }
-
-                    if (!adapter.containsQuantityType(quantityTypeDto)) {
-                        adapter.addQuantityType(quantityTypeDto);
-                        generalItemViewModel.getQuantityTypes().getValue().add(quantityTypeDto);
-                        recyclerView.smoothScrollToPosition(adapter.getItemCount() - 1);
-                        onTextChanged();
-                    } else {
-                        Toast.makeText(requireContext(), "Elemento già presente", Toast.LENGTH_SHORT).show();
-                    }
-                })
+                .setPositiveButton("Aggiungi", null)
                 .setNegativeButton("Indietro", (dialog, id) -> dialog.cancel());
 
-        builder.show();
+        AlertDialog alertDialog = builder.create();
+        alertDialog.setOnShowListener(dlg -> {
+            Button positiveButton = alertDialog.getButton(AlertDialog.BUTTON_POSITIVE);
+            positiveButton.setOnClickListener(v -> {
+                String newProviderName = "";
+                QuantityTypeDto quantityTypeDto = new QuantityTypeDto();
+                quantityTypeDto.setId(UUID.randomUUID());
+                quantityTypeDto.setItemId(itemId);
+                quantityTypeDto.setPurpose(purpose);
+                quantityTypeDto.setCreationDate(ZonedDateTime.now(ZoneId.of("Europe/Rome")));
+
+                if (spinner.getSelectedItem() != null) {
+                    quantityTypeDto.setQuantityType((QuantityType) spinner.getSelectedItem());
+                    quantityTypeDto.setDescription(((QuantityType) spinner.getSelectedItem()).getDescription());
+                }
+
+                String quantityText = quantityAvailable.getText().toString();
+                if (!quantityText.isEmpty()) {
+                    quantityTypeDto.setQuantity(Integer.parseInt(quantityText));
+                } else {
+                    quantityTypeDto.setQuantity(0);
+                }
+
+                String unitsPerQuantityTypeText = unitsPerQuantityType.getText().toString();
+                if (!unitsPerQuantityTypeText.isEmpty()) {
+                    quantityTypeDto.setUnitsPerQuantityType(Integer.parseInt(unitsPerQuantityTypeText));
+                } else {
+                    quantityTypeDto.setUnitsPerQuantityType(0);
+                }
+
+                if (!adapter.containsQuantityType(quantityTypeDto)) {
+                    adapter.addQuantityType(quantityTypeDto);
+                    generalItemViewModel.getQuantityTypes().getValue().add(quantityTypeDto);
+                    recyclerView.smoothScrollToPosition(adapter.getItemCount() - 1);
+                    onTextChanged();
+                    LoggerManager.getInstance().log("addQuantityType: Nuovo QuantityType aggiunto", "INFO");
+                } else {
+                    Toast.makeText(requireContext(), "Elemento già presente", Toast.LENGTH_SHORT).show();
+                    LoggerManager.getInstance().log("Toast: Elemento già presente", "WARN");
+                }
+            });
+        });
+        alertDialog.show();
     }
 
-
     private List<QuantityType> getAvailableQuantityTypes(List<QuantityTypeDto> existingQuantityTypes) {
+        LoggerManager.getInstance().log("getAvailableQuantityTypes: Calcolo tipi disponibili", "DEBUG");
         List<QuantityType> allQuantityTypes = Arrays.asList(QuantityType.values());
         List<QuantityType> usedQuantityTypes = existingQuantityTypes.stream()
                 .map(QuantityTypeDto::getQuantityType)
@@ -602,8 +650,8 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
                 .collect(Collectors.toList());
     }
 
-
     private ItemWithDetailAndQuantityTypeDto fetchItemWithDetailAndQuantityTypeById(UUID itemId) throws ExecutionException, InterruptedException {
+        LoggerManager.getInstance().log("fetchItemWithDetailAndQuantityTypeById: Recupero dati per itemId " + itemId, "DEBUG");
         Future<ItemWithDetailAndQuantityTypeDto> future = executorService.submit(() -> {
             ItemEntityDao entityDao = appDatabase.itemEntityDao();
             ItemWithDetailAndQuantityTypeEntity entity = entityDao.getItemsWithDetailsAndQuantityType(itemId);
@@ -633,8 +681,8 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         return future.get();
     }
 
-
     private UUID fetchItemWithDetailByBarcode(String barcode) throws ExecutionException, InterruptedException {
+        LoggerManager.getInstance().log("fetchItemWithDetailByBarcode: Recupero item per barcode " + barcode, "DEBUG");
         Future<UUID> future = executorService.submit(() -> {
             ItemEntityDao itemEntityDao = appDatabase.itemEntityDao();
             UUID itemId = UUID.fromString(itemEntityDao.getItemByBarcode(barcode));
@@ -649,7 +697,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
     }
 
     protected void prefillFields(View view) {
-
+        LoggerManager.getInstance().log("prefillFields: Pre-compilazione dei campi", "DEBUG");
         Spinner providerSpinner = view.findViewById(R.id.provider_spinner);
 
         ItemDto itemDto = Objects.requireNonNull(generalItemViewModel.getItems().getValue()).stream()
@@ -669,6 +717,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
                     if (spinnerPosition >= 0) {
                         providerSpinner.setSelection(spinnerPosition);
                     }
+                    LoggerManager.getInstance().log("prefillFields: Provider selezionato: " + provider.getName(), "DEBUG");
                 });
             }
         });
@@ -683,6 +732,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
             totPortionsAvailableTextView.setText(String.valueOf(itemDto.getTotPortions()));
             barcodeEditText.setText(itemDto.getBarcode());
             noteTextView.setText(itemDto.getNote());
+            LoggerManager.getInstance().log("prefillFields: Campi base precompilati", "DEBUG");
         }
 
         ItemDetailDto itemDetail = Objects.requireNonNull(generalItemViewModel.getItemDetails().getValue()).stream()
@@ -690,7 +740,6 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
                 .findFirst().orElse(null);
 
         if (itemDetail != null) {
-
             TextView totPortionsToBeOrderedTextView = view.findViewById(R.id.tot_portions_to_be_ordered);
             totPortionsToBeOrderedTextView.setText(String.valueOf(itemDetail.getQuantityToBeOrdered() != null ? itemDetail.getQuantityToBeOrdered() : 0));
 
@@ -720,7 +769,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
                 deliveryDateCalendarView.setDate(dateMillis);
                 selectedDateMillis = dateMillis;
             }
-
+            LoggerManager.getInstance().log("prefillFields: Campi dettagli precompilati", "DEBUG");
         }
 
         List<QuantityTypeDto> quantityTypes = generalItemViewModel.getQuantityTypes().getValue();
@@ -742,14 +791,13 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
             if(adapterToBeOrdered != null) {
                 adapterToBeOrdered.setQuantityTypes(quantityTypeToBeOrdered);
             }
-
+            LoggerManager.getInstance().log("prefillFields: Quantity types aggiornati", "DEBUG");
         }
-
     }
 
     @Override
     public UUID onItemLongClick(QuantityTypeDto quantityTypeDto) throws ExecutionException, InterruptedException {
-
+        LoggerManager.getInstance().log("onItemLongClick: Long click su QuantityType " + (quantityTypeDto != null ? quantityTypeDto.getId() : "null"), "DEBUG");
         if (quantityTypeDto == null) {
             return null;
         }
@@ -765,11 +813,13 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
                 .removeIf(q -> q.getId().equals(quantityTypeDto.getId()));
 
         Toast.makeText(requireContext(), "Deleted", Toast.LENGTH_SHORT).show();
+        LoggerManager.getInstance().log("Toast: QuantityType eliminato", "INFO");
         return quantityTypeDto.getId();
     }
 
     @Override
     public void onTextChanged() {
+        LoggerManager.getInstance().log("onTextChanged: Aggiornamento porzioni totali", "DEBUG");
         TextView totPortionsAvailableTextView = requireView().findViewById(R.id.tot_portions_avalaible);
         TextView totPortionsToBeOrderedTextView = requireView().findViewById(R.id.tot_portions_to_be_ordered);
         TextView totPortionsAvailablePlusOrderedTextView = requireView().findViewById(R.id.tot_portions_avalaible_plus_ordered);
@@ -797,10 +847,12 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
     @Override
     public void onDestroy() {
         super.onDestroy();
+        LoggerManager.getInstance().log("onDestroy: Chiusura di ItemDetailFragment", "INFO");
         executorService.shutdown();
     }
 
     private Integer parseIntegerValueToTextView(TextView portionsPerWeekendTextView) {
+        LoggerManager.getInstance().log("parseIntegerValueToTextView: Parsing valore", "DEBUG");
         if (portionsPerWeekendTextView.getText() == null || portionsPerWeekendTextView.getText().toString().isEmpty()) {
             return 0;
         } else {
@@ -809,6 +861,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
     }
 
     private void addProviderItem(LayoutInflater inflater, ArrayAdapter<String> spinnerAdapter, Spinner providerSpinner) {
+        LoggerManager.getInstance().log("addProviderItem: Apertura dialog per nuovo fornitore", "DEBUG");
         View dialogView = inflater.inflate(R.layout.new_provider_alert, null);
 
         EditText newProviderNameEditText = dialogView.findViewById(R.id.new_item_name);
@@ -828,6 +881,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
 
                 if (newProviderName.isEmpty()) {
                     Toast.makeText(getContext(), "Inserisci un nome per il nuovo fornitore", Toast.LENGTH_SHORT).show();
+                    LoggerManager.getInstance().log("Toast: Nome fornitore non inserito", "WARN");
                     return;
                 }
 
@@ -835,6 +889,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
                 try {
                     providerNames = executorService.submit(() -> appDatabase.providerEntityDao().getProviderNames()).get();
                 } catch (ExecutionException | InterruptedException e) {
+                    LoggerManager.getInstance().logException(e);
                     throw new RuntimeException(e);
                 }
 
@@ -842,6 +897,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
 
                 if (!isUnique) {
                     Toast.makeText(getContext(), "Esiste già un fornitore con questo nome", Toast.LENGTH_SHORT).show();
+                    LoggerManager.getInstance().log("Toast: Fornitore già esistente", "WARN");
                     return;
                 }
 
@@ -860,6 +916,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
                         spinnerAdapter.notifyDataSetChanged();
                         providerSpinner.setSelection(spinnerAdapter.getPosition(newProviderName));
                         alertDialog.dismiss();
+                        LoggerManager.getInstance().log("addProviderItem: Nuovo fornitore aggiunto: " + newProviderName, "INFO");
                     });
                 });
             });
@@ -867,5 +924,24 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         alertDialog.show();
     }
 
+    /**
+     * Mostra un dialog full screen con l'immagine ingrandita e il bottone per caricare/modificare l'immagine.
+     */
+    private void showFullImageDialog() {
+        LoggerManager.getInstance().log("showFullImageDialog: Apertura dialog full screen immagine", "DEBUG");
+        LayoutInflater inflater = LayoutInflater.from(this.getContext());
+        View dialogView = inflater.inflate(R.layout.dialog_full_image, null);
 
+        ImageView fullImageView = dialogView.findViewById(R.id.full_image_view);
+        MaterialButton uploadImageButton = dialogView.findViewById(R.id.upload_image_button);
+        fullImageView.setBackgroundColor(Color.RED);
+
+        String imageUrl = generalItemViewModel.getItems().getValue().stream()
+                .filter(item -> item.getId().equals(itemId))
+                .findFirst().get()
+                .getImageUrl();
+
+        FullScreenImageDialogFragment.newInstance(imageUrl)
+                .show(getChildFragmentManager(), "fullScreenImage");
+    }
 }

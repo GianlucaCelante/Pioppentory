@@ -1,4 +1,4 @@
-package it.pioppi.business.dto;
+package it.pioppi.business.dto.item;
 
 public class ItemFTSDto {
 

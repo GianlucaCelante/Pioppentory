@@ -1,4 +1,7 @@
-package it.pioppi.business.dto;
+package it.pioppi.business.dto.item;
+
+import it.pioppi.business.dto.provider.ProviderDto;
+import it.pioppi.business.dto.item.detail.ItemDetailDto;
 
 public class ItemWithDetailAndProviderDto {
 
