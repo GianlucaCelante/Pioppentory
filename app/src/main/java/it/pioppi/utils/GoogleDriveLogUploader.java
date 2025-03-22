@@ -20,10 +20,20 @@ public class GoogleDriveLogUploader implements LogUploader {
     }
 
     @Override
-    public void uploadLogFile(String filePath) {
-        File logFile = new File(filePath);
-        String content = readFileContent(logFile);
-        googleDriveManager.uploadFile(logFile.getName(), content, context, GoogleDriveManager.MIME_TYPE_TEXT);
+    public boolean uploadLogFile(String filePath) throws Exception {
+        LoggerManager.getInstance().log("GoogleDriveLogUploader", "Caricamento del file " + filePath + " su Google Drive...");
+        try {
+
+            File file = new File(filePath);
+            googleDriveManager.uploadFile(file.getName(),
+                    readFileContent(file),
+                    context,
+                    GoogleDriveManager.MIME_TYPE_TEXT);
+            return true;  // Se non viene lanciata eccezione, consideriamo l'upload riuscito.
+        } catch (Exception e) {
+            LoggerManager.getInstance().log("GoogleDriveLogUploader", "Errore durante l'upload: " + e.getMessage());
+            return false;
+        }
     }
 
     // Legge il contenuto del file in una stringa

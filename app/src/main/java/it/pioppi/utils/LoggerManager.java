@@ -102,14 +102,25 @@ public class LoggerManager {
     // Metodo invocato dal Worker per eseguire l'upload del log
     public void uploadLog() {
         try {
-            Log.d("LoggerManager", "Caricamento del log su Google Drive in corso...");
             File file = new File(context.getFilesDir(), logFileName);
-            logUploader.uploadLogFile(file.getAbsolutePath());
-            log("Log file caricato su Google Drive con successo.", "INFO");
+            String content = readLogFile();
+            if (content == null || content.isEmpty()) {
+                log("Nessun log da caricare.", "DEBUG");
+                return;
+            }
+            Log.d("LoggerManager", "Caricamento del log su Google Drive in corso...");
+            boolean success = logUploader.uploadLogFile(file.getAbsolutePath());
+            if (success) {
+                log("Log file caricato su Google Drive con successo.", "INFO");
+                clearLogFile();
+            } else {
+                log("Upload del log non riuscito.", "ERROR");
+            }
         } catch (Exception e) {
             log("Errore nel caricamento del log su Google Drive: " + e.getMessage(), "ERROR");
         }
     }
+
 
     // Svuota il contenuto del file di log sovrascrivendolo con una stringa vuota
     public void clearLogFile() {
