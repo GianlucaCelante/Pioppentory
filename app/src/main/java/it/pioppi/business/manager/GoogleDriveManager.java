@@ -2,6 +2,7 @@ package it.pioppi.business.manager;
 
 import android.app.Activity;
 import android.content.Context;
+import android.util.Log;
 import android.widget.Toast;
 
 import com.google.api.client.http.ByteArrayContent;
@@ -14,17 +15,24 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 
+import it.pioppi.utils.ImageListCallback;
+import it.pioppi.utils.ImageUploadCallback;
 import it.pioppi.utils.LoggerManager;
 
 public class GoogleDriveManager {
     public static final String MIME_TYPE_CSV = "text/csv";
     public static final String MIME_TYPE_TEXT = "text/plain";
-    private static final String FOLDER_NAME = "Pioppentory";
+    private static final String MIME_TYPE_IMAGE = "image/*";
     private static final String MIME_TYPE_FOLDER = "application/vnd.google-apps.folder";
+
+    private static final String FOLDER_NAME = "Pioppentory";
+    private static final String IMAGES_FOLDER_NAME = "images";
+
 
     private final Drive driveService;
     private final DriveServiceHelper driveServiceHelper;
     private String folderId; // ID della cartella "Pioppentory"
+    private String imagesFolderId; // Cartella "Pioppentory/images"
 
     public GoogleDriveManager(Drive driveService) {
         this.driveService = driveService;
@@ -32,18 +40,14 @@ public class GoogleDriveManager {
         LoggerManager.getInstance().log("GoogleDriveManager instantiated", "INFO");
     }
 
-    /**
-     * Verifica se la cartella "Pioppentory" esiste. Se non esiste, la crea.
-     */
-    public void ensureFolderExists() throws IOException {
-        LoggerManager.getInstance().log("ensureFolderExists started", "INFO");
+    // Metodo per garantire che la cartella principale "Pioppentory" esista
+    public void ensureMainFolderExists() throws IOException {
         String query = "mimeType = '" + MIME_TYPE_FOLDER + "' and name = '" + FOLDER_NAME + "' and trashed = false";
         FileList result = driveService.files().list()
                 .setQ(query)
                 .setSpaces("drive")
                 .setFields("files(id, name)")
                 .execute();
-
         if (result.getFiles() != null && !result.getFiles().isEmpty()) {
             folderId = result.getFiles().get(0).getId();
             LoggerManager.getInstance().log("Folder '" + FOLDER_NAME + "' already exists with ID: " + folderId, "DEBUG");
@@ -58,7 +62,37 @@ public class GoogleDriveManager {
             folderId = folder.getId();
             LoggerManager.getInstance().log("Folder created with ID: " + folderId, "DEBUG");
         }
-        LoggerManager.getInstance().log("ensureFolderExists completed", "INFO");
+    }
+
+    // Metodo per garantire che la cartella "images" esista all'interno di "Pioppentory"
+    public void ensureImagesFolderExists() throws IOException {
+        // Assicurati che la cartella principale esista
+        if (folderId == null) {
+            ensureMainFolderExists();
+        }
+        if (imagesFolderId != null) return; // già inizializzata
+
+        String query = "mimeType = '" + MIME_TYPE_FOLDER + "' and name = '" + IMAGES_FOLDER_NAME + "' and '" + folderId + "' in parents and trashed = false";
+        FileList result = driveService.files().list()
+                .setQ(query)
+                .setSpaces("drive")
+                .setFields("files(id, name)")
+                .execute();
+        if (result.getFiles() != null && !result.getFiles().isEmpty()) {
+            imagesFolderId = result.getFiles().get(0).getId();
+            LoggerManager.getInstance().log("Images folder already exists with ID: " + imagesFolderId, "DEBUG");
+        } else {
+            LoggerManager.getInstance().log("Images folder not found. Creating new folder.", "DEBUG");
+            File fileMetadata = new File();
+            fileMetadata.setName(IMAGES_FOLDER_NAME);
+            fileMetadata.setMimeType(MIME_TYPE_FOLDER);
+            fileMetadata.setParents(Collections.singletonList(folderId));
+            File folder = driveService.files().create(fileMetadata)
+                    .setFields("id")
+                    .execute();
+            imagesFolderId = folder.getId();
+            LoggerManager.getInstance().log("Images folder created with ID: " + imagesFolderId, "DEBUG");
+        }
     }
 
     /**
@@ -66,7 +100,6 @@ public class GoogleDriveManager {
      *
      * @param fileId ID del file su Drive.
      * @return Il contenuto del file come String.
-     * @throws IOException
      */
     private String downloadFileContent(String fileId) throws IOException {
         LoggerManager.getInstance().log("downloadFileContent started for fileId: " + fileId, "INFO");
@@ -82,7 +115,7 @@ public class GoogleDriveManager {
         new Thread(() -> {
             try {
                 // Assicurati che la cartella esista
-                ensureFolderExists();
+                ensureMainFolderExists();
 
                 LoggerManager.getInstance().log("Verifying if file '" + fileName + "' exists in folder ID: " + folderId, "DEBUG");
                 String query = "name = '" + fileName + "' and '" + folderId + "' in parents and trashed = false";
@@ -145,5 +178,60 @@ public class GoogleDriveManager {
             LoggerManager.getInstance().log("uploadFile completed for file: " + fileName, "INFO");
         }).start();
     }
+
+    // Metodo per caricare un'immagine sul drive all'interno della cartella "images"
+    public void uploadImage(String fileName, byte[] imageContent, Context context, ImageUploadCallback callback) {
+        new Thread(() -> {
+            try {
+                ensureImagesFolderExists();
+                LoggerManager.getInstance().log("Uploading image '" + fileName + "' in folder 'images'", "INFO");
+                File fileMetadata = new File();
+                fileMetadata.setName(fileName);
+                fileMetadata.setMimeType(MIME_TYPE_IMAGE);
+                fileMetadata.setParents(Collections.singletonList(imagesFolderId));
+                driveServiceHelper.uploadFile(fileMetadata, imageContent, new DriveServiceHelper.UploadCallback() {
+                    @Override
+                    public void onUploadSuccess(String fileId) {
+                        LoggerManager.getInstance().log("Image uploaded successfully. File ID: " + fileId, "INFO");
+                        callback.onSuccess(fileId);
+                    }
+                    @Override
+                    public void onUploadFailed(Exception e) {
+                        LoggerManager.getInstance().log("Image upload failed for file: " + fileName, "ERROR");
+                        callback.onFailure(e);
+                    }
+                });
+            } catch (Exception e) {
+                LoggerManager.getInstance().log("Error uploading image: " + e.getMessage(), "ERROR");
+                callback.onFailure(e);
+            }
+        }).start();
+    }
+
+    public void listImages(ImageListCallback callback) {
+        new Thread(() -> {
+            try {
+                ensureImagesFolderExists();
+                Log.d("GoogleDriveManager", "imagesFolderId: " + imagesFolderId);
+                String query = "mimeType contains 'image/' and '" + imagesFolderId + "' in parents and trashed = false";
+                Log.d("GoogleDriveManager", "Query: " + query);
+                FileList result = driveService.files().list()
+                        .setQ(query)
+                        .setSpaces("drive")
+                        .setFields("files(id, name, webContentLink, mimeType)")
+                        .execute();
+                Log.d("GoogleDriveManager", "Files trovati: " + (result.getFiles() != null ? result.getFiles().size() : 0));
+                if(result.getFiles() != null) {
+                    for (com.google.api.services.drive.model.File f : result.getFiles()) {
+                        Log.d("GoogleDriveManager", "File: " + f.getName() + ", mimeType: " + f.getMimeType());
+                    }
+                }
+                callback.onResult(result.getFiles());
+            } catch (Exception e) {
+                callback.onError(e);
+            }
+        }).start();
+    }
+
 
 }

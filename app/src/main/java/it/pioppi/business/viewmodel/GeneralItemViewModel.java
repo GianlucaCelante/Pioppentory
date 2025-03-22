@@ -163,4 +163,11 @@ public class GeneralItemViewModel extends ViewModel {
     public void setAllItemTags(List<ItemTagDto> allItemTags) {
         this.allItemTags.setValue(allItemTags);
     }
+
+    public void updateItemImageUrl(UUID itemId, String imageUrl) {
+        items.getValue().stream()
+                .filter(item -> item.getId().equals(itemId))
+                .findFirst()
+                .ifPresent(item -> item.setImageUrl(imageUrl));
+    }
 }

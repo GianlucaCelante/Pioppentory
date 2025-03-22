@@ -70,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
     private ExecutorService executorService;
 
     // Google Sign-In & Drive integration
-    private static final String DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.file";
+    private static final String DRIVE_SCOPE = "https://www.googleapis.com/auth/drive";
     private GoogleSignInClient googleSignInClient;
     private GoogleDriveManager googleDriveManager;
     private ActivityResultLauncher<Intent> signInLauncher;

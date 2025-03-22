@@ -27,6 +27,7 @@ public class ConstantUtils {
 
     // ITEM FRAGMENT
     public static final String ITEM_ID = "itemId";
+    public static final String IMAGE_URL = "imageUrl";
     public static final int GRID_LAYOUT_NUMBER_COLUMNS = 5;
 
 }

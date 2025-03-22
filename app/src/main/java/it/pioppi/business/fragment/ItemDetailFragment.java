@@ -5,7 +5,6 @@ import static it.pioppi.business.manager.ItemDetailFragmentManager.normalizeText
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -31,6 +30,7 @@ import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -58,7 +58,6 @@ import java.util.stream.Collectors;
 import it.pioppi.utils.ConstantUtils;
 import it.pioppi.R;
 import it.pioppi.business.adapter.EnumAdapter;
-import it.pioppi.business.adapter.FullScreenImageDialogFragment;
 import it.pioppi.business.dto.item.detail.ItemDetailDto;
 import it.pioppi.business.dto.item.ItemDto;
 import it.pioppi.business.dto.item.ItemWithDetailAndQuantityTypeDto;
@@ -189,8 +188,6 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         saveButton.setOnClickListener(v -> {
             LoggerManager.getInstance().log("onCreateView: Clic sul pulsante di salvataggio", "INFO");
             try {
-                ItemDto itemDto = new ItemDto();
-                itemDto.getId().equals(UUID.randomUUID());
                 saveAll(view);
             } catch (ExecutionException | InterruptedException e) {
                 LoggerManager.getInstance().logException(e);
@@ -232,13 +229,11 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
             }
         });
 
-        ShapeableImageView imagePreview = view.findViewById(R.id.item_image_preview);
-        imagePreview.setOnClickListener(v -> {
-            LoggerManager.getInstance().log("onCreateView: Clic sull'immagine per visualizzazione full screen", "DEBUG");
-            showFullImageDialog();
-        });
 
-        String imageUrl = generalItemViewModel.getItems().getValue().stream().filter(item -> item.getId().equals(itemId)).findFirst().get().getImageUrl();
+        ShapeableImageView imagePreview = view.findViewById(R.id.item_image_preview);
+        String imageUrl = generalItemViewModel.getItems().getValue().stream()
+                .filter(item -> item.getId().equals(itemId)).findFirst().get().getImageUrl();
+
         if (imageUrl != null && !imageUrl.isEmpty()) {
             Glide.with(requireContext())
                     .load(imageUrl)
@@ -246,6 +241,16 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
                     .into(imagePreview);
             LoggerManager.getInstance().log("onCreateView: Immagine caricata", "DEBUG");
         }
+
+        imagePreview.setOnClickListener(v -> {
+            LoggerManager.getInstance().log("onCreateView: Clic sull'immagine per visualizzazione full screen", "DEBUG");
+            NavController navController = NavHostFragment.findNavController(this);
+            Bundle bundleImageFragment = new Bundle();
+            bundleImageFragment.putString("itemId", itemId.toString());
+            bundleImageFragment.putString("imageUrl", imageUrl);
+            navController.navigate(R.id.action_itemDetailFragment_to_fullScreenImageDialogFragment, bundleImageFragment);
+        });
+
 
         LoggerManager.getInstance().log("onCreateView: Vista creata con successo", "INFO");
         return view;
@@ -344,6 +349,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         finalItem.setTotPortions(totPortionsAvailable);
         finalItem.setBarcode(barcode);
         finalItem.setNote(note);
+        finalItem.setImageUrl(item.getImageUrl());
         finalItem.setProviderId(item.getProviderId());
 
         ItemDetailDto finalItemDetail = new ItemDetailDto();
@@ -924,24 +930,4 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         alertDialog.show();
     }
 
-    /**
-     * Mostra un dialog full screen con l'immagine ingrandita e il bottone per caricare/modificare l'immagine.
-     */
-    private void showFullImageDialog() {
-        LoggerManager.getInstance().log("showFullImageDialog: Apertura dialog full screen immagine", "DEBUG");
-        LayoutInflater inflater = LayoutInflater.from(this.getContext());
-        View dialogView = inflater.inflate(R.layout.dialog_full_image, null);
-
-        ImageView fullImageView = dialogView.findViewById(R.id.full_image_view);
-        MaterialButton uploadImageButton = dialogView.findViewById(R.id.upload_image_button);
-        fullImageView.setBackgroundColor(Color.RED);
-
-        String imageUrl = generalItemViewModel.getItems().getValue().stream()
-                .filter(item -> item.getId().equals(itemId))
-                .findFirst().get()
-                .getImageUrl();
-
-        FullScreenImageDialogFragment.newInstance(imageUrl)
-                .show(getChildFragmentManager(), "fullScreenImage");
-    }
 }

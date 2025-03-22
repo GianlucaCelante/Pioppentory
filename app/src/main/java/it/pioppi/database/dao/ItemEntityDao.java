@@ -69,4 +69,6 @@ public interface ItemEntityDao extends BaseDao<ItemEntity> {
     @Query("SELECT id FROM item WHERE barcode = :barcode")
     String getItemByBarcode(String barcode);
 
+    @Query("UPDATE item SET image_url = :imageUrl WHERE id = :itemId")
+    void updateItemImageUrl(UUID itemId, String imageUrl);
 }

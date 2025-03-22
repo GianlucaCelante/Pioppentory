@@ -25,6 +25,9 @@
         <action
             android:id="@+id/action_itemDetailFragment_to_itemTagsFragment"
             app:destination="@id/itemTagsFragment" />
+        <action
+            android:id="@+id/action_itemDetailFragment_to_fullScreenImageDialogFragment"
+            app:destination="@id/fullScreenImageDialogFragment" />
     </fragment>
 
     <fragment
@@ -61,4 +64,16 @@
         android:id="@+id/bluetoothFragment"
         android:name="it.pioppi.business.fragment.BluetoothFragment"
         android:label=""/>
+    <fragment
+        android:id="@+id/driveImageSelectionFragment"
+        android:name="it.pioppi.business.fragment.DriveImageSelectionFragment"
+        android:label="Drive"
+        tools:layout="@layout/fragment_image_selection_from_drive" />
+    <fragment
+        android:id="@+id/fullScreenImageDialogFragment"
+        android:name="it.pioppi.business.fragment.FullScreenImageDialogFragment">
+        <action
+            android:id="@+id/action_fullScreenImageDialogFragment_to_driveImageSelectionFragment"
+            app:destination="@id/driveImageSelectionFragment" />
+    </fragment>
 </navigation>
