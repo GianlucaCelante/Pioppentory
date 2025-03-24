@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <!-- Immagine di background -->
     <ImageView
         android:id="@+id/full_image_view"
         android:layout_width="match_parent"
@@ -10,36 +12,57 @@
         android:scaleType="centerCrop"
         android:contentDescription="Immagine in full view" />
 
+    <!-- ProgressBar centrata sopra l'immagine -->
+    <ProgressBar
+        android:id="@+id/progressBar"
+        style="?android:attr/progressBarStyleLarge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:visibility="gone"/>
+
+    <!-- LinearLayout per i pulsanti, con spacers per centrarli -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:layout_gravity="bottom"
-        android:weightSum="5"
-        android:background="@color/semi_transparent_white">
+        android:padding="8dp"
+        android:gravity="bottom">
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/select_image_button"
-        android:layout_width="0dp"
-        android:layout_height="match_parent"
-        android:layout_margin="4dp"
-        android:text="Seleziona immagine"
-        android:layout_weight="2"
-        android:background="@color/semi_transparent_white"
-        android:src="@drawable/plus_icon"
-        android:contentDescription="Carica immagine" />
+        <!-- Spacer iniziale -->
+        <View
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/upload_image_button"
-        android:layout_width="0dp"
-        android:layout_height="match_parent"
-        android:layout_margin="4dp"
-        android:text="Carica immagine"
-        android:layout_weight="3"
-        android:background="@color/semi_transparent_white"
-        android:src="@drawable/plus_icon"
-        android:contentDescription="Carica immagine" />
+        <!-- Primo pulsante -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/select_image_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Seleziona immagine"
+            android:layout_marginHorizontal="4dp" />
 
+        <!-- Spacer intermedio -->
+        <View
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+
+        <!-- Secondo pulsante -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/upload_image_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Carica immagine"
+            android:layout_marginHorizontal="4dp" />
+
+        <!-- Spacer finale -->
+        <View
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
     </LinearLayout>
 
 </FrameLayout>

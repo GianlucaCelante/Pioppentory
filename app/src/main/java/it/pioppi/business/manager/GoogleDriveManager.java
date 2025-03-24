@@ -9,6 +9,7 @@ import com.google.api.client.http.ByteArrayContent;
 import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.model.File;
 import com.google.api.services.drive.model.FileList;
+import com.google.api.services.drive.model.Permission;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -179,7 +180,6 @@ public class GoogleDriveManager {
         }).start();
     }
 
-    // Metodo per caricare un'immagine sul drive all'interno della cartella "images"
     public void uploadImage(String fileName, byte[] imageContent, Context context, ImageUploadCallback callback) {
         new Thread(() -> {
             try {
@@ -193,6 +193,12 @@ public class GoogleDriveManager {
                     @Override
                     public void onUploadSuccess(String fileId) {
                         LoggerManager.getInstance().log("Image uploaded successfully. File ID: " + fileId, "INFO");
+                        // Imposta i permessi pubblici
+                        boolean permissionSet = setPublicPermission(fileId);
+                        if (!permissionSet) {
+                            // Se vuoi gestire il caso di fallimento nell'impostazione dei permessi, puoi farlo qui.
+                            LoggerManager.getInstance().log("Non sono riuscito a impostare i permessi pubblici per il file: " + fileId, "ERROR");
+                        }
                         callback.onSuccess(fileId);
                     }
                     @Override
@@ -207,6 +213,7 @@ public class GoogleDriveManager {
             }
         }).start();
     }
+
 
     public void listImages(ImageListCallback callback) {
         new Thread(() -> {
@@ -231,6 +238,25 @@ public class GoogleDriveManager {
                 callback.onError(e);
             }
         }).start();
+    }
+
+    /**
+     * Imposta i permessi pubblici sul file per renderlo accessibile senza autenticazione.
+     * @param fileId ID del file su Drive.
+     * @return true se i permessi sono stati impostati correttamente, false altrimenti.
+     */
+    public boolean setPublicPermission(String fileId) {
+        try {
+            Permission permission = new Permission();
+            permission.setRole("reader");
+            permission.setType("anyone");
+            driveService.permissions().create(fileId, permission).execute();
+            LoggerManager.getInstance().log("Permessi impostati per il file: " + fileId, "DEBUG");
+            return true;
+        } catch (IOException e) {
+            LoggerManager.getInstance().log("Errore nell'impostazione dei permessi per il file: " + fileId + " - " + e.getMessage(), "ERROR");
+            return false;
+        }
     }
 
 

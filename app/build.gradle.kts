@@ -62,6 +62,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.livedata)
     implementation(libs.androidx.work.runtime)
     implementation(libs.androidx.lifecycle.process)
+    implementation(libs.androidx.swiperefreshlayout)
     testImplementation(libs.junit)
     testImplementation(libs.androidx.core)
     testImplementation(libs.androidx.work.testing)

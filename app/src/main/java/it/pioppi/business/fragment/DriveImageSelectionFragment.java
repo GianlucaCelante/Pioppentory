@@ -3,6 +3,8 @@ package it.pioppi.business.fragment;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
@@ -13,8 +15,8 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.GridLayoutManager;
-import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.google.api.services.drive.model.File;
 
@@ -31,6 +33,7 @@ import it.pioppi.database.AppDatabase;
 import it.pioppi.database.dao.ItemEntityDao;
 import it.pioppi.utils.ConstantUtils;
 import it.pioppi.utils.ImageListCallback;
+import it.pioppi.utils.LoggerManager;
 
 public class DriveImageSelectionFragment extends Fragment implements ImageListCallback, DriveImageAdapter.OnImageClickListener {
 
@@ -41,6 +44,7 @@ public class DriveImageSelectionFragment extends Fragment implements ImageListCa
     private ItemEntityDao itemDao;
     private UUID itemId;
     private GeneralItemViewModel generalItemViewModel;
+    private SwipeRefreshLayout swipeRefreshLayout;
 
     public interface OnImageSelectedListener {
         void onImageSelected(String imageUrl);
@@ -54,7 +58,7 @@ public class DriveImageSelectionFragment extends Fragment implements ImageListCa
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        setHasOptionsMenu(true);
         executorService = Executors.newSingleThreadExecutor();
 
         Bundle args = getArguments();
@@ -71,13 +75,29 @@ public class DriveImageSelectionFragment extends Fragment implements ImageListCa
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
+        // Usa il layout che include lo SwipeRefreshLayout
         View view = inflater.inflate(R.layout.fragment_image_selection_from_drive, container, false);
         progressBar = view.findViewById(R.id.progressBar);
+        swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
 
         RecyclerView recyclerView = view.findViewById(R.id.recyclerViewImages);
-        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 4));
         adapter = new DriveImageAdapter(this);
         recyclerView.setAdapter(adapter);
+
+        // Imposta il listener dello SwipeRefreshLayout per ricaricare le immagini
+        swipeRefreshLayout.setOnRefreshListener(() -> {
+            if (driveManager == null) {
+                driveManager = ((it.pioppi.business.activity.MainActivity) requireActivity()).getGoogleDriveManager();
+            }
+            if (driveManager != null) {
+                driveManager.listImages(this);
+            } else {
+                Toast.makeText(getContext(), "Drive manager non disponibile", Toast.LENGTH_SHORT).show();
+                swipeRefreshLayout.setRefreshing(false);
+            }
+        });
+
         return view;
     }
 
@@ -85,8 +105,15 @@ public class DriveImageSelectionFragment extends Fragment implements ImageListCa
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         progressBar.setVisibility(View.VISIBLE);
-        // Chiedi a GoogleDriveManager di elencare le immagini
-        driveManager.listImages(this);
+        if (driveManager == null) {
+            driveManager = ((it.pioppi.business.activity.MainActivity) requireActivity()).getGoogleDriveManager();
+        }
+        if (driveManager != null) {
+            driveManager.listImages(this);
+        } else {
+            Toast.makeText(getContext(), "Drive manager non disponibile", Toast.LENGTH_SHORT).show();
+            Log.e("DriveImageSelection", "driveManager è null");
+        }
     }
 
     // Callback da ImageListCallback
@@ -95,6 +122,7 @@ public class DriveImageSelectionFragment extends Fragment implements ImageListCa
         if (getActivity() == null) return;
         getActivity().runOnUiThread(() -> {
             progressBar.setVisibility(View.GONE);
+            swipeRefreshLayout.setRefreshing(false);
             adapter.setImageFiles(imageFiles);
             adapter.notifyDataSetChanged();
         });
@@ -105,6 +133,7 @@ public class DriveImageSelectionFragment extends Fragment implements ImageListCa
         if (getActivity() == null) return;
         getActivity().runOnUiThread(() -> {
             progressBar.setVisibility(View.GONE);
+            swipeRefreshLayout.setRefreshing(false);
             Toast.makeText(getContext(), "Errore nel recupero delle immagini: " + e.getMessage(), Toast.LENGTH_SHORT).show();
             Log.e("DriveImageSelection", "Errore: ", e);
         });
@@ -113,12 +142,10 @@ public class DriveImageSelectionFragment extends Fragment implements ImageListCa
     // Callback dal DriveImageAdapter quando l'utente seleziona un'immagine
     @Override
     public void onImageClicked(File imageFile) {
-        // Utilizza il campo webContentLink per caricare l'immagine con Glide.
         String imageUrl = imageFile.getWebContentLink();
         if (listener != null) {
             listener.onImageSelected(imageUrl);
         }
-
         executorService.submit(() -> {
             itemDao.updateItemImageUrl(itemId, imageUrl);
             generalItemViewModel.updateItemImageUrl(itemId, imageUrl);
@@ -127,5 +154,15 @@ public class DriveImageSelectionFragment extends Fragment implements ImageListCa
         if (getActivity() != null) {
             getActivity().getSupportFragmentManager().popBackStack();
         }
+    }
+
+    @Override
+    public void onPrepareOptionsMenu(@NonNull Menu menu) {
+        MenuItem searchItem = menu.findItem(R.id.action_search);
+        if (searchItem != null) {
+            searchItem.setVisible(false);
+            LoggerManager.getInstance().log("onPrepareOptionsMenu: Elemento di ricerca nascosto", "DEBUG");
+        }
+        super.onPrepareOptionsMenu(menu);
     }
 }
