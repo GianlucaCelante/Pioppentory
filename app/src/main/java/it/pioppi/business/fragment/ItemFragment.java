@@ -143,7 +143,10 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
         FloatingActionButton fab = view.findViewById(R.id.new_item_fab);
         fab.setOnClickListener(v -> {
             LoggerManager.getInstance().log("onCreateView: Clic sul FAB per aggiungere nuovo item", "INFO");
+            String a =  null;
+            a.toLowerCase();
             addNewItem(inflater, generalItemViewModel);
+
         });
 
         LoggerManager.getInstance().log("onCreateView: Vista creata con successo", "INFO");

@@ -8,6 +8,7 @@ import android.content.Context;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -527,7 +528,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
         if (imm != null) {
             imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
-            LoggerManager.getInstance().log("hideKeyboard: Tastiera nascosta", "DEBUG");
+            Log.d("hideKeyboard: Tastiera nascosta", "DEBUG");
         }
     }
 
@@ -535,7 +536,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
         if (imm != null) {
             imm.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT);
-            LoggerManager.getInstance().log("openKeyboard: Tastiera mostrata", "DEBUG");
+            Log.d("openKeyboard: Tastiera mostrata", "DEBUG");
         }
     }
 

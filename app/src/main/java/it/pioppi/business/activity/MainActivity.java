@@ -17,10 +17,6 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
 import androidx.appcompat.widget.Toolbar;
-import androidx.lifecycle.Lifecycle;
-import androidx.lifecycle.LifecycleObserver;
-import androidx.lifecycle.OnLifecycleEvent;
-import androidx.lifecycle.ProcessLifecycleOwner;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.navigation.NavController;
@@ -48,7 +44,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 import it.pioppi.utils.ConstantUtils;
 import it.pioppi.R;
@@ -58,9 +53,6 @@ import it.pioppi.business.viewmodel.GeneralItemViewModel;
 import it.pioppi.database.AppDatabase;
 import it.pioppi.database.dao.ItemFTSEntityDao;
 import it.pioppi.database.mapper.EntityDtoMapper;
-import it.pioppi.utils.LogUploadWorker;
-import it.pioppi.utils.LoggerManager;
-import it.pioppi.utils.GoogleDriveLogUploader;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -78,9 +70,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        // Inizializza LoggerManager (il LogUploader verrà settato dopo il Sign-In)
-        LoggerManager.init(this, "app_log.txt", true, null);
         setContentView(R.layout.activity_main);
 
         Log.d("MainActivity", "Registering BroadcastReceiver for scanned code events");
@@ -122,11 +111,9 @@ public class MainActivity extends AppCompatActivity {
                         Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
                         try {
                             GoogleSignInAccount account = task.getResult(Exception.class);
-                            // Sign-In avvenuto con successo
                             Log.d("MainActivity", "Sign-In effettuato");
                             initializeDriveService(account);
                         } catch (Exception e) {
-                            e.printStackTrace();
                             Log.e("MainActivity", "Errore durante il Sign-In", e);
                         }
                     }
@@ -155,18 +142,16 @@ public class MainActivity extends AppCompatActivity {
                 Collections.singleton(DRIVE_SCOPE)
         );
         credential.setSelectedAccount(account.getAccount());
-        // Sostituisci con il nome della tua app
         Drive driveService = new Drive.Builder(
                 new NetHttpTransport(),
                 new GsonFactory(),
                 credential)
-                .setApplicationName("Pioppentory") // Sostituisci con il nome della tua app
+                .setApplicationName("Pioppentory")
                 .build();
 
         googleDriveManager = new GoogleDriveManager(driveService);
-        GoogleDriveLogUploader logUploader = new GoogleDriveLogUploader(googleDriveManager, this);
-        LoggerManager.getInstance().setLogUploader(logUploader);
-        Toast.makeText(this, "Drive Service inizializzato", Toast.LENGTH_SHORT).show();
+        // La logica per settare il LogUploader è stata rimossa perché ora viene gestita in Pioppentory
+        Log.d("MainActivity", "Drive Service inizializzato");
     }
 
     // Getter per GoogleDriveManager, utile per i Fragment/Adapter
@@ -227,7 +212,6 @@ public class MainActivity extends AppCompatActivity {
         public void onReceive(Context context, Intent intent) {
             Log.d("MainActivity", "action received: " + intent.getAction());
             if (ConstantUtils.ACTION_CODE_SCANNED.equals(intent.getAction())) {
-                // Recupera il codice scansionato
                 String scannedCode = intent.getStringExtra(ConstantUtils.SCANNED_CODE);
                 Log.d("MainActivity", "Scanned code: " + scannedCode);
                 openDetailFragment(scannedCode);

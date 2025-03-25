@@ -1,7 +1,8 @@
 package it.pioppi.business.manager;
 
-import android.app.Activity;
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -140,7 +141,8 @@ public class GoogleDriveManager {
                             .setFields("id")
                             .execute();
                     LoggerManager.getInstance().log("File updated successfully. New file ID: " + updatedFile.getId(), "INFO");
-                    ((Activity) context).runOnUiThread(() -> {
+
+                    new Handler(Looper.getMainLooper()).post(() -> {
                         Toast.makeText(context, "File aggiornato su Drive: " + fileName, Toast.LENGTH_LONG).show();
                         LoggerManager.getInstance().clearLogFile();
                     });
@@ -157,30 +159,34 @@ public class GoogleDriveManager {
                         @Override
                         public void onUploadSuccess(String fileId) {
                             LoggerManager.getInstance().log("File uploaded successfully. File ID: " + fileId, "INFO");
-                            ((Activity) context).runOnUiThread(() -> {
+                            new Handler(Looper.getMainLooper()).post(() -> {
                                 Toast.makeText(context, "File caricato su Drive: " + fileName, Toast.LENGTH_LONG).show();
                                 LoggerManager.getInstance().clearLogFile();
                             });
+
                         }
 
                         @Override
                         public void onUploadFailed(Exception e) {
                             LoggerManager.getInstance().log("Upload failed for file: " + fileName, "ERROR");
-                            ((Activity) context).runOnUiThread(() ->
-                                    Toast.makeText(context, "Errore durante l'upload su Drive", Toast.LENGTH_SHORT).show());
+                            new Handler(Looper.getMainLooper()).post(() -> {
+                                Toast.makeText(context, "File caricato su Drive: " + fileName, Toast.LENGTH_LONG).show();
+                            });
+
                         }
                     });
                 }
             } catch (IOException e) {
                 LoggerManager.getInstance().logException(e);
-                ((Activity) context).runOnUiThread(() ->
-                        Toast.makeText(context, "Errore nella creazione della cartella su Drive", Toast.LENGTH_SHORT).show());
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    Toast.makeText(context, "Errore nella creazione della cartella su Drive: " + fileName, Toast.LENGTH_LONG).show();
+                });
             }
             LoggerManager.getInstance().log("uploadFile completed for file: " + fileName, "INFO");
         }).start();
     }
 
-    public void uploadImage(String fileName, byte[] imageContent, Context context, ImageUploadCallback callback) {
+    public void uploadImage(String fileName, byte[] imageContent, ImageUploadCallback callback) {
         new Thread(() -> {
             try {
                 ensureImagesFolderExists();

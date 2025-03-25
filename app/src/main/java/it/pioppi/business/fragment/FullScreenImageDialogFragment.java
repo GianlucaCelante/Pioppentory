@@ -52,6 +52,7 @@ import it.pioppi.utils.LoggerManager;
 
 public class FullScreenImageDialogFragment extends DialogFragment {
 
+    public static final String URL = "https://drive.google.com/uc?export=view&id=";
     private ExecutorService executorService;
     private ItemEntityDao itemDao;
     private String imageUrl;
@@ -107,7 +108,6 @@ public class FullScreenImageDialogFragment extends DialogFragment {
         selectImageButton = view.findViewById(R.id.select_image_button);
         progressBar = view.findViewById(R.id.progressBar);
 
-        // Imposta il listener per il pulsante per selezionare un'immagine già presente su Drive (Opzione 1)
         selectImageButton.setOnClickListener(v -> {
             if (itemId == null) return;
             NavController navController = NavHostFragment.findNavController(this);
@@ -116,7 +116,6 @@ public class FullScreenImageDialogFragment extends DialogFragment {
             navController.navigate(R.id.action_fullScreenImageDialogFragment_to_driveImageSelectionFragment, bundle);
         });
 
-        // Imposta il listener per il pulsante di upload dal device (Opzione 2)
         uploadImageButton.setOnClickListener(v -> {
             // Disabilita la UI e mostra il progressBar
             setUIEnabled(false);
@@ -202,17 +201,16 @@ public class FullScreenImageDialogFragment extends DialogFragment {
             GoogleDriveManager driveManager = ((it.pioppi.business.activity.MainActivity) requireActivity()).getGoogleDriveManager();
 
             // Carica l'immagine su Drive
-            driveManager.uploadImage(fileName, imageBytes, requireContext(), new ImageUploadCallback() {
+            driveManager.uploadImage(fileName, imageBytes, new ImageUploadCallback() {
                 @Override
                 public void onSuccess(String fileId) {
                     if (!isAdded()) return;
-                    // Usa il formato URL "uc?export=view&id=FILE_ID"
-                    String newImageUrl = "https://drive.google.com/uc?export=view&id=" + fileId;
+
+                    String newImageUrl = URL + fileId;
 
                     executorService.submit(() -> {
-                        // Aggiorna il DB tramite il DAO
+
                         itemDao.updateItemImageUrl(itemId, newImageUrl);
-                        // Aggiorna il LiveData nel ViewModel; questo dovrebbe notificare tutti gli osservatori
                         generalItemViewModel.updateItemImageUrl(itemId, newImageUrl);
                     });
 

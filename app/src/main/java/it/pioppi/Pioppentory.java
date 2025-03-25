@@ -8,8 +8,18 @@ import androidx.work.ExistingPeriodicWorkPolicy;
 import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkManager;
 
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
+import com.google.api.services.drive.Drive;
+
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
+import it.pioppi.business.manager.GoogleDriveManager;
+import it.pioppi.utils.GoogleDriveLogUploader;
 import it.pioppi.utils.LogUploadWorker;
 import it.pioppi.utils.LoggerManager;
 
@@ -21,37 +31,53 @@ public class Pioppentory extends Application {
         super.onCreate();
         Log.d("Pioppentory", "onCreate: scheduling PeriodicLogUpload worker");
 
-        // Inizializza LoggerManager: qui viene creato il file di log e verranno registrati i log di eccezione
+        // Inizializza LoggerManager immediatamente con uploader nullo per evitare chiamate premature a getInstance().
         LoggerManager.init(getApplicationContext(), "app_log.txt", true, null);
 
-        // Salva il default uncaught exception handler
+        // Ora, se l'utente è già loggato, crea il Drive service e imposta il LogUploader corretto.
+        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(getApplicationContext());
+        if (account != null) {
+            GoogleAccountCredential credential = GoogleAccountCredential.usingOAuth2(
+                    this, Collections.singleton("https://www.googleapis.com/auth/drive")
+            );
+            credential.setSelectedAccount(account.getAccount());
+            Drive driveService = new Drive.Builder(
+                    new NetHttpTransport(),
+                    new GsonFactory(),
+                    credential)
+                    .setApplicationName("Pioppentory")
+                    .build();
+
+            GoogleDriveManager googleDriveManager = new GoogleDriveManager(driveService);
+            GoogleDriveLogUploader logUploader = new GoogleDriveLogUploader(googleDriveManager, this);
+            // Aggiorna LoggerManager con l'istanza corretta di LogUploader.
+            LoggerManager.getInstance().setLogUploader(logUploader);
+            Log.d("Pioppentory", "LogUploader inizializzato con Drive service");
+        } else {
+            Log.w("Pioppentory", "Utente non loggato; LogUploader non impostato");
+        }
+
+        // Imposta il default uncaught exception handler.
         defaultUEH = Thread.getDefaultUncaughtExceptionHandler();
-
-        // Imposta il nuovo default handler che registra l'eccezione e attende un breve lasso di tempo
         Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
-            // Registra l'eccezione
             LoggerManager.getInstance().logException(new Exception(throwable));
-
             try {
-                // Attendi un breve periodo per consentire la scrittura del log
-                Thread.sleep(2000);
+                Thread.sleep(3000); // Attende per consentire la scrittura del log
             } catch (InterruptedException e) {
-                Log.e("Pioppentory", "Sleep interrotto in exception handler", e);
+                Log.e("Pioppentory", "Sleep interrotto nell'handler di eccezione", e);
             }
-
-            // Delega al default handler originale
             defaultUEH.uncaughtException(thread, throwable);
         });
 
-        // Pianifica il worker periodico per l'upload del log (in questo esempio ogni 1 giorno)
+        // Pianifica il worker periodico per l'upload dei log ogni 15 minuti.
         PeriodicWorkRequest periodicUploadRequest =
-                new PeriodicWorkRequest.Builder(LogUploadWorker.class, 1, TimeUnit.DAYS)
+                new PeriodicWorkRequest.Builder(LogUploadWorker.class, 15, TimeUnit.MINUTES)
                         .setBackoffCriteria(BackoffPolicy.LINEAR, 10, TimeUnit.SECONDS)
                         .build();
 
         WorkManager.getInstance(getApplicationContext()).enqueueUniquePeriodicWork(
                 "PeriodicLogUpload",
-                ExistingPeriodicWorkPolicy.REPLACE,
+                ExistingPeriodicWorkPolicy.UPDATE,
                 periodicUploadRequest
         );
     }

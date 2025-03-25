@@ -3,7 +3,9 @@ package it.pioppi.utils;
 import android.content.Context;
 import android.util.Log;
 
+import androidx.work.BackoffPolicy;
 import androidx.work.OneTimeWorkRequest;
+import androidx.work.OutOfQuotaPolicy;
 import androidx.work.WorkManager;
 
 import java.io.File;
@@ -16,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 public class LoggerManager {
     private static LoggerManager instance;
@@ -95,8 +98,11 @@ public class LoggerManager {
 
     // Schedula l’upload tramite WorkManager
     private void scheduleImmediateUpload() {
-        OneTimeWorkRequest uploadRequest = new OneTimeWorkRequest.Builder(LogUploadWorker.class).build();
-        WorkManager.getInstance(context).enqueue(uploadRequest);
+        OneTimeWorkRequest expeditedUploadRequest = new OneTimeWorkRequest.Builder(LogUploadWorker.class)
+                .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+                .setBackoffCriteria(BackoffPolicy.LINEAR, 10, TimeUnit.SECONDS)
+                .build();
+        WorkManager.getInstance(context).enqueue(expeditedUploadRequest);
     }
 
     // Metodo invocato dal Worker per eseguire l'upload del log
@@ -105,19 +111,18 @@ public class LoggerManager {
             File file = new File(context.getFilesDir(), logFileName);
             String content = readLogFile();
             if (content == null || content.isEmpty()) {
-                log("Nessun log da caricare.", "DEBUG");
+                Log.d("uploadLog","Nessun log da caricare.");
                 return;
             }
-            Log.d("LoggerManager", "Caricamento del log su Google Drive in corso...");
+            Log.d("uploadLog","Caricamento del log su Google Drive in corso...");
             boolean success = logUploader.uploadLogFile(file.getAbsolutePath());
             if (success) {
-                log("Log file caricato su Google Drive con successo.", "INFO");
-                clearLogFile();
+                Log.d("uploadLog","Log file caricato su Google Drive con successo.");
             } else {
-                log("Upload del log non riuscito.", "ERROR");
+                Log.e("uploadLog","Upload del log non riuscito.");
             }
         } catch (Exception e) {
-            log("Errore nel caricamento del log su Google Drive: " + e.getMessage(), "ERROR");
+            Log.e("uploadLog","Errore nel caricamento del log su Google Drive: " + e.getMessage());
         }
     }
 
@@ -127,9 +132,9 @@ public class LoggerManager {
         try (FileOutputStream fos = context.openFileOutput(logFileName, Context.MODE_PRIVATE)) {
             // Apertura in MODE_PRIVATE sovrascrive il file, quindi scrivendo una stringa vuota lo svuoti
             fos.write("".getBytes());
-            log("Contenuto del log svuotato.", "DEBUG");
+            Log.d("clearLogFile","Contenuto del log svuotato.");
         } catch (Exception e) {
-            log("Errore nello svuotamento del log: " + e.getMessage(), "ERROR");
+            Log.e("clearLogFile","Errore durante la pulizia del log.");
         }
     }
 
@@ -143,7 +148,7 @@ public class LoggerManager {
                 sb.append(new String(buffer, 0, length));
             }
         } catch (Exception e) {
-            log("Errore nella lettura del log: " + e.getMessage(), "ERROR");
+            Log.e("readLogFile", "Errore nella lettura del log: " + e.getMessage());
         }
         return sb.toString();
     }
