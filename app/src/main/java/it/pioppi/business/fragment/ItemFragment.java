@@ -49,6 +49,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
+import it.pioppi.business.dto.item.quantity.QuantityTypeDto;
 import it.pioppi.utils.ConstantUtils;
 import it.pioppi.R;
 import it.pioppi.business.adapter.PreviewItemsAdapter;
@@ -132,8 +133,14 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
 
         generalItemViewModel.getFilteredItems().observe(getViewLifecycleOwner(), itemList -> {
             itemAdapter.setItemList(itemList);
-            LoggerManager.getInstance().log("onCreateView: Osservati " + itemList.size() + " items", "DEBUG");
-            recyclerView.setLayoutManager(new GridLayoutManager(getContext(), ConstantUtils.GRID_LAYOUT_NUMBER_COLUMNS));
+            GridLayoutManager layoutManager = new GridLayoutManager(getContext(), 5);
+            layoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
+                @Override
+                public int getSpanSize(int position) {
+                    return itemAdapter.getItemViewType(position) == ConstantUtils.TYPE_HEADER ? 5 : 1;
+                }
+            });
+            recyclerView.setLayoutManager(layoutManager);
             recyclerView.setHasFixedSize(true);
             recyclerView.setAdapter(itemAdapter);
         });
@@ -143,8 +150,6 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
         FloatingActionButton fab = view.findViewById(R.id.new_item_fab);
         fab.setOnClickListener(v -> {
             LoggerManager.getInstance().log("onCreateView: Clic sul FAB per aggiungere nuovo item", "INFO");
-            String a =  null;
-            a.toLowerCase();
             addNewItem(inflater, generalItemViewModel);
 
         });
@@ -163,9 +168,9 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                 SearchManager searchManager = (SearchManager) requireActivity().getSystemService(Context.SEARCH_SERVICE);
                 SearchView searchView = (SearchView) searchItem.getActionView();
                 if (searchManager != null) {
-                    searchView.setSearchableInfo(searchManager.getSearchableInfo(requireActivity().getComponentName()));
+                    Objects.requireNonNull(searchView).setSearchableInfo(searchManager.getSearchableInfo(requireActivity().getComponentName()));
                 }
-                searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+                Objects.requireNonNull(searchView).setOnQueryTextListener(new SearchView.OnQueryTextListener() {
                     @Override
                     public boolean onQueryTextSubmit(String query) {
                         LoggerManager.getInstance().log("setupMenuToolbar: Query submit: " + query, "DEBUG");
@@ -191,15 +196,12 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                 int itemId = menuItem.getItemId();
                 if (itemId == R.id.filter_by_A_to_Z) {
                     filterItemsByNameAscending();
-                    return true;
+                     return true;
                 } else if (itemId == R.id.filter_by_Z_to_A) {
                     filterItemsByNameDescending();
                     return true;
                 } else if (itemId == R.id.filter_by_status_white) {
                     filterItemsByStatus(ItemStatus.WHITE);
-                    return true;
-                } else if (itemId == R.id.filter_by_status_blue) {
-                    filterItemsByStatus(ItemStatus.BLUE);
                     return true;
                 } else if (itemId == R.id.filter_by_status_red) {
                     filterItemsByStatus(ItemStatus.RED);
@@ -215,15 +217,15 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
 
     private void previewItems() {
         LoggerManager.getInstance().log("previewItems: Inizio preview items", "DEBUG");
-        List<ItemDto> blueItems = Objects.requireNonNull(generalItemViewModel.getItems().getValue()).stream()
-                .filter(item -> ItemStatus.BLUE.equals(item.getStatus()))
+        List<ItemDto> checkedItems = Objects.requireNonNull(generalItemViewModel.getItems().getValue()).stream()
+                .filter(ItemDto::isChecked)
                 .collect(Collectors.toList());
-        if (blueItems.isEmpty()) {
+        if (checkedItems.isEmpty()) {
             Toast.makeText(getContext(), "Non ci sono elementi modificati.", Toast.LENGTH_SHORT).show();
             LoggerManager.getInstance().log("Toast: Non ci sono elementi modificati", "INFO");
             return;
         }
-        showPreviewDialog(blueItems);
+        showPreviewDialog(checkedItems);
     }
 
     private void showPreviewDialog(List<ItemDto> itemList) {
@@ -267,7 +269,7 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
         executorService.execute(() -> {
             try {
                 for (ItemDto item : itemList) {
-                    item.setStatus(ItemStatus.WHITE);
+                    item.setChecked(false);
                     ItemEntity itemEntity = EntityDtoMapper.dtoToEntity(item);
                     appDatabase.itemEntityDao().update(itemEntity);
                 }
@@ -281,7 +283,7 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
         LoggerManager.getInstance().log("saveItemHistory: Salvataggio storico items", "DEBUG");
         executorService.execute(() -> {
             try {
-                ZonedDateTime closureDate = ZonedDateTime.now(ZoneId.of("Europe/Rome")).truncatedTo(ChronoUnit.DAYS);
+                ZonedDateTime closureDate = ZonedDateTime.now(ZoneId.of(ConstantUtils.ZONE_ID)).truncatedTo(ChronoUnit.DAYS);
                 for (ItemDto item : itemList) {
                     ItemHistoryEntity itemHistoryByItemName = appDatabase.itemHistoryEntityDao().getItemHistoryByItemNameInClosureDate(item.getName(), String.valueOf(LocalDate.from(closureDate)));
                     ItemWithDetailEntity itemEntity = appDatabase.itemEntityDao().getItemWithDetail(item.getId());
@@ -340,14 +342,14 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                             LoggerManager.getInstance().log("Toast: Prodotto già esistente", "WARN");
                             return;
                         }
-                        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Europe/Rome"));
+                        ZonedDateTime now = ZonedDateTime.now(ZoneId.of(ConstantUtils.ZONE_ID));
                         ItemEntity newItem = new ItemEntity();
                         UUID itemId = UUID.randomUUID();
                         newItem.setId(itemId);
                         newItem.setName(newItemName);
                         newItem.setTotPortions(0L);
                         newItem.setStatus(ItemStatus.WHITE);
-                        newItem.setBarcode("FAKE_BARCODE");
+                        newItem.setBarcode("");
                         newItem.setCreationDate(now);
                         ItemDetailEntity itemDetailEntity = new ItemDetailEntity();
                         itemDetailEntity.setId(UUID.randomUUID());
@@ -366,11 +368,29 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                                 throw new RuntimeException(e);
                             }
                         });
-                        generalItemViewModel.updateItem(EntityDtoMapper.entityToDto(newItem));
+                        List<ItemDto> currentItems = generalItemViewModel.getItems().getValue();
+                        List<ItemDetailDto> currentDetails = generalItemViewModel.getItemDetails().getValue();
+                        List<QuantityTypeDto> currentQuantityTypes = generalItemViewModel.getQuantityTypes().getValue();
+
+
+                        Objects.requireNonNull(currentItems).add(EntityDtoMapper.entityToDto(newItem));
+                        Objects.requireNonNull(currentDetails).add(EntityDtoMapper.detailEntityToDto(itemDetailEntity));
+                        Objects.requireNonNull(currentQuantityTypes).add(EntityDtoMapper.entityToDto(quantityTypeEntity));
+
                         requireActivity().runOnUiThread(() -> {
-                            itemAdapter.setItemList(items);
-                            newItemDialog.dismiss();
                             LoggerManager.getInstance().log("addNewItem: Nuovo item aggiunto", "INFO");
+
+                            currentItems.sort(Comparator.comparing(ItemDto::getName, String.CASE_INSENSITIVE_ORDER));
+                            generalItemViewModel.setItems(currentItems);
+                            generalItemViewModel.setItemDetails(currentDetails);
+                            generalItemViewModel.setQuantityTypes(currentQuantityTypes);
+
+                            itemAdapter.setItemList(currentItems);
+                            NavController navController = NavHostFragment.findNavController(this);
+                            Bundle bundle = new Bundle();
+                            bundle.putString("itemId", itemId.toString());
+                            navController.navigate(R.id.action_itemFragment_to_itemDetailFragment, bundle);
+                            newItemDialog.dismiss();
                         });
                     } catch (Exception e) {
                         requireActivity().runOnUiThread(() -> Toast.makeText(getContext(), "Errore durante la creazione del prodotto: " + e.getLocalizedMessage(), Toast.LENGTH_SHORT).show());

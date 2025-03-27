@@ -44,6 +44,8 @@ public class ItemEntity extends BaseEntity {
     private Long totPortions;
     @ColumnInfo(name = "status")
     private ItemStatus status;
+    @ColumnInfo(name = "checked")
+    private boolean checked;
     @ColumnInfo(name = "barcode")
     private String barcode;
     @ColumnInfo(name = "check_date")
@@ -62,13 +64,14 @@ public class ItemEntity extends BaseEntity {
 
     @Ignore
     public ItemEntity(@NotNull UUID id, Integer ftsId, String name, Long totPortions,
-                      ItemStatus status, String barcode, ZonedDateTime checkDate, String note, String imageUrl, UUID providerId) {
+                      ItemStatus status, boolean checked, String barcode, ZonedDateTime checkDate, String note, String imageUrl, UUID providerId) {
         super();
         this.id = id;
         this.ftsId = ftsId;
         this.name = name;
         this.totPortions = totPortions;
         this.status = status;
+        this.checked = checked;
         this.barcode = barcode;
         this.checkDate = checkDate;
         this.note = note;
@@ -117,6 +120,14 @@ public class ItemEntity extends BaseEntity {
 
     public void setStatus(ItemStatus status) {
         this.status = status;
+    }
+
+    public boolean isChecked() {
+        return checked;
+    }
+
+    public void setChecked(boolean checked) {
+        this.checked = checked;
     }
 
     public String getBarcode() {
@@ -181,6 +192,7 @@ public class ItemEntity extends BaseEntity {
                 ", name='" + name + '\'' +
                 ", totPortions=" + totPortions +
                 ", status=" + status +
+                ", checked=" + checked +
                 ", barcode='" + barcode + '\'' +
                 ", checkDate=" + checkDate +
                 ", note='" + note + '\'' +

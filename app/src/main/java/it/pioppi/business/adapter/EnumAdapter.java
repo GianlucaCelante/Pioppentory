@@ -163,6 +163,7 @@ public class EnumAdapter extends RecyclerView.Adapter<EnumAdapter.EnumViewHolder
 
         holder.enumUnitsPerQuantityType.addTextChangedListener(unitsPerPackagingTextWatcher);
         holder.unitsPerPackagingTextWatcher = unitsPerPackagingTextWatcher;
+
     }
 
 

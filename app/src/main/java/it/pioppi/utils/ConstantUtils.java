@@ -29,5 +29,11 @@ public class ConstantUtils {
     public static final String ITEM_ID = "itemId";
     public static final String IMAGE_URL = "imageUrl";
     public static final int GRID_LAYOUT_NUMBER_COLUMNS = 5;
+    
+    // TIMESTAMP
+    public static final String TIMESTAMP_FORMAT = "yyyy-MM-dd HH:mm:ss";
+    public static final String TIMESTAMP_FORMAT_DATE = "yyyy-MM-dd";
+    public static final String ZONE_ID = "Europe/Rome";
 
+    public static final int TYPE_HEADER = 1;
 }

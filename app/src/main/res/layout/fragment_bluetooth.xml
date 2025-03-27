@@ -1,84 +1,117 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
+    android:padding="2dp"
     tools:context=".business.fragment.BluetoothFragment">
 
-    <LinearLayout
-        android:layout_width="match_parent"
+    <!-- Card per dispositivi nelle vicinanze -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/card_nearby"
+        android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        android:orientation="vertical"
-        android:padding="8dp">
+        app:cardCornerRadius="12dp"
+        app:cardElevation="4dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHeight_percent="0.5">
 
-        <!-- Use RelativeLayout or ConstraintLayout for better positioning -->
-        <RelativeLayout
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:padding="8dp">
+            android:layout_height="match_parent"
+            android:padding="16dp">
 
-            <!-- Title TextView centered horizontally -->
+            <!-- Titolo centrato -->
             <TextView
-                android:id="@+id/title_text"
-                android:layout_width="wrap_content"
+                android:id="@+id/tv_nearby_title"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:text="Dispositivi Bluetooth nelle vicinanze"
-                android:textSize="24sp"
-                android:padding="8dp"
+                android:textSize="20sp"
                 android:textStyle="bold"
-                android:textColor="@color/black"
-                android:layout_centerHorizontal="true"/>
+                android:textColor="?attr/colorOnSurface"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/fab_discover_devices"/>
 
-            <!-- FloatingActionButton aligned to the right -->
+            <!-- FAB in alto a destra -->
             <com.google.android.material.floatingactionbutton.FloatingActionButton
                 android:id="@+id/fab_discover_devices"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_alignParentRight="true"
-                android:src="@drawable/bluetooth_signal_icon"/>
-        </RelativeLayout>
+                android:src="@drawable/bluetooth_signal_icon"
+                android:layout_gravity="bottom|end"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recycler_view_nearby_devices"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:padding="8dp"
-            android:clipToPadding="false"
-            android:overScrollMode="never"
-            android:scrollbars="vertical"
-            tools:listitem="@layout/bluetooth_device_item" />
-    </LinearLayout>
+            <!-- RecyclerView per i dispositivi vicini -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycler_view_nearby_devices"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:clipToPadding="false"
+                android:overScrollMode="never"
+                android:paddingTop="8dp"
+                app:layout_constraintTop_toBottomOf="@id/tv_nearby_title"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                tools:listitem="@layout/bluetooth_device_item" />
 
-    <LinearLayout
-        android:layout_width="match_parent"
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Card per dispositivi associati -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/card_paired"
+        android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        android:orientation="vertical"
-        android:padding="8dp">
+        app:cardCornerRadius="12dp"
+        app:cardElevation="4dp"
+        app:layout_constraintTop_toBottomOf="@id/card_nearby"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHeight_percent="0.5">
 
-        <TextView
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Dispositivi Bluetooth associati"
-            android:textSize="24sp"
-            android:padding="8dp"
-            android:textStyle="bold"
-            android:textAlignment="center"
-            android:textColor="@color/black" />
+            android:layout_height="match_parent"
+            android:padding="2dp">
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recycler_view_devices"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:padding="8dp"
-            android:clipToPadding="false"
-            android:overScrollMode="never"
-            android:scrollbars="vertical"
-            tools:listitem="@layout/bluetooth_device_item" />
-    </LinearLayout>
-</LinearLayout>
+            <!-- Titolo centrato -->
+            <TextView
+                android:id="@+id/tv_paired_title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Dispositivi Bluetooth associati"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="?attr/colorOnSurface"
+                android:textAlignment="center"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+            <!-- RecyclerView per i dispositivi associati -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycler_view_devices"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:clipToPadding="false"
+                android:overScrollMode="never"
+                android:paddingTop="8dp"
+                app:layout_constraintTop_toBottomOf="@id/tv_paired_title"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                tools:listitem="@layout/bluetooth_device_item" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

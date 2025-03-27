@@ -14,6 +14,7 @@ import android.content.pm.PackageManager;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -138,7 +139,7 @@ public class BluetoothFragment extends Fragment implements BluetoothDevicesAdapt
         BluetoothDeviceDto newDevice = new BluetoothDeviceDto();
         newDevice.setName(deviceName);
         newDevice.setAddress(deviceAddress);
-        newDevice.setCreationDate(ZonedDateTime.now(ZoneId.of("Europe/Rome")));
+        newDevice.setCreationDate(ZonedDateTime.now(ZoneId.of(ConstantUtils.ZONE_ID)));
         newDevice.setDetected(detected);
 
         List<BluetoothDeviceDto> currentDevices = bluetoothDeviceViewModel.getNearbyBluetoothDevices().getValue();
@@ -210,26 +211,39 @@ public class BluetoothFragment extends Fragment implements BluetoothDevicesAdapt
     }
 
     private void checkLocationEnabled() {
-        LoggerManager.getInstance().log("checkLocationEnabled: Verifica stato localizzazione", "DEBUG");
         LocationManager locationManager = (LocationManager) requireContext().getSystemService(Context.LOCATION_SERVICE);
         if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-            Toast.makeText(getContext(), "Abilita la localizzazione per cercare i dispositivi Bluetooth", Toast.LENGTH_SHORT).show();
-            LoggerManager.getInstance().log("Toast: Abilita la localizzazione per cercare i dispositivi Bluetooth", "WARN");
+            new AlertDialog.Builder(requireContext())
+                    .setTitle("Attiva la localizzazione")
+                    .setMessage("Per cercare dispositivi Bluetooth, è necessario abilitare il GPS. Vuoi attivarlo ora?")
+                    .setPositiveButton("Sì", (dialog, which) -> {
+                        Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                        startActivity(intent);
+                    })
+                    .setNegativeButton("No", (dialog, which) -> {
+                        Toast.makeText(getContext(), "La localizzazione è disabilitata. Alcune funzionalità potrebbero non funzionare correttamente.", Toast.LENGTH_LONG).show();
+                    })
+                    .show();
         }
     }
 
+
     private void startBluetoothDiscovery() {
         LoggerManager.getInstance().log("startBluetoothDiscovery: Avvio ricerca dispositivi", "INFO");
-        if (!checkAndRequestPermissions()) {
-            LoggerManager.getInstance().log("startBluetoothDiscovery: Permessi insufficienti", "ERROR");
+
+        // Controlla e richiedi il permesso per la localizzazione se non concesso
+        if (!checkAndRequestLocationPermission()) {
+            LoggerManager.getInstance().log("startBluetoothDiscovery: Permessi localizzazione non concesso", "ERROR");
             return;
         }
+
+        // Verifica se la localizzazione è attiva
+        checkLocationEnabled();
 
         try {
             if (bluetoothAdapter.isDiscovering()) {
                 bluetoothAdapter.cancelDiscovery();
             }
-
             boolean success = bluetoothAdapter.startDiscovery();
             if (success) {
                 Log.d("BluetoothDebug", "Discovery avviata correttamente");
@@ -245,11 +259,11 @@ public class BluetoothFragment extends Fragment implements BluetoothDevicesAdapt
                     fabDiscoverDevices.setAlpha(1.0f);
                 }
             }
-
         } catch (SecurityException e) {
             LoggerManager.getInstance().logException(e);
         }
     }
+
 
     @Override
     public void onResume() {
@@ -327,10 +341,18 @@ public class BluetoothFragment extends Fragment implements BluetoothDevicesAdapt
     private void enableBluetooth() {
         LoggerManager.getInstance().log("enableBluetooth: Verifica stato Bluetooth", "DEBUG");
         if (!bluetoothAdapter.isEnabled()) {
+            if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                // Richiedi il permesso BLUETOOTH_CONNECT
+                ActivityCompat.requestPermissions(requireActivity(),
+                        new String[]{Manifest.permission.BLUETOOTH_CONNECT},
+                        ConstantUtils.REQUEST_ENABLE_BT);
+                return;
+            }
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableBtIntent, ConstantUtils.REQUEST_ENABLE_BT);
         }
     }
+
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -619,7 +641,7 @@ public class BluetoothFragment extends Fragment implements BluetoothDevicesAdapt
                 BluetoothDeviceDto deviceDto = new BluetoothDeviceDto();
                 deviceDto.setName(device.getName());
                 deviceDto.setAddress(device.getAddress());
-                deviceDto.setCreationDate(ZonedDateTime.now(ZoneId.of("Europe/Rome")));
+                deviceDto.setCreationDate(ZonedDateTime.now(ZoneId.of(ConstantUtils.ZONE_ID)));
 
                 pairedDevicesList.add(deviceDto);
             }
@@ -628,33 +650,15 @@ public class BluetoothFragment extends Fragment implements BluetoothDevicesAdapt
         bluetoothDeviceViewModel.setPairedBluetoothDevices(pairedDevicesList);
     }
 
-    private boolean checkAndRequestPermissions() {
-        LoggerManager.getInstance().log("checkAndRequestPermissions: Verifica permessi necessari", "DEBUG");
-        List<String> permissionsNeeded = new ArrayList<>();
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
-                permissionsNeeded.add(Manifest.permission.BLUETOOTH_SCAN);
-            }
-            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-                permissionsNeeded.add(Manifest.permission.BLUETOOTH_CONNECT);
-            }
-            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE) != PackageManager.PERMISSION_GRANTED) {
-                permissionsNeeded.add(Manifest.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE);
-            }
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                permissionsNeeded.add(Manifest.permission.ACCESS_FINE_LOCATION);
-            }
-        }
-
-        if (!permissionsNeeded.isEmpty()) {
+    private boolean checkAndRequestLocationPermission() {
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(requireActivity(),
-                    permissionsNeeded.toArray(new String[0]),
-                    ConstantUtils.REQUEST_BLUETOOTH_PERMISSION);
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                    ConstantUtils.REQUEST_LOCATION_PERMISSION);
             return false;
         }
-
         return true;
     }
+
 }

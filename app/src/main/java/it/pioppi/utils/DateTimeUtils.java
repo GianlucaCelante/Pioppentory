@@ -16,14 +16,14 @@ public class DateTimeUtils {
     public static String formatForDisplay(ZonedDateTime date) {
         if (date == null) return "";
 
-        ZonedDateTime localDate = date.withZoneSameInstant(ZoneId.of("Europe/Rome"));
+        ZonedDateTime localDate = date.withZoneSameInstant(ZoneId.of(ConstantUtils.ZONE_ID));
         return localDate.format(LOCAL_DATE_TIME_PATTERN);
     }
 
     public static String formatForDisplay(LocalDate date) {
         if (date == null) return "";
 
-        ZonedDateTime localDate = date.atStartOfDay(ZoneId.of("Europe/Rome"));
+        ZonedDateTime localDate = date.atStartOfDay(ZoneId.of(ConstantUtils.ZONE_ID));
         return localDate.format(LOCAL_DATE_PATTERN);
     }
 }

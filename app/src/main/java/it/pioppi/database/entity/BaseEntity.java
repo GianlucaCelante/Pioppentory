@@ -5,6 +5,8 @@ import androidx.room.ColumnInfo;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
+import it.pioppi.utils.ConstantUtils;
+
 public class BaseEntity {
 
     @ColumnInfo(name = "creation_date")
@@ -13,8 +15,8 @@ public class BaseEntity {
     private ZonedDateTime lastUpdate;
 
     public BaseEntity() {
-        this.creationDate = ZonedDateTime.now(ZoneId.of("Europe/Rome"));
-        this.lastUpdate = ZonedDateTime.now(ZoneId.of("Europe/Rome"));
+        this.creationDate = ZonedDateTime.now(ZoneId.of(ConstantUtils.ZONE_ID));
+        this.lastUpdate = ZonedDateTime.now(ZoneId.of(ConstantUtils.ZONE_ID));
     }
 
     public ZonedDateTime getCreationDate() {

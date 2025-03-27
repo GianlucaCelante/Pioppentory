@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -165,7 +166,7 @@ public class GeneralItemViewModel extends ViewModel {
     }
 
     public void updateItemImageUrl(UUID itemId, String imageUrl) {
-        items.getValue().stream()
+        Objects.requireNonNull(items.getValue()).stream()
                 .filter(item -> item.getId().equals(itemId))
                 .findFirst()
                 .ifPresent(item -> item.setImageUrl(imageUrl));

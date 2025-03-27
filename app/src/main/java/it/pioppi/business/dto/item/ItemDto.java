@@ -18,6 +18,7 @@ public class ItemDto implements Parcelable {
     private String name;
     private Long totPortions;
     private ItemStatus status;
+    private boolean checked;
     private String barcode;
     private ZonedDateTime checkDate;
     private String note;
@@ -26,7 +27,7 @@ public class ItemDto implements Parcelable {
     private ZonedDateTime lastUpdateDate;
     private UUID providerId;
 
-    public ItemDto(UUID id, Integer ftsId, String name, Long totPortions, ItemStatus status,
+    public ItemDto(UUID id, Integer ftsId, String name, Long totPortions, ItemStatus status, boolean checked,
                    String barcode, ZonedDateTime checkDate, String note, String imageUrl,
                    ZonedDateTime creationDate, ZonedDateTime lastUpdateDate, UUID providerId) {
         this.id = id;
@@ -34,6 +35,7 @@ public class ItemDto implements Parcelable {
         this.name = name;
         this.totPortions = totPortions;
         this.status = status;
+        this.checked = checked;
         this.barcode = barcode;
         this.checkDate = checkDate;
         this.note = note;
@@ -51,6 +53,7 @@ public class ItemDto implements Parcelable {
         name = in.readString();
         totPortions = in.readByte() == 0 ? null : in.readLong();
         status = in.readByte() == 0 ? null : ItemStatus.valueOf(in.readString());
+        checked = in.readByte() != 0;
         barcode = in.readString();
         note = in.readString();
         imageUrl = in.readString();
@@ -111,6 +114,14 @@ public class ItemDto implements Parcelable {
 
     public void setStatus(ItemStatus status) {
         this.status = status;
+    }
+
+    public boolean isChecked() {
+        return checked;
+    }
+
+    public void setChecked(boolean checked) {
+        this.checked = checked;
     }
 
     public String getBarcode() {
@@ -201,6 +212,7 @@ public class ItemDto implements Parcelable {
             parcel.writeByte((byte) 1);
             parcel.writeString(status.name());
         }
+        parcel.writeByte((byte) (checked ? 1 : 0));
         parcel.writeString(barcode);
         parcel.writeString(note);
         parcel.writeString(imageUrl);

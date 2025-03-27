@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS `ITEM` (
     `name` TEXT,
     `tot_portions` INTEGER,
     `status` TEXT,
+    `checked` INTEGER NOT NULL DEFAULT 0,
     `barcode` TEXT,
     `check_date` TEXT,
     `note` TEXT,

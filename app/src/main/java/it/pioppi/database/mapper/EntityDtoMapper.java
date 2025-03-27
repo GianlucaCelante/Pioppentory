@@ -34,6 +34,7 @@ public class EntityDtoMapper {
         itemEntity.setName(itemDto.getName());
         itemEntity.setTotPortions(itemDto.getTotPortions());
         itemEntity.setStatus(itemDto.getStatus());
+        itemEntity.setChecked(itemDto.isChecked());
         itemEntity.setBarcode(itemDto.getBarcode());
         itemEntity.setNote(itemDto.getNote());
         itemEntity.setImageUrl(itemDto.getImageUrl());
@@ -65,6 +66,7 @@ public class EntityDtoMapper {
         itemDto.setName(itemEntity.getName());
         itemDto.setTotPortions(itemEntity.getTotPortions());
         itemDto.setStatus(itemEntity.getStatus());
+        itemDto.setChecked(itemEntity.isChecked());
         itemDto.setBarcode(itemEntity.getBarcode());
         itemDto.setNote(itemEntity.getNote());
         itemDto.setImageUrl(itemEntity.getImageUrl());

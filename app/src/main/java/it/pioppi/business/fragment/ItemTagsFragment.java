@@ -445,19 +445,24 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
         }
 
         executorService.execute(() -> {
-            // Recupera dal DB gli ID degli item associati al tag esistente
-            java.util.List<UUID> globalItemIds = appDatabase.itemTagJoinDao().getItemIdsForTag(existingTag.getId());
+
+            List<UUID> globalItemIds = appDatabase.itemTagJoinDao().getItemIdsForTag(existingTag.getId());
             Set<UUID> globalJoinSet = new HashSet<>(globalItemIds);
             LoggerManager.getInstance().log("Global join set size for tag " + existingTag.getId() + ": " + globalJoinSet.size(), "DEBUG");
 
-            // Aggiorna la mappa dei join nel ViewModel
+            if (itemId != null && !globalJoinSet.contains(itemId)) {
+                ItemTagJoinEntity joinEntity = new ItemTagJoinEntity(itemId, existingTag.getId());
+                appDatabase.itemTagJoinDao().insert(joinEntity);
+                globalJoinSet.add(itemId);
+                LoggerManager.getInstance().log("Item corrente associato al tag nel DB: " + itemId, "DEBUG");
+            }
+
             Map<UUID, Set<UUID>> currentJoins = generalItemViewModel.getItemTagJoins();
             if (currentJoins == null) {
                 currentJoins = new HashMap<>();
             }
             currentJoins.put(existingTag.getId(), globalJoinSet);
 
-            // Recupera gli ItemDto relativi agli ID ottenuti
             List<ItemDto> importedItems = new ArrayList<>();
             for (UUID id : globalJoinSet) {
                 ItemEntity entity = appDatabase.itemEntityDao().getItemById(id);
@@ -467,7 +472,6 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
                 }
             }
 
-            // Aggiorna la lista degli item nel dettaglio corrente
             List<ItemDto> currentItems = generalItemViewModel.getItems().getValue();
             if (currentItems == null) {
                 currentItems = new ArrayList<>();
@@ -482,7 +486,7 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
             Map<UUID, Set<UUID>> finalCurrentJoins = currentJoins;
             List<ItemDto> finalCurrentItems = currentItems;
             requireActivity().runOnUiThread(() -> {
-                // Se il tag non è già presente nel dettaglio corrente, aggiungilo
+
                 List<ItemTagDto> currentTags = generalItemViewModel.getItemTags().getValue();
                 if (currentTags == null) {
                     currentTags = new ArrayList<>();
@@ -493,15 +497,18 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
                     itemTagsAdapter.setItemTagDtos(currentTags);
                     LoggerManager.getInstance().log("Existing tag aggiunto al dettaglio corrente: " + existingTag.getName(), "DEBUG");
                 }
-                // Aggiorna lista degli item e mappa dei join
+
                 generalItemViewModel.setItems(finalCurrentItems);
                 itemTagsAdapter.setItemDtos(finalCurrentItems);
                 generalItemViewModel.setItemTagJoins(finalCurrentJoins);
+                itemTagsAdapter.notifyDataSetChanged();
+
                 Toast.makeText(context, "Tag importato correttamente", Toast.LENGTH_SHORT).show();
                 LoggerManager.getInstance().log("Tag importato correttamente: " + existingTag.getName(), "INFO");
             });
         });
     }
+
 
     protected void prefillFields() {
         LoggerManager.getInstance().log("prefillFields started", "INFO");

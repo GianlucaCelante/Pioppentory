@@ -31,10 +31,8 @@ public class Pioppentory extends Application {
         super.onCreate();
         Log.d("Pioppentory", "onCreate: scheduling PeriodicLogUpload worker");
 
-        // Inizializza LoggerManager immediatamente con uploader nullo per evitare chiamate premature a getInstance().
         LoggerManager.init(getApplicationContext(), "app_log.txt", true, null);
 
-        // Ora, se l'utente è già loggato, crea il Drive service e imposta il LogUploader corretto.
         GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(getApplicationContext());
         if (account != null) {
             GoogleAccountCredential credential = GoogleAccountCredential.usingOAuth2(
@@ -57,7 +55,6 @@ public class Pioppentory extends Application {
             Log.w("Pioppentory", "Utente non loggato; LogUploader non impostato");
         }
 
-        // Imposta il default uncaught exception handler.
         defaultUEH = Thread.getDefaultUncaughtExceptionHandler();
         Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
             LoggerManager.getInstance().logException(new Exception(throwable));
@@ -69,9 +66,8 @@ public class Pioppentory extends Application {
             defaultUEH.uncaughtException(thread, throwable);
         });
 
-        // Pianifica il worker periodico per l'upload dei log ogni 15 minuti.
         PeriodicWorkRequest periodicUploadRequest =
-                new PeriodicWorkRequest.Builder(LogUploadWorker.class, 15, TimeUnit.MINUTES)
+                new PeriodicWorkRequest.Builder(LogUploadWorker.class, 1, TimeUnit.DAYS)
                         .setBackoffCriteria(BackoffPolicy.LINEAR, 10, TimeUnit.SECONDS)
                         .build();
 

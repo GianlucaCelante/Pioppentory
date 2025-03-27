@@ -1,6 +1,5 @@
 package it.pioppi.business.adapter;
 
-import android.app.PendingIntent;
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -18,130 +17,159 @@ import com.google.android.material.card.MaterialCardView;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
+import java.util.Locale;
 
 import it.pioppi.R;
 import it.pioppi.business.dto.item.ItemDto;
 
-public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder> {
+public class ItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+
+    private static final int ITEM_VIEW_TYPE = 0;
+    private static final int HEADER_VIEW_TYPE = 1;
 
     public interface OnItemClickListener {
-        void onItemClick(ItemDto item) throws ExecutionException, InterruptedException, PendingIntent.CanceledException;
+        void onItemClick(ItemDto item);
     }
 
     public interface OnLongItemClickListener {
-        void onLongItemClick(ItemDto item) throws ExecutionException, InterruptedException;
+        void onLongItemClick(ItemDto item);
     }
 
-    private List<ItemDto> itemList;
+    private final List<Object> itemListWithHeaders;
     private final OnItemClickListener listener;
     private final OnLongItemClickListener longListener;
     private final Context context;
 
     public ItemAdapter(List<ItemDto> itemList, OnItemClickListener listener, OnLongItemClickListener longListener, Context context) {
-        this.itemList = itemList;
+        this.context = context;
         this.listener = listener;
         this.longListener = longListener;
-        this.context = context;
+        this.itemListWithHeaders = generateItemListWithHeaders(itemList);
+    }
+
+    private List<Object> generateItemListWithHeaders(List<ItemDto> items) {
+        items.sort((a, b) -> a.getName().compareToIgnoreCase(b.getName()));
+        List<Object> itemListWithHeaders = new ArrayList<>();
+        char currentHeader = 0;
+        for (ItemDto item : items) {
+            char firstChar = item.getName().toUpperCase(Locale.ROOT).charAt(0);
+            if (currentHeader != firstChar) {
+                currentHeader = firstChar;
+                itemListWithHeaders.add(String.valueOf(currentHeader));
+            }
+            itemListWithHeaders.add(item);
+        }
+        return itemListWithHeaders;
+    }
+
+    @Override
+    public int getItemViewType(int position) {
+        return itemListWithHeaders.get(position) instanceof String ? HEADER_VIEW_TYPE : ITEM_VIEW_TYPE;
+    }
+
+    public void setItemList(List<ItemDto> itemList) {
+        itemListWithHeaders.clear();
+        itemListWithHeaders.addAll(generateItemListWithHeaders(itemList));
+        notifyDataSetChanged();
     }
 
     @NonNull
     @Override
-    public ItemViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.card_item, parent, false);
-        return new ItemViewHolder(view);
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        if (viewType == HEADER_VIEW_TYPE) {
+            View headerView = LayoutInflater.from(parent.getContext()).inflate(R.layout.sticky_header, parent, false);
+            return new HeaderViewHolder(headerView);
+        } else {
+            View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.card_item, parent, false);
+            return new ItemViewHolder(itemView);
+        }
     }
 
     @Override
-    public void onBindViewHolder(@NonNull ItemViewHolder holder, int position) {
-        ItemDto item = itemList.get(position);
-        holder.itemName.setText(item.getName() != null ? item.getName() : "");
-        holder.totPortions.setText(String.valueOf(item.getTotPortions() != null ? item.getTotPortions() : 0));
-
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-        String formattedDateTime = item.getCheckDate() != null ? item.getCheckDate().format(formatter) : "";
-        holder.checkDate.setText(formattedDateTime);
-
-        holder.hasNote.setVisibility(item.getNote() != null && !item.getNote().isEmpty() ? View.VISIBLE : View.INVISIBLE);
-        holder.itemView.setOnClickListener(v -> {
-            try {
-                listener.onItemClick(item);
-            } catch (PendingIntent.CanceledException | ExecutionException | InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        });
-        holder.itemView.setOnLongClickListener(v -> {
-            try {
-                longListener.onLongItemClick(item);
-            } catch (ExecutionException | InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-            return true;
-        });
-
-        if(item.getImageUrl() != null && !item.getImageUrl().isEmpty()){
-            Glide.with(context)
-                    .load(item.getImageUrl())
-                    .placeholder(R.drawable.placeholder_thin) // opzionale
-                    .error(R.drawable.placeholder_thin) // opzionale
-                    .into(holder.itemImage);
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+        if (holder instanceof HeaderViewHolder) {
+            HeaderViewHolder headerHolder = (HeaderViewHolder) holder;
+            String headerText = (String) itemListWithHeaders.get(position);
+            headerHolder.headerTitle.setText(headerText);
         } else {
-            // Se non c'è URL, puoi impostare un'immagine di default
-            holder.itemImage.setImageResource(R.drawable.
-                    placeholder_thin);
-        }
+            ItemViewHolder itemHolder = (ItemViewHolder) holder;
+            ItemDto item = (ItemDto) itemListWithHeaders.get(position);
 
-        if (item.getStatus() != null) {
-            switch (item.getStatus()) {
-                case WHITE:
-                    holder.status.setCardBackgroundColor(ContextCompat.getColor(context, R.color.white));
-                    break;
-                case BLUE:
-                    holder.status.setCardBackgroundColor(ContextCompat.getColor(context, R.color.blue));
-                    break;
-                case GREEN:
-                    holder.status.setCardBackgroundColor(ContextCompat.getColor(context, R.color.green));
-                    break;
-                case RED:
-                    holder.status.setCardBackgroundColor(ContextCompat.getColor(context, R.color.red));
-                    break;
-                default:
+            itemHolder.itemName.setText(item.getName());
+            itemHolder.totPortions.setText(String.valueOf(item.getTotPortions()));
+
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+            String formattedDateTime = item.getCheckDate() != null ? item.getCheckDate().format(formatter) : "";
+            itemHolder.checkDate.setText(formattedDateTime);
+
+            itemHolder.hasNote.setVisibility(item.getNote() != null && !item.getNote().isEmpty() ? View.VISIBLE : View.INVISIBLE);
+
+            itemHolder.itemView.setOnClickListener(v -> listener.onItemClick(item));
+            itemHolder.itemView.setOnLongClickListener(v -> {
+                longListener.onLongItemClick(item);
+                return true;
+            });
+
+            if (item.getImageUrl() != null && !item.getImageUrl().isEmpty()) {
+                Glide.with(context).load(item.getImageUrl()).placeholder(R.drawable.placeholder_thin).into(itemHolder.itemImage);
+            } else {
+                itemHolder.itemImage.setImageResource(R.drawable.placeholder_thin);
+            }
+
+            if(item.getStatus() == null) {
+                itemHolder.materialCardView.setCardBackgroundColor(ContextCompat.getColor(context, R.color.white));
+            } else {
+                switch (item.getStatus()) {
+                    case WHITE:
+                        itemHolder.materialCardView.setCardBackgroundColor(ContextCompat.getColor(context, R.color.white));
+                        break;
+                    case GREEN:
+                        itemHolder.materialCardView.setCardBackgroundColor(ContextCompat.getColor(context, R.color.green));
+                        break;
+                    case RED:
+                        itemHolder.materialCardView.setCardBackgroundColor(ContextCompat.getColor(context, R.color.red));
+                        break;
+                    default:
+                        itemHolder.materialCardView.setCardBackgroundColor(ContextCompat.getColor(context, R.color.white));
+                        break;
+                }
+
+            }
+
+            if(item.isChecked()) {
+                itemHolder.materialCardView.setStrokeWidth(10);
+                itemHolder.materialCardView.setStrokeColor(ContextCompat.getColor(context, R.color.connected_device_background));
             }
         }
     }
 
     @Override
     public int getItemCount() {
-        return this.itemList.size();
+        return itemListWithHeaders.size();
     }
 
-    public List<ItemDto> getItemList() {
-        return itemList;
-    }
+    static class ItemViewHolder extends RecyclerView.ViewHolder {
+        TextView itemName, totPortions, checkDate;
+        ImageView hasNote, itemImage;
+        MaterialCardView materialCardView;
 
-    public void setItemList(List<ItemDto> itemList) {
-        if (itemList != null && !itemList.isEmpty()) {
-            this.itemList = new ArrayList<>(itemList);
-            notifyDataSetChanged();
-        }
-    }
-
-    public static class ItemViewHolder extends RecyclerView.ViewHolder {
-        public TextView itemName;
-        public TextView totPortions;
-        public TextView checkDate;
-        public ImageView hasNote;
-        public MaterialCardView status;
-        public ImageView itemImage;
-
-        public ItemViewHolder(View itemView) {
+        ItemViewHolder(View itemView) {
             super(itemView);
             itemName = itemView.findViewById(R.id.item_name_card);
             totPortions = itemView.findViewById(R.id.tot_portions);
             checkDate = itemView.findViewById(R.id.check_date);
             hasNote = itemView.findViewById(R.id.has_note);
-            status = itemView.findViewById(R.id.card_item);
+            materialCardView = itemView.findViewById(R.id.card_item);
             itemImage = itemView.findViewById(R.id.item_image);
+        }
+    }
+
+    static class HeaderViewHolder extends RecyclerView.ViewHolder {
+        TextView headerTitle;
+
+        HeaderViewHolder(View itemView) {
+            super(itemView);
+            headerTitle = itemView.findViewById(R.id.sticky_header_textview);
         }
     }
 }
