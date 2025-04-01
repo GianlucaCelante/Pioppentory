@@ -578,32 +578,46 @@ public class ItemTagsFragment extends Fragment implements ItemTagsAdapter.OnItem
             public boolean onMenuItemSelected(@NonNull MenuItem menuItem) {
                 int menuItemId = menuItem.getItemId();
                 if (menuItemId == R.id.delete_tag) {
-                    List<ItemTagDto> itemTagDtos = generalItemViewModel.getItemTags().getValue();
-                    if (itemTagDtos == null) {
+                    List<ItemTagDto> currentTags = generalItemViewModel.getItemTags().getValue();
+                    if (currentTags == null) {
                         return false;
                     }
-                    List<ItemTagDto> selectedItems = new ArrayList<>();
-                    for (ItemTagDto tag : itemTagDtos) {
+                    List<ItemTagDto> selectedTags = new ArrayList<>();
+                    for (ItemTagDto tag : currentTags) {
                         if (tag.isSelected()) {
-                            selectedItems.add(tag);
+                            selectedTags.add(tag);
                         }
                     }
-                    if (selectedItems.isEmpty()) {
+                    if (selectedTags.isEmpty()) {
                         Toast.makeText(getContext(), "Nessun elemento selezionato", Toast.LENGTH_SHORT).show();
                         return false;
                     }
-                    itemTagDtos.removeIf(ItemTagDto::isSelected);
-                    executorService.submit(() -> {
-                        for (ItemTagDto tag : selectedItems) {
-                            ItemTagEntity entity = EntityDtoMapper.dtoToEntity(tag);
-                            appDatabase.itemTagEntityDao().delete(entity);
-                            LoggerManager.getInstance().log("Tag eliminato dal DB: " + tag.getName(), "DEBUG");
+
+                    for (ItemTagDto tag : selectedTags) {
+                        // Ottieni l'insieme degli item associati a questo tag
+                        Set<UUID> joinSet = itemTagJoins.get(tag.getId());
+                        if (joinSet != null && joinSet.size() > 1) {
+                            // Il tag è associato ad altri item: rimuovi solo l'associazione per l'item corrente
+                            executorService.submit(() -> {
+                                appDatabase.itemTagJoinDao().delete(tag.getId(), itemId);
+                                LoggerManager.getInstance().log("Rimosso il join per il tag " + tag.getName() + " dall'item " + itemId, "DEBUG");
+                            });
+                        } else {
+                            // Il tag è associato solo all'item corrente: elimina il tag globale
+                            executorService.submit(() -> {
+                                appDatabase.itemTagEntityDao().delete(EntityDtoMapper.dtoToEntity(tag));
+                                LoggerManager.getInstance().log("Tag eliminato globalmente dal DB: " + tag.getName(), "DEBUG");
+                            });
                         }
-                    });
-                    List<ItemTagDto> updatedList = new ArrayList<>(itemTagDtos);
+                    }
+
+                    // Aggiorna la lista dei tag nel ViewModel e nell'adapter
+                    currentTags.removeIf(ItemTagDto::isSelected);
+                    List<ItemTagDto> updatedList = new ArrayList<>(currentTags);
                     generalItemViewModel.setItemTags(updatedList);
                     itemTagsAdapter.setItemTagDtos(updatedList);
                     return true;
+
                 } else if (menuItemId == R.id.filter_tags) {
                     Objects.requireNonNull(generalItemViewModel.getItemTags().getValue())
                             .sort(Comparator.comparing(ItemTagDto::getName, String.CASE_INSENSITIVE_ORDER));

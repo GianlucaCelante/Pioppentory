@@ -30,10 +30,10 @@
                 android:title="Controllati - BLU" />
             <item
                 android:id="@+id/filter_by_status_red"
-                android:title="Confermati e fabbisogno insufficiente - ROSSO" />
+                android:title="Fabbisogno insufficiente - ROSSO" />
             <item
                 android:id="@+id/filter_by_status_green"
-                android:title="Confermati e fabbisogno sufficiente - VERDE" />
+                android:title="Fabbisogno sufficiente - VERDE" />
 
         </menu>
     </item>

@@ -12,6 +12,9 @@
         <action
             android:id="@+id/action_itemFragment_to_itemDetailFragment"
             app:destination="@id/itemDetailFragment" />
+        <action
+            android:id="@+id/action_itemFragment_to_itemHistoryFragment"
+            app:destination="@id/itemHistoryFragment" />
     </fragment>
 
     <fragment

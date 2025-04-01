@@ -5,6 +5,8 @@ import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -16,8 +18,16 @@ import it.pioppi.business.dto.item.ItemDto;
 import it.pioppi.business.dto.item.tag.ItemTagDto;
 import it.pioppi.business.dto.item.detail.ItemDetailDto;
 import it.pioppi.business.dto.item.quantity.QuantityTypeDto;
+import it.pioppi.database.model.ItemStatus;
+import it.pioppi.utils.ConstantUtils;
 
 public class GeneralItemViewModel extends ViewModel {
+
+    private String ascendingOrder = "ASC";
+    private Boolean filterCheckedOnly = null;
+    private ItemStatus filterStatus = null;
+
+    private List<ItemDto> originalItems = new ArrayList<>();
 
     private final MutableLiveData<List<ItemDto>> items = new MutableLiveData<>();
     private final MutableLiveData<String> query = new MutableLiveData<>("");
@@ -41,7 +51,9 @@ public class GeneralItemViewModel extends ViewModel {
         return items;
     }
 
+    // Imposta la lista completa e aggiorna la lista filtrata
     public void setItems(List<ItemDto> itemList) {
+        originalItems = new ArrayList<>(itemList);
         items.setValue(itemList);
     }
 
@@ -54,16 +66,58 @@ public class GeneralItemViewModel extends ViewModel {
     }
 
     private void applyFilter() {
-        List<ItemDto> itemList = items.getValue();
+        List<ItemDto> filteredList = new ArrayList<>(originalItems);
+
         String q = query.getValue();
-        if (itemList == null || q == null || q.isEmpty()) {
-            filteredItems.setValue(itemList);
-        } else {
-            List<ItemDto> filteredList = itemList.stream()
-                    .filter(item -> (item.getName() != null && item.getName().toLowerCase().contains(q.toLowerCase())) ||
-                            (item.getBarcode() != null && item.getBarcode().toLowerCase().contains(q.toLowerCase())))
+        if (q != null && !q.isEmpty()) {
+            filteredList = filteredList.stream()
+                    .filter(item -> (item.getName() != null && item.getName().toLowerCase().contains(q.toLowerCase()))
+                            || (item.getBarcode() != null && item.getBarcode().toLowerCase().contains(q.toLowerCase())))
                     .collect(Collectors.toList());
-            filteredItems.setValue(filteredList);
+        }
+
+        if (filterCheckedOnly != null && filterCheckedOnly) {
+            filteredList = filteredList.stream()
+                    .filter(ItemDto::isChecked)
+                    .collect(Collectors.toList());
+        }
+
+        if (filterStatus != null) {
+            filteredList = filteredList.stream()
+                    .filter(item -> item.getStatus() != null && item.getStatus().equals(filterStatus))
+                    .collect(Collectors.toList());
+        }
+
+        if (ConstantUtils.SORTING_DESCENDING.equals(ascendingOrder)) {
+            filteredList.sort(Comparator.comparing(ItemDto::getName, String.CASE_INSENSITIVE_ORDER).reversed());
+        } else {
+            filteredList.sort(Comparator.comparing(ItemDto::getName, String.CASE_INSENSITIVE_ORDER));
+        }
+
+        filteredItems.setValue(filteredList);
+    }
+
+    public void setFilterCheckedOnly(Boolean filterCheckedOnly) {
+        this.filterCheckedOnly = filterCheckedOnly;
+        applyFilter();
+    }
+
+    public void setFilterStatus(ItemStatus filterStatus) {
+        this.filterStatus = filterStatus;
+        applyFilter();
+    }
+
+    public void setSortOrder(String sortOrder) {
+        ascendingOrder = sortOrder;
+        applyFilter();
+    }
+
+    public void removeItem(ItemDto item) {
+        List<ItemDto> current = items.getValue();
+        if (current != null) {
+            List<ItemDto> updated = new ArrayList<>(current);
+            updated.remove(item);
+            setItems(updated);
         }
     }
 
@@ -102,20 +156,21 @@ public class GeneralItemViewModel extends ViewModel {
         }
     }
 
+    public LiveData<List<ItemTagDto>> getAllItemTags() {
+        return allItemTags;
+    }
+
+    public void setAllItemTags(List<ItemTagDto> allItemTags) {
+        this.allItemTags.setValue(allItemTags);
+    }
+
+    // Metodi per ItemDetails
     public LiveData<List<ItemDetailDto>> getItemDetails() {
         return itemDetails;
     }
 
     public void setItemDetails(List<ItemDetailDto> details) {
         itemDetails.setValue(details);
-    }
-
-    public LiveData<List<QuantityTypeDto>> getQuantityTypes() {
-        return quantityTypes;
-    }
-
-    public void setQuantityTypes(List<QuantityTypeDto> types) {
-        quantityTypes.setValue(types);
     }
 
     public void updateItemDetail(ItemDetailDto updatedDetail) {
@@ -131,6 +186,15 @@ public class GeneralItemViewModel extends ViewModel {
         }
     }
 
+    // Metodi per QuantityTypes
+    public LiveData<List<QuantityTypeDto>> getQuantityTypes() {
+        return quantityTypes;
+    }
+
+    public void setQuantityTypes(List<QuantityTypeDto> types) {
+        quantityTypes.setValue(types);
+    }
+
     public void updateQuantityType(QuantityTypeDto updatedType) {
         List<QuantityTypeDto> currentTypes = quantityTypes.getValue();
         if (currentTypes != null) {
@@ -144,6 +208,7 @@ public class GeneralItemViewModel extends ViewModel {
         }
     }
 
+    // Metodi per la gestione delle relazioni ItemTagJoins
     public void setItemTagJoins(Map<UUID, Set<UUID>> itemTagJoins) {
         this.itemTagJoins.setValue(itemTagJoins);
     }
@@ -155,14 +220,6 @@ public class GeneralItemViewModel extends ViewModel {
     public boolean itemBelongsToTag(UUID itemId, UUID tagId) {
         Set<UUID> itemsForTag = itemTagJoins.getValue().get(tagId);
         return itemsForTag != null && itemsForTag.contains(itemId);
-    }
-
-    public LiveData<List<ItemTagDto>> getAllItemTags() {
-        return allItemTags;
-    }
-
-    public void setAllItemTags(List<ItemTagDto> allItemTags) {
-        this.allItemTags.setValue(allItemTags);
     }
 
     public void updateItemImageUrl(UUID itemId, String imageUrl) {

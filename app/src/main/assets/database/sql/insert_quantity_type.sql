@@ -7,7 +7,7 @@ VALUES
   ('96d47755-8047-48b2-a5c6-55ec5f145ab4', 'PACCO', 'PACCO di Aceto 1 Litro', 0, 'AVAILABLE', 12, '2025-02-18T21:39:42', NULL, '8ace8bd6-cf39-432b-979c-dc90669f1254');
 
 INSERT INTO QUANTITY_TYPE
-  (id, quantity_type, quantity_type_description, quantity_type_available, quantity_type_purpose, units_per_quantity_type, creation_date, last_update, item_id)
+  (id, quantity_type, q uantity_type_description, quantity_type_available, quantity_type_purpose, units_per_quantity_type, creation_date, last_update, item_id)
 VALUES
   ('b568b7c1-83eb-4437-86d6-99ae52f5dae5', 'PEZZO', 'PEZZO di Aceto 1 Litro', 0, 'AVAILABLE', 1, '2025-02-18T21:39:42', NULL, '8ace8bd6-cf39-432b-979c-dc90669f1254');
 

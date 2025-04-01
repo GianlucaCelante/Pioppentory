@@ -19,6 +19,11 @@ public class ItemHistoryItemAdapter extends RecyclerView.Adapter<ItemHistoryItem
     private final List<ItemHistoryDto> itemHistoryList;
 
     public ItemHistoryItemAdapter(List<ItemHistoryDto> itemHistoryList) {
+        itemHistoryList.sort((itemHistoryDto, t1) -> {
+            String name1 = itemHistoryDto.getItemName().toUpperCase();
+            String name2 = t1.getItemName().toUpperCase();
+            return name1.compareTo(name2);
+        });
         this.itemHistoryList = itemHistoryList;
     }
 

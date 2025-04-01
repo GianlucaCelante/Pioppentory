@@ -35,7 +35,8 @@ public class ItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         void onLongItemClick(ItemDto item);
     }
 
-    private final List<Object> itemListWithHeaders;
+    private final List<Object> itemListWithHeaders = new ArrayList<>();
+    private List<ItemDto> originalItems = new ArrayList<>();
     private final OnItemClickListener listener;
     private final OnLongItemClickListener longListener;
     private final Context context;
@@ -44,11 +45,11 @@ public class ItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         this.context = context;
         this.listener = listener;
         this.longListener = longListener;
-        this.itemListWithHeaders = generateItemListWithHeaders(itemList);
+        setHasStableIds(true);
+        setItemList(itemList);
     }
 
     private List<Object> generateItemListWithHeaders(List<ItemDto> items) {
-        items.sort((a, b) -> a.getName().compareToIgnoreCase(b.getName()));
         List<Object> itemListWithHeaders = new ArrayList<>();
         char currentHeader = 0;
         for (ItemDto item : items) {
@@ -67,10 +68,29 @@ public class ItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         return itemListWithHeaders.get(position) instanceof String ? HEADER_VIEW_TYPE : ITEM_VIEW_TYPE;
     }
 
+    @Override
+    public long getItemId(int position) {
+        Object item = itemListWithHeaders.get(position);
+        if (item instanceof String) {
+            return item.hashCode();
+        } else if (item instanceof ItemDto) {
+            return ((ItemDto) item).getId().hashCode();
+        }
+        return position;
+    }
+
+    public List<Object> getItemListWithHeaders() {
+        return new ArrayList<>(itemListWithHeaders);
+    }
+
+    // Il metodo setItemList rimane invariato
     public void setItemList(List<ItemDto> itemList) {
-        itemListWithHeaders.clear();
-        itemListWithHeaders.addAll(generateItemListWithHeaders(itemList));
-        notifyDataSetChanged();
+        if (itemList != null) {
+            originalItems = new ArrayList<>(itemList);
+            itemListWithHeaders.clear();
+            itemListWithHeaders.addAll(generateItemListWithHeaders(originalItems));
+            notifyDataSetChanged();
+        }
     }
 
     @NonNull
@@ -133,12 +153,13 @@ public class ItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                         itemHolder.materialCardView.setCardBackgroundColor(ContextCompat.getColor(context, R.color.white));
                         break;
                 }
-
             }
 
             if(item.isChecked()) {
                 itemHolder.materialCardView.setStrokeWidth(10);
                 itemHolder.materialCardView.setStrokeColor(ContextCompat.getColor(context, R.color.connected_device_background));
+            } else {
+                itemHolder.materialCardView.setStrokeWidth(0);
             }
         }
     }

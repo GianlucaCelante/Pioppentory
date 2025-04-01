@@ -2,18 +2,25 @@ package it.pioppi.database.repository;
 
 import android.app.Application;
 
+import androidx.lifecycle.LiveData;
 import androidx.room.Transaction;
 
+import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import it.pioppi.business.dto.item.ItemDto;
 import it.pioppi.database.AppDatabase;
 import it.pioppi.database.dao.ItemEntityDao;
 import it.pioppi.database.dao.ItemFTSEntityDao;
 import it.pioppi.database.entity.ItemEntity;
 import it.pioppi.database.entity.ItemFTSEntity;
+import it.pioppi.database.mapper.EntityDtoMapper;
+import it.pioppi.database.model.ItemStatus;
+import it.pioppi.utils.LoggerManager;
 
 public class ItemEntityRepository {
     private final ItemEntityDao itemEntityDao;
@@ -61,4 +68,30 @@ public class ItemEntityRepository {
         });
     }
 
+    public LiveData<List<ItemDto>> getFilteredItems(String query, Boolean checkedOnly, ItemStatus status, boolean ascending) {
+        LiveData<List<ItemEntity>> filteredItems = itemEntityDao.getFilteredItems(query, checkedOnly, status, ascending ? 1 : 0);
+        return new LiveData<List<ItemDto>>() {
+            @Override
+            protected void onActive() {
+                super.onActive();
+                filteredItems.observeForever(itemEntities -> {
+                    List<ItemDto> itemDtoList = EntityDtoMapper.dtosToEntitiesForItemDto(itemEntities);
+                    setValue(itemDtoList);
+                });
+            }
+        };
+    }
+
+    public boolean updateItemImageUrl(UUID itemId, String imageUrl) {
+        Future<Boolean> future = executorService.submit(() -> {
+            itemEntityDao.updateItemImageUrl(itemId, imageUrl);
+            return true;
+        });
+        try {
+            return future.get();
+        } catch (InterruptedException | ExecutionException e) {
+            LoggerManager.getInstance().logException(e);
+            return false;
+        }
+    }
 }

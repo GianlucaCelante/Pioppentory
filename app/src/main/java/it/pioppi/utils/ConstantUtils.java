@@ -36,4 +36,8 @@ public class ConstantUtils {
     public static final String ZONE_ID = "Europe/Rome";
 
     public static final int TYPE_HEADER = 1;
+
+    // SORTING
+    public static final String SORTING_ASCENDING = "ASC";
+    public static final String SORTING_DESCENDING = "DESC";
 }

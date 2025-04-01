@@ -3,13 +3,14 @@ package it.pioppi.business.fragment;
 import android.app.SearchManager;
 import android.content.Context;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.inputmethod.InputMethodManager;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -27,6 +28,7 @@ import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
@@ -128,6 +130,25 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
         LoggerManager.getInstance().log("onCreateView: Inizio creazione della view di ItemFragment", "INFO");
         View view = inflater.inflate(R.layout.fragment_item, container, false);
 
+        SwipeRefreshLayout swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
+        swipeRefreshLayout.setOnRefreshListener(() -> {
+            LoggerManager.getInstance().log("onRefresh: Inizio refresh items", "DEBUG");
+
+            List<ItemDto> refreshedItems;
+            try {
+                refreshedItems = loadItems();
+            } catch (ExecutionException | InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            requireActivity().runOnUiThread(() -> {
+                // Aggiorna solo il ViewModel
+                generalItemViewModel.setItems(refreshedItems);
+                // Termina l'animazione del refresh
+                swipeRefreshLayout.setRefreshing(false);
+                LoggerManager.getInstance().log("onRefresh: Refresh completato", "DEBUG");
+            });
+        });
+
         recyclerView = view.findViewById(R.id.recycler_view_items);
         itemAdapter = new ItemAdapter(new ArrayList<>(), this, this, getContext());
 
@@ -151,11 +172,17 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
         fab.setOnClickListener(v -> {
             LoggerManager.getInstance().log("onCreateView: Clic sul FAB per aggiungere nuovo item", "INFO");
             addNewItem(inflater, generalItemViewModel);
-
         });
 
         LoggerManager.getInstance().log("onCreateView: Vista creata con successo", "INFO");
         return view;
+    }
+
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        itemAdapter.notifyDataSetChanged();
     }
 
     private void setupMenuToolbar() {
@@ -203,6 +230,9 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                 } else if (itemId == R.id.filter_by_status_white) {
                     filterItemsByStatus(ItemStatus.WHITE);
                     return true;
+                } else if (itemId == R.id.filter_by_status_blue) {
+                    filterCheckedItems();
+                    return true;
                 } else if (itemId == R.id.filter_by_status_red) {
                     filterItemsByStatus(ItemStatus.RED);
                     return true;
@@ -231,7 +261,7 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
     private void showPreviewDialog(List<ItemDto> itemList) {
         LoggerManager.getInstance().log("showPreviewDialog: Apertura dialog preview", "DEBUG");
         AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
-        builder.setTitle("Elementi Modificati");
+        builder.setTitle("Chiusura inventario");
 
         LayoutInflater inflater = requireActivity().getLayoutInflater();
         View dialogView = inflater.inflate(R.layout.dialog_preview_items, null);
@@ -258,6 +288,8 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                     Toast.makeText(getContext(), "Chiusura dell'inventario salvata con successo.", Toast.LENGTH_SHORT).show();
                     LoggerManager.getInstance().log("Toast: Chiusura dell'inventario salvata", "INFO");
                     dialog.dismiss();
+                    NavController navController = NavHostFragment.findNavController(this);
+                    navController.navigate(R.id.action_itemFragment_to_itemHistoryFragment);
                 });
             });
         });
@@ -315,17 +347,17 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
 
     private void addNewItem(@NonNull LayoutInflater inflater, GeneralItemViewModel generalItemViewModel) {
         LoggerManager.getInstance().log("addNewItem: Apertura dialog per nuovo item", "INFO");
-        List<ItemDto> items = generalItemViewModel.getItems().getValue();
         View dialogView = inflater.inflate(R.layout.new_item_alert, null);
         EditText newItemNameEditText = dialogView.findViewById(R.id.new_item_name);
-        newItemNameEditText.requestFocus();
-        openKeyboard(newItemNameEditText);
+
         AlertDialog.Builder builder = new AlertDialog.Builder(requireActivity());
         builder.setView(dialogView)
                 .setPositiveButton("Aggiungi", null)
                 .setNegativeButton("Indietro", (dialog, id) -> dialog.cancel());
         newItemDialog = builder.create();
         newItemDialog.setOnShowListener(dlg -> {
+            newItemNameEditText.requestFocus();
+            Objects.requireNonNull(newItemDialog.getWindow()).setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
             Button positiveButton = newItemDialog.getButton(AlertDialog.BUTTON_POSITIVE);
             positiveButton.setOnClickListener(v -> {
                 String newItemName = newItemNameEditText.getText().toString();
@@ -370,7 +402,7 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                         });
                         List<ItemDto> currentItems = generalItemViewModel.getItems().getValue();
                         List<ItemDetailDto> currentDetails = generalItemViewModel.getItemDetails().getValue();
-                        List<QuantityTypeDto> currentQuantityTypes = generalItemViewModel.getQuantityTypes().getValue();
+                        List<QuantityTypeDto> currentQuantityTypes = generalItemViewModel.getQuantityTypes().getValue() != null ? generalItemViewModel.getQuantityTypes().getValue() : new ArrayList<>();
 
 
                         Objects.requireNonNull(currentItems).add(EntityDtoMapper.entityToDto(newItem));
@@ -456,64 +488,55 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
 
     @Override
     public void onLongItemClick(ItemDto itemDto) {
-        LoggerManager.getInstance().log("onLongItemClick: Long click su item " + (itemDto != null ? itemDto.getName() : "null"), "DEBUG");
         new AlertDialog.Builder(requireContext())
                 .setTitle("Conferma eliminazione")
                 .setMessage("Sei sicuro di voler eliminare questo elemento?")
-                .setPositiveButton("Elimina", (dialog, which) -> executorService.execute(() -> {
+                .setPositiveButton("Elimina", (dialog, which) -> {
                     try {
                         ItemEntity itemEntity = EntityDtoMapper.dtoToEntity(itemDto);
                         itemEntityRepository.delete(itemEntity);
                         requireActivity().runOnUiThread(() -> {
-                            List<ItemDto> currentList = generalItemViewModel.getItems().getValue();
-                            if (currentList != null) {
-                                List<ItemDto> updatedList = new ArrayList<>(currentList);
-                                int index = updatedList.indexOf(itemDto);
-                                if (index != RecyclerView.NO_POSITION) {
-                                    updatedList.remove(index);
-                                    generalItemViewModel.setItems(updatedList);
-                                    itemAdapter.setItemList(updatedList);
-                                    recyclerView.setAdapter(itemAdapter);
-                                    Toast.makeText(getContext(), "Elemento eliminato", Toast.LENGTH_SHORT).show();
-                                    LoggerManager.getInstance().log("Toast: Elemento eliminato", "INFO");
-                                }
-                            }
+                            Parcelable recyclerViewState = recyclerView.getLayoutManager().onSaveInstanceState();
+
+                            generalItemViewModel.removeItem(itemDto);
+
+                            recyclerView.getLayoutManager().onRestoreInstanceState(recyclerViewState);
+                            Toast.makeText(getContext(), "Elemento eliminato", Toast.LENGTH_SHORT).show();
                         });
                     } catch (Exception e) {
-                        requireActivity().runOnUiThread(() -> Toast.makeText(getContext(), "Errore durante l'eliminazione", Toast.LENGTH_SHORT).show());
-                        LoggerManager.getInstance().logException(e);
+                        requireActivity().runOnUiThread(() ->
+                                Toast.makeText(getContext(), "Errore durante l'eliminazione", Toast.LENGTH_SHORT).show()
+                        );
                     }
-                }))
+                })
                 .setNegativeButton("Annulla", null)
                 .show();
     }
 
     private void filterItemsByNameAscending() {
-        LoggerManager.getInstance().log("filterItemsByNameAscending: Ordinamento A-Z", "DEBUG");
-        Objects.requireNonNull(generalItemViewModel.getItems().getValue()).sort(Comparator.comparing(ItemDto::getName, String.CASE_INSENSITIVE_ORDER));
-        itemAdapter.setItemList(generalItemViewModel.getItems().getValue());
-        recyclerView.setLayoutManager(new GridLayoutManager(getContext(), ConstantUtils.GRID_LAYOUT_NUMBER_COLUMNS));
-        recyclerView.setAdapter(itemAdapter);
+        generalItemViewModel.setFilterCheckedOnly(null);
+        generalItemViewModel.setFilterStatus(null);
+        generalItemViewModel.setSortOrder("ASC");
+        recyclerView.scrollToPosition(0);
     }
 
     private void filterItemsByNameDescending() {
-        LoggerManager.getInstance().log("filterItemsByNameDescending: Ordinamento Z-A", "DEBUG");
-        Objects.requireNonNull(generalItemViewModel.getItems().getValue()).sort(Comparator.comparing(ItemDto::getName, String.CASE_INSENSITIVE_ORDER).reversed());
-        itemAdapter.setItemList(generalItemViewModel.getItems().getValue());
-        recyclerView.setLayoutManager(new GridLayoutManager(getContext(), ConstantUtils.GRID_LAYOUT_NUMBER_COLUMNS));
-        recyclerView.setAdapter(itemAdapter);
+        generalItemViewModel.setFilterCheckedOnly(null);
+        generalItemViewModel.setFilterStatus(null);
+        generalItemViewModel.setSortOrder("DESC");
+        recyclerView.scrollToPosition(0);
+    }
+
+    private void filterCheckedItems() {
+        generalItemViewModel.setFilterStatus(null);
+        generalItemViewModel.setFilterCheckedOnly(true);
+        recyclerView.scrollToPosition(0);
     }
 
     private void filterItemsByStatus(ItemStatus status) {
-        LoggerManager.getInstance().log("filterItemsByStatus: Filtro per stato " + status, "DEBUG");
-        // Il filtro per stato è attualmente commentato
-    }
-
-    private void openKeyboard(View view) {
-        InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-        if (imm != null) {
-            imm.showSoftInput(view, InputMethodManager.SHOW_FORCED);
-        }
+        generalItemViewModel.setFilterCheckedOnly(null);
+        generalItemViewModel.setFilterStatus(status);
+        recyclerView.scrollToPosition(0);
     }
 
     @Override

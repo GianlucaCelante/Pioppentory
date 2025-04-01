@@ -1,5 +1,6 @@
 package it.pioppi.database.dao;
 
+import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Delete;
 import androidx.room.Insert;
@@ -15,6 +16,7 @@ import java.util.UUID;
 import it.pioppi.database.entity.ItemEntity;
 import it.pioppi.database.entity.ItemWithDetailAndQuantityTypeEntity;
 import it.pioppi.database.entity.ItemWithDetailEntity;
+import it.pioppi.database.model.ItemStatus;
 
 @Dao
 public interface ItemEntityDao extends BaseDao<ItemEntity> {
@@ -71,4 +73,13 @@ public interface ItemEntityDao extends BaseDao<ItemEntity> {
 
     @Query("UPDATE item SET image_url = :imageUrl WHERE id = :itemId")
     void updateItemImageUrl(UUID itemId, String imageUrl);
+
+    @Query("SELECT * FROM ITEM " +
+            "WHERE (:query IS NULL OR LOWER(name) LIKE '%' || LOWER(:query) || '%') " +
+            "AND (:checkedOnly IS NULL OR checked = :checkedOnly) " +
+            "AND (:status IS NULL OR status = :status) " +
+            "ORDER BY " +
+            "CASE WHEN :ascending = 1 THEN name END ASC, " +
+            "CASE WHEN :ascending = 0 THEN name END DESC")
+    LiveData<List<ItemEntity>> getFilteredItems(String query, Boolean checkedOnly, ItemStatus status, int ascending);
 }

@@ -16,14 +16,17 @@ import it.pioppi.utils.ConstantUtils;
         tableName = ConstantUtils.ITEM_TAG_JOIN_TABLE_NAME,
         primaryKeys = {"item_id", "tag_id"},
         foreignKeys = {
-                @ForeignKey(entity = ItemEntity.class,
+                @ForeignKey(
+                        entity = ItemEntity.class,
                         parentColumns = "id",
-                        childColumns = "item_id"
+                        childColumns = "item_id",
+                        onDelete = ForeignKey.CASCADE
                 ),
-                @ForeignKey(entity = ItemTagEntity.class,
+                @ForeignKey(
+                        entity = ItemTagEntity.class,
                         parentColumns = "id",
-                        childColumns = "tag_id",
-                        onDelete = ForeignKey.CASCADE)
+                        childColumns = "tag_id"
+                )
         },
         indices = {
                 @Index(value = "item_id"),

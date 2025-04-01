@@ -166,15 +166,13 @@ public class EnumAdapter extends RecyclerView.Adapter<EnumAdapter.EnumViewHolder
 
     }
 
-
-
     @Override
     public int getItemCount() {
         return quantityTypesDto.size();
     }
 
     public void setQuantityTypes(List<QuantityTypeDto> quantityTypes) {
-        this.quantityTypesDto = new ArrayList<>(quantityTypes);
+        this.quantityTypesDto = quantityTypes;
         sortQuantityTypes();
         notifyDataSetChanged();
     }

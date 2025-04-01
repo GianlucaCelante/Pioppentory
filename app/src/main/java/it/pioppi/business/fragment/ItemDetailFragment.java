@@ -111,6 +111,29 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         LoggerManager.getInstance().log("onCreateView: Inizio creazione della view", "INFO");
         View view = inflater.inflate(R.layout.fragment_item_detail, container, false);
 
+        if (savedInstanceState != null) {
+            EditText itemNameTextView = view.findViewById(R.id.item_name_card_detail);
+            EditText noteEditText = view.findViewById(R.id.note);
+            EditText barcodeEditText = view.findViewById(R.id.barcode);
+            EditText portionsRequiredOnSaturdayEditText = view.findViewById(R.id.portions_required_on_saturday);
+            EditText portionsRequiredOnSundayEditText = view.findViewById(R.id.portions_required_on_sunday);
+            EditText portionsOnHolidayEditText = view.findViewById(R.id.portions_on_holiday);
+            EditText maxPortionsSoldEditText = view.findViewById(R.id.max_portions_sold);
+
+            itemNameTextView.setText(savedInstanceState.getString("item_name", ""));
+            noteEditText.setText(savedInstanceState.getString("note", ""));
+            barcodeEditText.setText(savedInstanceState.getString("barcode", ""));
+            portionsRequiredOnSaturdayEditText.setText(savedInstanceState.getString("portions_required_on_saturday", ""));
+            portionsRequiredOnSundayEditText.setText(savedInstanceState.getString("portions_required_on_sunday", ""));
+            portionsOnHolidayEditText.setText(savedInstanceState.getString("portions_on_holiday", ""));
+            maxPortionsSoldEditText.setText(savedInstanceState.getString("max_portions_sold", ""));
+
+            // Ripristina la data selezionata, se necessario
+            selectedDateMillis = savedInstanceState.getLong("selectedDateMillis", System.currentTimeMillis());
+            CalendarView deliveryDateCalendarView = view.findViewById(R.id.delivery_date);
+            deliveryDateCalendarView.setDate(selectedDateMillis);
+        }
+
         Bundle bundle = getArguments();
         if (bundle != null) {
             try {
@@ -268,6 +291,32 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
     }
 
     @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+
+        // Salva i valori degli EditText (o altri widget) che l'utente può aver modificato
+        EditText itemNameTextView = requireView().findViewById(R.id.item_name_card_detail);
+        EditText noteEditText = requireView().findViewById(R.id.note);
+        EditText barcodeEditText = requireView().findViewById(R.id.barcode);
+        EditText portionsRequiredOnSaturdayEditText = requireView().findViewById(R.id.portions_required_on_saturday);
+        EditText portionsRequiredOnSundayEditText = requireView().findViewById(R.id.portions_required_on_sunday);
+        EditText portionsOnHolidayEditText = requireView().findViewById(R.id.portions_on_holiday);
+        EditText maxPortionsSoldEditText = requireView().findViewById(R.id.max_portions_sold);
+
+        outState.putString("item_name", itemNameTextView.getText().toString());
+        outState.putString("note", noteEditText.getText().toString());
+        outState.putString("barcode", barcodeEditText.getText().toString());
+        outState.putString("portions_required_on_saturday", portionsRequiredOnSaturdayEditText.getText().toString());
+        outState.putString("portions_required_on_sunday", portionsRequiredOnSundayEditText.getText().toString());
+        outState.putString("portions_on_holiday", portionsOnHolidayEditText.getText().toString());
+        outState.putString("max_portions_sold", maxPortionsSoldEditText.getText().toString());
+
+        // Se necessario, salva anche altri dati (ad esempio, la data selezionata)
+        outState.putLong("selectedDateMillis", selectedDateMillis);
+    }
+
+
+    @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         LoggerManager.getInstance().log("onViewCreated: Vista completata", "INFO");
@@ -406,6 +455,8 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         future.get();
 
         generalItemViewModel.updateItem(finalItem);
+        List<ItemDto> updatedItems = new ArrayList<>(generalItemViewModel.getItems().getValue());
+        generalItemViewModel.setItems(updatedItems);
         generalItemViewModel.updateItemDetail(finalItemDetail);
         generalItemViewModel.setQuantityTypes(finalQuantityTypes);
 
@@ -581,7 +632,7 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
         return recyclerView;
     }
 
-    private void addQuantityType(LayoutInflater inflater, QuantityPurpose purpose) {
+        private void addQuantityType(LayoutInflater inflater, QuantityPurpose purpose) {
         List<QuantityTypeDto> existingQuantityTypes = Objects.requireNonNull(generalItemViewModel.getQuantityTypes().getValue())
                 .stream().filter(q -> q.getPurpose() == purpose).collect(Collectors.toList());
 
@@ -816,7 +867,8 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
     public void onTextChanged() {
         LoggerManager.getInstance().log("onTextChanged: Aggiornamento porzioni totali", "DEBUG");
 
-        if (generalItemViewModel.getItems().getValue() == null || generalItemViewModel.getQuantityTypes().getValue() == null) {
+        if (generalItemViewModel.getItems().getValue() == null ||
+                generalItemViewModel.getQuantityTypes().getValue() == null) {
             LoggerManager.getInstance().log("onTextChanged: items o quantityTypes ancora null, uscita anticipata", "WARN");
             return;
         }
@@ -825,29 +877,32 @@ public class ItemDetailFragment extends Fragment implements EnumAdapter.OnItemLo
                 .filter(item -> item.getId().equals(itemId))
                 .findFirst()
                 .orElse(null);
-        
+
+        // Ottieni la lista dei QuantityType che è già aggiornata (gli oggetti sono gli stessi modificati dai TextWatcher)
+        List<QuantityTypeDto> quantityTypeDtos = generalItemViewModel.getQuantityTypes().getValue();
+
+        // Calcola i totali in base allo stato attuale della lista
+        Long totPortionsAvailable = ItemDetailFragmentManager.calculateTotPortions(quantityTypeDtos, QuantityPurpose.AVAILABLE);
+        Long totPortionsToBeOrdered = ItemDetailFragmentManager.calculateTotPortions(quantityTypeDtos, QuantityPurpose.TO_BE_ORDERED);
+        long totPortionsAvailablePlusOrdered = totPortionsAvailable + totPortionsToBeOrdered;
+
         TextView totPortionsAvailableTextView = requireView().findViewById(R.id.tot_portions_avalaible);
         TextView totPortionsToBeOrderedTextView = requireView().findViewById(R.id.tot_portions_to_be_ordered);
         TextView totPortionsAvailablePlusOrderedTextView = requireView().findViewById(R.id.tot_portions_avalaible_plus_ordered);
         TextView portionsPerWeekendTextView = requireView().findViewById(R.id.portions_per_weekend);
-        CardView itemNameAndTotPortionsCardView = requireView().findViewById(R.id.item_name_tot_portions);
-
-        List<QuantityTypeDto> quantityTypeDtos = generalItemViewModel.getQuantityTypes().getValue();
-        Long totPortionsAvailable = calculateTotPortions(Objects.requireNonNull(quantityTypeDtos), QuantityPurpose.AVAILABLE);
-        Long totPortionsToBeOrdered = calculateTotPortions(quantityTypeDtos, QuantityPurpose.TO_BE_ORDERED);
-        long totPortionsAvailablePlusOrdered = totPortionsAvailable + totPortionsToBeOrdered;
-
         totPortionsAvailableTextView.setText(String.valueOf(totPortionsAvailable));
         totPortionsToBeOrderedTextView.setText(String.valueOf(totPortionsToBeOrdered));
         totPortionsAvailablePlusOrderedTextView.setText(String.valueOf(totPortionsAvailablePlusOrdered));
 
+        // Aggiorna lo stato dell'item (e il colore della card) in base al totale
         int portionsPerWeekend = Integer.parseInt(portionsPerWeekendTextView.getText().toString().isEmpty() ? "0" : portionsPerWeekendTextView.getText().toString());
-
         if (totPortionsAvailablePlusOrdered >= portionsPerWeekend) {
             Objects.requireNonNull(itemDto).setStatus(ItemStatus.GREEN);
+            CardView itemNameAndTotPortionsCardView = requireView().findViewById(R.id.item_name_tot_portions);
             itemNameAndTotPortionsCardView.setCardBackgroundColor(ContextCompat.getColor(requireView().getContext(), R.color.green));
         } else {
             Objects.requireNonNull(itemDto).setStatus(ItemStatus.RED);
+            CardView itemNameAndTotPortionsCardView = requireView().findViewById(R.id.item_name_tot_portions);
             itemNameAndTotPortionsCardView.setCardBackgroundColor(ContextCompat.getColor(requireView().getContext(), R.color.red));
         }
     }

@@ -6,18 +6,25 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context=".business.fragment.ItemFragment">
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recycler_view_items"
-        tools:listitem="@layout/card_item"
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefreshLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:padding="8dp"
-        app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
-        app:spanCount="6"
-        android:clipToPadding="false"
-        android:clipChildren="false"
-        android:overScrollMode="never"
-        android:scrollbars="vertical" />
+        tools:context=".business.fragment.ItemFragment">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler_view_items"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="8dp"
+            app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+            app:spanCount="6"
+            android:clipToPadding="false"
+            android:clipChildren="false"
+            android:overScrollMode="never"
+            android:scrollbars="vertical" />
+
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/new_item_fab"
@@ -26,9 +33,6 @@
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
         android:src="@drawable/plus_icon"
-
-        android:contentDescription="CREA"
-        />
-
+        android:contentDescription="CREA" />
 
 </FrameLayout>

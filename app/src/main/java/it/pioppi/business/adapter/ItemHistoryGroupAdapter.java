@@ -67,6 +67,7 @@ public class ItemHistoryGroupAdapter extends RecyclerView.Adapter<ItemHistoryGro
                         String fileName = group.getInventoryClosureDate() + SUFFIX_FILE_NAME;
 
                         if (googleDriveManager != null) {
+                            Toast.makeText(v.getContext(), "Caricamento in corso...", Toast.LENGTH_SHORT).show();
                             googleDriveManager.uploadFile(fileName, csvContent, v.getContext(), GoogleDriveManager.MIME_TYPE_CSV);
                         } else {
                             Toast.makeText(v.getContext(), "Google Drive non è inizializzato", Toast.LENGTH_SHORT).show();

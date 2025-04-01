@@ -95,8 +95,8 @@ CREATE TABLE IF NOT EXISTS `ITEM_TAG_JOIN` (
     `item_id` TEXT NOT NULL,
     `tag_id` TEXT NOT NULL,
     PRIMARY KEY (`item_id`, `tag_id`),
-    FOREIGN KEY (`item_id`) REFERENCES `ITEM`(`id`) ON DELETE NO ACTION,
-    FOREIGN KEY (`tag_id`) REFERENCES `ITEM_TAG`(`id`) ON DELETE CASCADE
+    FOREIGN KEY (`item_id`) REFERENCES `ITEM`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`tag_id`) REFERENCES `ITEM_TAG`(`id`) ON DELETE NO ACTION
 );
 
 -- Creazione degli indici
