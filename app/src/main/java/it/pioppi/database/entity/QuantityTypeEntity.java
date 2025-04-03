@@ -11,9 +11,9 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 
+import it.pioppi.database.model.QuantityTypeEnum;
 import it.pioppi.utils.ConstantUtils;
 import it.pioppi.database.model.QuantityPurpose;
-import it.pioppi.database.model.QuantityType;
 
 @Entity(
         tableName = ConstantUtils.QUANTITY_TYPE_TABLE_NAME,
@@ -32,7 +32,7 @@ public class QuantityTypeEntity extends BaseEntity {
     @ColumnInfo(name = "id")
     private UUID id;
     @ColumnInfo(name = "quantity_type")
-    private QuantityType quantityType;
+    private QuantityTypeEnum quantityTypeEnum;
     @ColumnInfo(name = "quantity_type_description")
     private String quantityTypeDescription;
     @ColumnInfo(name = "quantity_type_available")
@@ -45,10 +45,10 @@ public class QuantityTypeEntity extends BaseEntity {
     private UUID itemId;
 
     @Ignore
-    public QuantityTypeEntity(@NotNull UUID id, QuantityType quantityType, String quantityTypeDescription, Integer quantityTypeAvailable, QuantityPurpose purpose, Integer unitsPerQuantityType, UUID itemId) {
+    public QuantityTypeEntity(@NotNull UUID id, QuantityTypeEnum quantityTypeEnum, String quantityTypeDescription, Integer quantityTypeAvailable, QuantityPurpose purpose, Integer unitsPerQuantityType, UUID itemId) {
         super();
         this.id = id;
-        this.quantityType = quantityType;
+        this.quantityTypeEnum = quantityTypeEnum;
         this.quantityTypeDescription = quantityTypeDescription;
         this.quantityTypeAvailable = quantityTypeAvailable;
         this.purpose = purpose;
@@ -66,12 +66,12 @@ public class QuantityTypeEntity extends BaseEntity {
         this.id = id;
     }
 
-    public QuantityType getQuantityType() {
-        return quantityType;
+    public QuantityTypeEnum getQuantityTypeEnum() {
+        return quantityTypeEnum;
     }
 
-    public void setQuantityType(QuantityType quantityType) {
-        this.quantityType = quantityType;
+    public void setQuantityTypeEnum(QuantityTypeEnum quantityTypeEnum) {
+        this.quantityTypeEnum = quantityTypeEnum;
     }
 
     public String getQuantityTypeDescription() {

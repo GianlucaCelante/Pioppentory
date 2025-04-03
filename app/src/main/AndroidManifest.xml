@@ -23,7 +23,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:enableOnBackInvokedCallback="true"
-        android:theme="@style/Theme.Inventario">
+        android:theme="@style/Theme.MaterialComponents.Light.NoActionBar">
 
 
         <activity

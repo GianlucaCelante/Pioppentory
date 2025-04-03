@@ -11,8 +11,11 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
+import it.pioppi.business.dto.history.ItemHistoryDto;
 import it.pioppi.utils.DateTimeUtils;
 import it.pioppi.R;
 import it.pioppi.business.dto.history.ItemHistoryGroupDto;
@@ -47,8 +50,10 @@ public class ItemHistoryGroupAdapter extends RecyclerView.Adapter<ItemHistoryGro
         ItemHistoryGroupDto group = groupList.get(position);
         holder.textViewDate.setText(DateTimeUtils.formatForDisplay(group.getInventoryClosureDate()));
 
-        // Configura il RecyclerView figlio
-        ItemHistoryItemAdapter entryAdapter = new ItemHistoryItemAdapter(group.getItemHistories());
+        List<ItemHistoryDto> itemHistories = group.getItemHistories();
+        itemHistories.sort(Comparator.comparing(ItemHistoryDto::getItemName));
+
+        ItemHistoryItemAdapter entryAdapter = new ItemHistoryItemAdapter(itemHistories);
         holder.recyclerViewItems.setLayoutManager(new LinearLayoutManager(holder.recyclerViewItems.getContext(), LinearLayoutManager.HORIZONTAL, false));
         holder.recyclerViewItems.setAdapter(entryAdapter);
 

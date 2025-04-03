@@ -18,11 +18,17 @@
             android:layout_height="match_parent"
             android:padding="8dp"
             app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
-            app:spanCount="6"
+            app:spanCount="5"
             android:clipToPadding="false"
             android:clipChildren="false"
             android:overScrollMode="never"
-            android:scrollbars="vertical" />
+            android:scrollbars="vertical"
+            android:scrollbarThumbVertical="@android:color/darker_gray"
+            android:scrollbarSize="8dp"
+            android:fadeScrollbars="false"
+            android:scrollbarStyle="outsideInset"
+            android:background="@color/white"
+            tools:listitem="@layout/card_item"/>
 
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 

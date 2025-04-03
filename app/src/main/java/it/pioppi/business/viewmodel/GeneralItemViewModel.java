@@ -195,16 +195,34 @@ public class GeneralItemViewModel extends ViewModel {
         quantityTypes.setValue(types);
     }
 
+    public void updateQuantityTypes(List<QuantityTypeDto> finalQuantityTypes) {
+
+        List<QuantityTypeDto> currentTypes = quantityTypes.getValue();
+        if (currentTypes != null) {
+            for (QuantityTypeDto type : finalQuantityTypes) {
+                updateQuantityType(type);
+            }
+        } else {
+            quantityTypes.setValue(finalQuantityTypes);
+        }
+
+    }
+
     public void updateQuantityType(QuantityTypeDto updatedType) {
         List<QuantityTypeDto> currentTypes = quantityTypes.getValue();
         if (currentTypes != null) {
+            boolean found = false;
             for (int i = 0; i < currentTypes.size(); i++) {
                 if (currentTypes.get(i).getId().equals(updatedType.getId())) {
                     currentTypes.set(i, updatedType);
-                    quantityTypes.setValue(currentTypes);
+                    found = true;
                     break;
                 }
             }
+            if (!found) {
+                currentTypes.add(updatedType);
+            }
+            quantityTypes.setValue(currentTypes);
         }
     }
 
@@ -228,4 +246,5 @@ public class GeneralItemViewModel extends ViewModel {
                 .findFirst()
                 .ifPresent(item -> item.setImageUrl(imageUrl));
     }
+
 }

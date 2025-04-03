@@ -4,22 +4,25 @@
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="8dp">
+    android:padding="2dp">
 
+    <!-- MaterialCardView con il contenuto dell'item -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/card_item"
-        android:layout_width="130dp"
+        android:layout_width="120dp"
         android:layout_height="220dp"
         android:layout_margin="1dp"
         app:cardCornerRadius="16dp"
         app:cardElevation="4dp">
 
+        <!-- Contenuto della card -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical"
             android:layout_margin="4dp">
 
+            <!-- Riga superiore: data e indicatore nota -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -32,53 +35,49 @@
                     android:layout_height="wrap_content"
                     android:textStyle="bold"
                     android:layout_margin="2dp"
-                    android:layout_weight="4"/>
+                    android:layout_weight="4" />
 
                 <ImageView
                     android:id="@+id/has_note"
                     android:layout_width="2dp"
-                    android:layout_height="10dp"
+                    android:layout_height="match_parent"
                     android:layout_weight="1"
                     android:src="@drawable/red_asterisk"
                     android:layout_marginEnd="4dp"
-                    android:layout_marginTop="4dp">
-
-                </ImageView>
-
+                    android:layout_marginTop="4dp" />
             </LinearLayout>
 
+            <!-- Contenuto centrale: nome, immagine e porzioni -->
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:orientation="vertical"
                 android:weightSum="5"
                 android:layout_margin="4dp">
 
-            <TextView
-                android:id="@+id/item_name_card"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:textColor="@android:color/black"
-                android:gravity="center"
-                android:textAlignment="center"
-                android:layout_margin="2dp"
-                android:layout_weight="1"
-                android:breakStrategy="simple"/>
+                <TextView
+                    android:id="@+id/item_name_card"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="@android:color/black"
+                    android:textAlignment="center"
+                    android:layout_margin="2dp"
+                    android:layout_weight="1"
+                    android:breakStrategy="simple" />
 
                 <ImageView
                     android:id="@+id/item_image"
                     android:layout_width="match_parent"
                     android:layout_height="0dp"
-                    android:layout_weight="4">
-
-                </ImageView>
+                    android:layout_weight="4" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:orientation="horizontal">
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_gravity="bottom">
 
                     <TextView
                         android:id="@+id/item_count_string"
@@ -87,21 +86,89 @@
                         android:text="@string/tot_portions_ita"
                         android:textSize="14sp"
                         android:textColor="@android:color/darker_gray"
-                        android:layout_marginEnd="8dp"/>
+                        android:layout_marginEnd="8dp" />
 
                     <TextView
                         android:id="@+id/tot_portions"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:textSize="14sp"
-                        android:textColor="@android:color/darker_gray"/>
-
+                        android:textColor="@android:color/darker_gray" />
                 </LinearLayout>
             </LinearLayout>
-
-
         </LinearLayout>
 
-    </com.google.android.material.card.MaterialCardView>
 
+
+    </com.google.android.material.card.MaterialCardView>
+    <LinearLayout
+        android:id="@+id/quantity_type_section"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="4dp">
+
+        <!-- Pulsante per decrementare la quantità -->
+        <ImageButton
+            android:id="@+id/btn_decrease_quantity"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/minus_icon"
+            android:background="@drawable/round_corners"
+            android:scaleType="centerInside"/>
+
+        <LinearLayout
+            android:id="@+id/quantity_type_container"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="2dp">
+
+            <!-- Nome del quantity type -->
+            <TextView
+                android:id="@+id/tv_quantity_type"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Unknown"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:gravity="center" />
+
+            <!-- Quantità attuale -->
+            <TextView
+                android:id="@+id/tv_quantity_value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
+
+        <!-- Pulsante per incrementare la quantità -->
+        <ImageButton
+            android:id="@+id/btn_increase_quantity"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/plus_icon"
+            android:background="@drawable/round_corners"
+            android:scaleType="centerInside"/>
+    </LinearLayout>
+
+    <!-- Dot indicator per il feedback visivo -->
+    <LinearLayout
+        android:id="@+id/dots_indicator"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="2dp"
+        android:gravity="center"
+        android:clickable="false">
+
+    </LinearLayout>
 </LinearLayout>

@@ -2,6 +2,7 @@ package it.pioppi.business.fragment;
 
 import android.app.SearchManager;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.view.LayoutInflater;
@@ -12,12 +13,16 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.widget.PopupMenu;
 import androidx.appcompat.widget.SearchView;
 import androidx.core.view.MenuProvider;
 import androidx.fragment.app.Fragment;
@@ -52,6 +57,8 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import it.pioppi.business.dto.item.quantity.QuantityTypeDto;
+import it.pioppi.business.manager.ItemUtilityManager;
+import it.pioppi.database.model.QuantityPurpose;
 import it.pioppi.utils.ConstantUtils;
 import it.pioppi.R;
 import it.pioppi.business.adapter.PreviewItemsAdapter;
@@ -73,7 +80,7 @@ import it.pioppi.database.entity.QuantityTypeEntity;
 import it.pioppi.database.repository.ItemEntityRepository;
 import it.pioppi.utils.LoggerManager;
 
-public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickListener, ItemAdapter.OnLongItemClickListener, Searchable {
+public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickListener, ItemAdapter.OnItemLongClickListener, ItemAdapter.OnQuantityTypeChangeListener, Searchable {
 
     private AppDatabase appDatabase;
     private ItemAdapter itemAdapter;
@@ -97,6 +104,7 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
             List<ItemDto> itemDtoList = loadItems();
             List<ItemDetailDto> itemDetailDtoList = loadItemDetails();
             List<ItemTagJoinDto> itemTagJoinDtoList = loadItemTagJoin();
+            List<QuantityTypeDto> quantityTypeDtoList = loadQuantityTypes();
             Map<UUID, Set<UUID>> itemTagJoinMap = new HashMap<>();
             for (ItemTagJoinDto join : itemTagJoinDtoList) {
                 itemTagJoinMap.computeIfAbsent(join.getTagId(), k -> new HashSet<>()).add(join.getItemId());
@@ -104,6 +112,7 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
             generalItemViewModel.setItemTagJoins(itemTagJoinMap);
             generalItemViewModel.setItems(itemDtoList);
             generalItemViewModel.setItemDetails(itemDetailDtoList);
+            generalItemViewModel.setQuantityTypes(quantityTypeDtoList);
             LoggerManager.getInstance().log("onCreate: Items e ItemDetails caricati. Items: " + itemDtoList.size() + ", ItemDetails: " + itemDetailDtoList.size(), "DEBUG");
         } catch (ExecutionException | InterruptedException e) {
             LoggerManager.getInstance().logException(e);
@@ -135,22 +144,28 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
             LoggerManager.getInstance().log("onRefresh: Inizio refresh items", "DEBUG");
 
             List<ItemDto> refreshedItems;
+            List<ItemDetailDto> refreshedItemDetails;
+            List<QuantityTypeDto> refreshedQuantityTypes;
             try {
                 refreshedItems = loadItems();
+                refreshedItemDetails = loadItemDetails();
+                refreshedQuantityTypes = loadQuantityTypes();
             } catch (ExecutionException | InterruptedException e) {
                 throw new RuntimeException(e);
             }
             requireActivity().runOnUiThread(() -> {
-                // Aggiorna solo il ViewModel
+
                 generalItemViewModel.setItems(refreshedItems);
-                // Termina l'animazione del refresh
+                generalItemViewModel.setItemDetails(refreshedItemDetails);
+                generalItemViewModel.setQuantityTypes(refreshedQuantityTypes);
+
                 swipeRefreshLayout.setRefreshing(false);
                 LoggerManager.getInstance().log("onRefresh: Refresh completato", "DEBUG");
             });
         });
 
         recyclerView = view.findViewById(R.id.recycler_view_items);
-        itemAdapter = new ItemAdapter(new ArrayList<>(), this, this, getContext());
+        itemAdapter = new ItemAdapter(new ArrayList<>(), this, this, this, getContext());
 
         generalItemViewModel.getFilteredItems().observe(getViewLifecycleOwner(), itemList -> {
             itemAdapter.setItemList(itemList);
@@ -163,9 +178,13 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
             });
             recyclerView.setLayoutManager(layoutManager);
             recyclerView.setHasFixedSize(true);
+            recyclerView.setVerticalScrollBarEnabled(true);
+            recyclerView.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
             recyclerView.setAdapter(itemAdapter);
         });
 
+        generalItemViewModel.getQuantityTypes().observe(getViewLifecycleOwner(), quantityTypeList -> itemAdapter.setQuantityTypes(quantityTypeList));
+        generalItemViewModel.getItemDetails().observe(getViewLifecycleOwner(), itemDetailList -> itemAdapter.setItemDetails(itemDetailList));
         setupMenuToolbar();
 
         FloatingActionButton fab = view.findViewById(R.id.new_item_fab);
@@ -182,6 +201,7 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
     @Override
     public void onResume() {
         super.onResume();
+        itemAdapter.setQuantityTypes(generalItemViewModel.getQuantityTypes().getValue());
         itemAdapter.notifyDataSetChanged();
     }
 
@@ -246,15 +266,28 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
     }
 
     private void previewItems() {
+
         LoggerManager.getInstance().log("previewItems: Inizio preview items", "DEBUG");
+
         List<ItemDto> checkedItems = Objects.requireNonNull(generalItemViewModel.getItems().getValue()).stream()
                 .filter(ItemDto::isChecked)
                 .collect(Collectors.toList());
+
         if (checkedItems.isEmpty()) {
             Toast.makeText(getContext(), "Non ci sono elementi modificati.", Toast.LENGTH_SHORT).show();
             LoggerManager.getInstance().log("Toast: Non ci sono elementi modificati", "INFO");
             return;
         }
+
+        for (ItemDto item : checkedItems) {
+            List<QuantityTypeDto> quantityTypeDtos = Objects.requireNonNull(generalItemViewModel.getQuantityTypes().getValue()).stream()
+                    .filter(q -> q.getItemId().equals(item.getId()))
+                    .collect(Collectors.toList());
+
+            Long totPortions = ItemUtilityManager.calculateTotPortions(quantityTypeDtos, QuantityPurpose.AVAILABLE);
+            item.setTotPortions(totPortions);
+        }
+
         showPreviewDialog(checkedItems);
     }
 
@@ -334,12 +367,13 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                     historyRecord.setPortionsPerWeekend(Long.valueOf(itemEntity.itemDetail.getPortionsPerWeekend()));
                     historyRecord.setDeliveryDate(LocalDate.from(itemEntity.itemDetail.getDeliveryDate()));
                     historyRecord.setProviderName(providerEntity != null ? providerEntity.getName() : null);
-                    historyRecord.setNote(item.getNote());
+                    historyRecord.setNote(item.getNote() != null ? item.getNote() : "");
                     historyRecord.setCreationDate(closureDate);
                     historyRecord.setLastUpdate(closureDate);
                     appDatabase.itemHistoryEntityDao().upsert(historyRecord);
                 }
             } catch (Exception e) {
+                LoggerManager.getInstance().logException(e);
                 requireActivity().runOnUiThread(() -> Toast.makeText(getContext(), "Errore durante il salvataggio: " + e.getMessage(), Toast.LENGTH_SHORT).show());
             }
         });
@@ -387,27 +421,19 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                         itemDetailEntity.setId(UUID.randomUUID());
                         itemDetailEntity.setItemId(itemId);
                         itemDetailEntity.setCreationDate(now);
-                        QuantityTypeEntity quantityTypeEntity = new QuantityTypeEntity();
-                        quantityTypeEntity.setId(UUID.randomUUID());
-                        quantityTypeEntity.setItemId(itemId);
-                        quantityTypeEntity.setCreationDate(now);
                         appDatabase.runInTransaction(() -> {
                             try {
                                 appDatabase.itemEntityDao().insert(newItem);
                                 appDatabase.itemDetailEntityDao().insert(itemDetailEntity);
-                                appDatabase.quantityTypeEntityDao().insert(quantityTypeEntity);
                             } catch (Exception e) {
                                 throw new RuntimeException(e);
                             }
                         });
                         List<ItemDto> currentItems = generalItemViewModel.getItems().getValue();
                         List<ItemDetailDto> currentDetails = generalItemViewModel.getItemDetails().getValue();
-                        List<QuantityTypeDto> currentQuantityTypes = generalItemViewModel.getQuantityTypes().getValue() != null ? generalItemViewModel.getQuantityTypes().getValue() : new ArrayList<>();
-
 
                         Objects.requireNonNull(currentItems).add(EntityDtoMapper.entityToDto(newItem));
                         Objects.requireNonNull(currentDetails).add(EntityDtoMapper.detailEntityToDto(itemDetailEntity));
-                        Objects.requireNonNull(currentQuantityTypes).add(EntityDtoMapper.entityToDto(quantityTypeEntity));
 
                         requireActivity().runOnUiThread(() -> {
                             LoggerManager.getInstance().log("addNewItem: Nuovo item aggiunto", "INFO");
@@ -415,7 +441,6 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                             currentItems.sort(Comparator.comparing(ItemDto::getName, String.CASE_INSENSITIVE_ORDER));
                             generalItemViewModel.setItems(currentItems);
                             generalItemViewModel.setItemDetails(currentDetails);
-                            generalItemViewModel.setQuantityTypes(currentQuantityTypes);
 
                             itemAdapter.setItemList(currentItems);
                             NavController navController = NavHostFragment.findNavController(this);
@@ -462,6 +487,20 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
         return itemDetailDtos;
     }
 
+    private List<QuantityTypeDto> loadQuantityTypes() throws ExecutionException, InterruptedException {
+        LoggerManager.getInstance().log("loadQuantityTypes: Caricamento quantity types", "DEBUG");
+        List<QuantityTypeDto> quantityTypeDtos = new ArrayList<>();
+        Future<?> future = executorService.submit(() -> {
+            List<QuantityTypeEntity> quantityTypeEntities = appDatabase.quantityTypeEntityDao().getAll();
+            quantityTypeEntities.forEach(quantityTypeEntity -> {
+                QuantityTypeDto quantityTypeDto = EntityDtoMapper.entityToDto(quantityTypeEntity);
+                quantityTypeDtos.add(quantityTypeDto);
+            });
+        });
+        future.get();
+        return quantityTypeDtos;
+    }
+
     @Override
     public void onDestroy() {
         super.onDestroy();
@@ -487,30 +526,80 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
     }
 
     @Override
-    public void onLongItemClick(ItemDto itemDto) {
-        new AlertDialog.Builder(requireContext())
-                .setTitle("Conferma eliminazione")
-                .setMessage("Sei sicuro di voler eliminare questo elemento?")
-                .setPositiveButton("Elimina", (dialog, which) -> {
-                    try {
-                        ItemEntity itemEntity = EntityDtoMapper.dtoToEntity(itemDto);
-                        itemEntityRepository.delete(itemEntity);
-                        requireActivity().runOnUiThread(() -> {
-                            Parcelable recyclerViewState = recyclerView.getLayoutManager().onSaveInstanceState();
+    public void onItemLongClick(ItemDto item, View anchor) {
+        PopupMenu popup = new PopupMenu(requireContext(), anchor);
+        // Aggiungi le opzioni al menu
+        popup.getMenu().add("Deseleziona elemento");
+        popup.getMenu().add("Elimina");
 
-                            generalItemViewModel.removeItem(itemDto);
+        popup.setOnMenuItemClickListener(menuItem -> {
+            if (menuItem.getTitle().equals("Deseleziona elemento")) {
 
-                            recyclerView.getLayoutManager().onRestoreInstanceState(recyclerViewState);
-                            Toast.makeText(getContext(), "Elemento eliminato", Toast.LENGTH_SHORT).show();
-                        });
-                    } catch (Exception e) {
-                        requireActivity().runOnUiThread(() ->
-                                Toast.makeText(getContext(), "Errore durante l'eliminazione", Toast.LENGTH_SHORT).show()
-                        );
-                    }
-                })
-                .setNegativeButton("Annulla", null)
-                .show();
+                SharedPreferences prefs = requireContext().getSharedPreferences(ConstantUtils.MY_APP_PREFS, Context.MODE_PRIVATE);
+                boolean skipDeselectionConfirmation = prefs.getBoolean("skip_deselection_confirmation", false);
+                if (skipDeselectionConfirmation) {
+                    performDeselection(item);
+                } else {
+
+                    LayoutInflater inflater = LayoutInflater.from(requireContext());
+                    View dialogView = inflater.inflate(R.layout.dialog_confirm_deselection, null);
+                    CheckBox dontAskAgain = dialogView.findViewById(R.id.checkbox_no_confirmation);
+
+                    new AlertDialog.Builder(requireContext())
+                            .setTitle("Conferma Deselezione")
+                            .setView(dialogView)
+                            .setPositiveButton("Conferma", (dialog1, which1) -> {
+                                if (dontAskAgain.isChecked()) {
+                                    prefs.edit().putBoolean("skip_deselection_confirmation", true).apply();
+                                }
+                                performDeselection(item);
+                            })
+                            .setNegativeButton("Annulla", null)
+                            .show();
+                }
+            } else if (menuItem.getTitle().equals("Elimina")) {
+                new AlertDialog.Builder(requireContext())
+                        .setTitle("Conferma Eliminazione")
+                        .setMessage("Sei sicuro di voler eliminare questo elemento?")
+                        .setPositiveButton("Elimina", (dialog1, which1) -> {
+                            performDeletion(item);
+                        })
+                        .setNegativeButton("Annulla", null)
+                        .show();
+            }
+            return true;
+        });
+        popup.show();
+    }
+
+    private void performDeselection(ItemDto item) {
+        item.setChecked(false);
+        executorService.submit(() -> {
+            ItemEntity itemEntity = EntityDtoMapper.dtoToEntity(item);
+            appDatabase.itemEntityDao().update(itemEntity);
+        });
+        requireActivity().runOnUiThread(() -> {
+            itemAdapter.notifyDataSetChanged();
+            Toast.makeText(getContext(), "Elemento deselezionato", Toast.LENGTH_SHORT).show();
+        });
+    }
+
+    private void performDeletion(ItemDto item) {
+        try {
+            ItemEntity itemEntity = EntityDtoMapper.dtoToEntity(item);
+            itemEntityRepository.delete(itemEntity);
+            requireActivity().runOnUiThread(() -> {
+                Parcelable recyclerViewState = Objects.requireNonNull(recyclerView.getLayoutManager()).onSaveInstanceState();
+                generalItemViewModel.removeItem(item);
+                itemAdapter.notifyDataSetChanged();
+                recyclerView.getLayoutManager().onRestoreInstanceState(recyclerViewState);
+                Toast.makeText(getContext(), "Elemento eliminato", Toast.LENGTH_SHORT).show();
+            });
+        } catch (Exception e) {
+            requireActivity().runOnUiThread(() ->
+                    Toast.makeText(getContext(), "Errore durante l'eliminazione", Toast.LENGTH_SHORT).show()
+            );
+        }
     }
 
     private void filterItemsByNameAscending() {
@@ -543,5 +632,32 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
     public void onSearchQueryChanged(String query) {
         LoggerManager.getInstance().log("onSearchQueryChanged: Query cambiata: " + query, "DEBUG");
         generalItemViewModel.setQuery(query);
+    }
+
+    @Override
+    public void onQuantityTypeChanged(QuantityTypeDto updatedQuantityType) {
+
+        ItemDto itemDto = generalItemViewModel.getItems().getValue().stream()
+                .filter(item -> item.getId().equals(updatedQuantityType.getItemId()))
+                .findFirst()
+                .orElse(null);
+
+        List<QuantityTypeDto> globalQuantityTypes = generalItemViewModel.getQuantityTypes().getValue();
+        if (globalQuantityTypes != null) {
+            for (int i = 0; i < globalQuantityTypes.size(); i++) {
+                if (globalQuantityTypes.get(i).getId().equals(updatedQuantityType.getId())) {
+                    globalQuantityTypes.set(i, updatedQuantityType);
+                    break;
+                }
+            }
+            generalItemViewModel.setQuantityTypes(globalQuantityTypes);
+
+        }
+
+        executorService.execute(() -> {
+            QuantityTypeEntity updatedEntity = EntityDtoMapper.dtoToEntity(updatedQuantityType);
+            appDatabase.quantityTypeEntityDao().upsert(updatedEntity);
+            appDatabase.itemEntityDao().update(EntityDtoMapper.dtoToEntity(itemDto));
+        });
     }
 }

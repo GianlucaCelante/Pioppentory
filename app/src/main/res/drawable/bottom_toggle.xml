@@ -1,0 +1,7 @@
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <!-- Imposta il colore grigio desiderato -->
+    <solid android:color="#D3D3D3" />
+    <!-- Arrotonda tutti gli angoli con lo stesso raggio usato nella card -->
+    <corners android:radius="16dp"/>
+</shape>

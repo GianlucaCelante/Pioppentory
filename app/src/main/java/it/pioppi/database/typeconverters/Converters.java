@@ -10,7 +10,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.UUID;
 
-import it.pioppi.database.model.QuantityType;
+import it.pioppi.database.model.QuantityTypeEnum;
 import it.pioppi.database.model.ItemStatus;
 
 public class Converters {
@@ -76,20 +76,20 @@ public class Converters {
     }
 
     @TypeConverter
-    public static QuantityType toQuantityType(String quantityTypeString) {
+    public static QuantityTypeEnum toQuantityType(String quantityTypeString) {
         if (quantityTypeString == null) {
             return null;
         } else {
-            return QuantityType.valueOf(quantityTypeString);
+            return QuantityTypeEnum.valueOf(quantityTypeString);
         }
     }
 
     @TypeConverter
-    public static String fromQuantityType(QuantityType quantityType) {
-        if (quantityType == null) {
+    public static String fromQuantityType(QuantityTypeEnum quantityTypeEnum) {
+        if (quantityTypeEnum == null) {
             return null;
         } else {
-            return quantityType.name();
+            return quantityTypeEnum.name();
         }
     }
 

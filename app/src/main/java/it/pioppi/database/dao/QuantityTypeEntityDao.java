@@ -8,6 +8,7 @@ import androidx.room.Transaction;
 import androidx.room.Update;
 import androidx.room.Upsert;
 
+import java.util.List;
 import java.util.UUID;
 
 import it.pioppi.database.entity.ItemWithQuantityTypes;
@@ -35,5 +36,8 @@ public interface QuantityTypeEntityDao extends BaseDao<QuantityTypeEntity> {
     @Transaction
     @Query("SELECT * FROM item WHERE id = :itemId")
     ItemWithQuantityTypes getItemWithQuantityTypes(UUID itemId);
+
+    @Query("SELECT * FROM quantity_type")
+    List<QuantityTypeEntity> getAll();
 
 }

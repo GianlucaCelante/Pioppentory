@@ -20,6 +20,13 @@ public class DateTimeUtils {
         return localDate.format(LOCAL_DATE_TIME_PATTERN);
     }
 
+    public static String formatForDisplayToDate(ZonedDateTime date) {
+        if (date == null) return "";
+
+        ZonedDateTime localDate = date.withZoneSameInstant(ZoneId.of(ConstantUtils.ZONE_ID));
+        return localDate.format(LOCAL_DATE_PATTERN);
+    }
+
     public static String formatForDisplay(LocalDate date) {
         if (date == null) return "";
 

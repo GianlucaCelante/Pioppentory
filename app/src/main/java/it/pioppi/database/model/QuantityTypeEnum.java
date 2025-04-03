@@ -1,6 +1,6 @@
 package it.pioppi.database.model;
 
-public enum QuantityType {
+public enum QuantityTypeEnum {
 
     STRATO("Strato"),
     CARTONE("Cartone"),
@@ -13,7 +13,7 @@ public enum QuantityType {
 
     private final String description;
 
-    QuantityType(String description) {
+    QuantityTypeEnum(String description) {
         this.description = description;
     }
 

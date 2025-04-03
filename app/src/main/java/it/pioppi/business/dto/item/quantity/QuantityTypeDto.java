@@ -4,12 +4,12 @@ import java.time.ZonedDateTime;
 import java.util.UUID;
 
 import it.pioppi.database.model.QuantityPurpose;
-import it.pioppi.database.model.QuantityType;
+import it.pioppi.database.model.QuantityTypeEnum;
 
 public class QuantityTypeDto {
 
     private UUID id;
-    private QuantityType quantityType;
+    private QuantityTypeEnum quantityTypeEnum;
     private String description;
     private Integer quantity;
     private QuantityPurpose purpose;
@@ -18,11 +18,11 @@ public class QuantityTypeDto {
     private ZonedDateTime lastUpdateDate;
     private UUID itemId;
 
-    public QuantityTypeDto(UUID id, QuantityType quantityType, String description,
+    public QuantityTypeDto(UUID id, QuantityTypeEnum quantityTypeEnum, String description,
                            Integer quantity, QuantityPurpose purpose, Integer unitsPerQuantityType,
                            ZonedDateTime creationDate, ZonedDateTime lastUpdateDate, UUID itemId) {
         this.id = id;
-        this.quantityType = quantityType;
+        this.quantityTypeEnum = quantityTypeEnum;
         this.description = description;
         this.quantity = quantity;
         this.purpose = purpose;
@@ -44,12 +44,12 @@ public class QuantityTypeDto {
         return itemId;
     }
 
-    public QuantityType getQuantityType() {
-        return quantityType;
+    public QuantityTypeEnum getQuantityType() {
+        return quantityTypeEnum;
     }
 
-    public void setQuantityType(QuantityType quantityType) {
-        this.quantityType = quantityType;
+    public void setQuantityType(QuantityTypeEnum quantityTypeEnum) {
+        this.quantityTypeEnum = quantityTypeEnum;
     }
 
     public String getDescription() {

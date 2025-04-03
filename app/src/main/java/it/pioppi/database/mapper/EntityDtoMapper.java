@@ -164,7 +164,7 @@ public class EntityDtoMapper {
         QuantityTypeDto quantityItemDto = new QuantityTypeDto();
         quantityItemDto.setId(quantityTypeEntity.getId());
         quantityItemDto.setItemId(quantityTypeEntity.getItemId());
-        quantityItemDto.setQuantityType(quantityTypeEntity.getQuantityType());
+        quantityItemDto.setQuantityType(quantityTypeEntity.getQuantityTypeEnum());
         quantityItemDto.setDescription(quantityTypeEntity.getQuantityTypeDescription());
         quantityItemDto.setQuantity(quantityTypeEntity.getQuantityTypeAvailable());
         quantityItemDto.setPurpose(quantityTypeEntity.getPurpose());
@@ -192,7 +192,7 @@ public class EntityDtoMapper {
         QuantityTypeEntity quantityTypeEntity = new QuantityTypeEntity();
         quantityTypeEntity.setId(quantityItemDto.getId());
         quantityTypeEntity.setItemId(quantityItemDto.getItemId());
-        quantityTypeEntity.setQuantityType(quantityItemDto.getQuantityType());
+        quantityTypeEntity.setQuantityTypeEnum(quantityItemDto.getQuantityType());
         quantityTypeEntity.setQuantityTypeDescription(quantityItemDto.getDescription());
         quantityTypeEntity.setQuantityTypeAvailable(quantityItemDto.getQuantity());
         quantityTypeEntity.setPurpose(quantityItemDto.getPurpose());

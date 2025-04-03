@@ -4,7 +4,10 @@ import java.util.UUID;
 
 public class ConstantUtils {
 
+    public static final String MY_APP_PREFS = "my_app_prefs";
+
     // DATABASE
+    public static final String DB_NAME = "pioppi";
     public static final String APP_DATABASE = "INVENTORY";
     public static final String ITEM_TABLE_NAME = "ITEM";
     public static final String ITEM_DETAIL_TABLE_NAME = "ITEM_DETAIL";
@@ -40,4 +43,10 @@ public class ConstantUtils {
     // SORTING
     public static final String SORTING_ASCENDING = "ASC";
     public static final String SORTING_DESCENDING = "DESC";
+
+    // SETTINGS
+    public static final String RESET_CHOICES = "Reset conferme popup";
+    public static final String BACKUP_DB = "Backup database";
+    public static final String BLUETOOTH = "Bluetooth";
+
 }

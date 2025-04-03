@@ -1,11 +1,11 @@
 package it.pioppi.business.dto.settings;
 
-public class BasicSettingDto<T> extends BaseSettingDto {
+public class SimpleSettingDto<T> extends BaseSettingDto {
 
     private T value;
 
-    public BasicSettingDto(String name, String description, SettingType type, int icon, T value) {
-        super(name, description, type, icon);
+    public SimpleSettingDto(String name, String description, int icon, T value) {
+        super(name, description, SettingType.BASIC, icon);
         this.value = value;
     }
 
