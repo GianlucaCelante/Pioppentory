@@ -1,3 +1,5 @@
+import com.android.build.api.dsl.Packaging
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
@@ -5,16 +7,28 @@ plugins {
 
 android {
     namespace = "it.pioppi"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "it.pioppi"
         minSdk = 26
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        javaCompileOptions {
+            annotationProcessorOptions {
+                argument("room.schemaLocation", "$projectDir/schemas")
+            }
+        }
+
+        packaging {
+            resources {
+                excludes.add("META-INF/INDEX.LIST")
+                excludes.add("META-INF/DEPENDENCIES")
+            }
+        }
     }
 
     buildTypes {
@@ -43,41 +57,62 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
+    implementation(libs.androidx.activity)
+    implementation(libs.androidx.constraintlayout)
+    implementation(libs.androidx.lifecycle.livedata)
+    implementation(libs.androidx.work.runtime)
+    implementation(libs.androidx.lifecycle.process)
+    implementation(libs.androidx.swiperefreshlayout)
     testImplementation(libs.junit)
+    testImplementation(libs.androidx.core)
+    testImplementation(libs.androidx.work.testing)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-    val room_version = "2.6.1"
 
-    implementation("androidx.room:room-runtime:$room_version")
-    annotationProcessor("androidx.room:room-compiler:$room_version")
+    implementation(libs.androidx.room.runtime)
+    annotationProcessor(libs.androidx.room.compiler)
     // optional - Guava support for Room, including Optional and ListenableFuture
-    implementation("androidx.room:room-guava:$room_version")
+    implementation(libs.androidx.room.guava)
 
     // optional - Test helpers
-    testImplementation("androidx.room:room-testing:$room_version")
+    testImplementation(libs.androidx.room.testing)
 
     // optional - Paging 3 Integration
-    implementation("androidx.room:room-paging:$room_version")
-    implementation ("com.google.android.material:material:1.12.0")
-    implementation ("io.insert-koin:koin-android:3.1.2")
-    implementation("androidx.recyclerview:recyclerview:1.3.2")
+    implementation(libs.androidx.room.paging)
+    implementation (libs.material)
+    implementation (libs.koin.android)
+    implementation(libs.androidx.recyclerview)
     // For control over item selection of both touch and mouse driven selection
-    implementation("androidx.recyclerview:recyclerview-selection:1.1.0")
-
-    val nav_version = "2.7.7"
+    implementation(libs.androidx.recyclerview.selection)
 
     // Java language implementation
-    implementation ("androidx.navigation:navigation-fragment:$nav_version")
-    implementation ("androidx.navigation:navigation-ui:$nav_version")
+    implementation (libs.androidx.navigation.fragment)
+    implementation (libs.androidx.navigation.ui)
 
 
     // Feature module Support
-    implementation ("androidx.navigation:navigation-dynamic-features-fragment:$nav_version")
+    implementation (libs.androidx.navigation.dynamic.features.fragment)
 
     // Testing Navigation
-    androidTestImplementation ("androidx.navigation:navigation-testing:$nav_version")
+    androidTestImplementation (libs.androidx.navigation.testing)
 
     // Jetpack Compose Integration
-    implementation ("androidx.navigation:navigation-compose:$nav_version")
+    implementation (libs.androidx.navigation.compose)
+    implementation (libs.android.logging.log4j)
+
+    // Required -- JUnit 4 framework
+    testImplementation (libs.junit)
+    // Optional -- Mockito framework
+    testImplementation (libs.mockito.core)
+    // Optional -- Mockk framework
+    testImplementation (libs.mockk)
+    implementation (libs.asset.delivery)
+
+    implementation (libs.glide)
+
+    // Google Drive integration
+    implementation(libs.play.services.auth)
+    implementation(libs.google.api.client.android)
+    implementation(libs.google.api.services.drive)
 
 }

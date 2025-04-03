@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/item_container"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp">
+
+    <TextView
+        android:id="@+id/text_item_name"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Item name"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:padding="8dp"
+        android:textAlignment="center"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/remove_item_from_tag_button" />
+
+    <TextView
+        android:id="@+id/text_portions_per_weekend_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="16sp"
+        android:padding="8dp"
+        android:text="Fabbisogno Weekend:"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/text_item_name"
+        app:layout_constraintEnd_toStartOf="@+id/text_portions_per_weekend_value"
+        app:layout_constraintHorizontal_chainStyle="spread" />
+
+
+    <TextView
+        android:id="@+id/text_portions_per_weekend_value"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:textSize="16sp"
+        android:padding="8dp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toEndOf="@id/text_portions_per_weekend_label"
+        app:layout_constraintTop_toBottomOf="@id/text_item_name"
+        app:layout_constraintEnd_toStartOf="@+id/remove_item_from_tag_button" />
+
+    <TextView
+        android:id="@+id/text_tot_portions_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="16sp"
+        android:padding="8dp"
+        android:text="Totale Quantità:"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/text_portions_per_weekend_label"
+        app:layout_constraintEnd_toStartOf="@+id/text_tot_portions_value"
+        app:layout_constraintHorizontal_chainStyle="packed" />
+
+    <TextView
+        android:id="@+id/text_tot_portions_value"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:textSize="16sp"
+        android:padding="8dp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toEndOf="@id/text_tot_portions_label"
+        app:layout_constraintTop_toBottomOf="@id/text_portions_per_weekend_label"
+        app:layout_constraintEnd_toStartOf="@+id/remove_item_from_tag_button" />
+
+    <TextView
+        android:id="@+id/text_last_update_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="16sp"
+        android:padding="8dp"
+        android:text="Ultimo Aggiornamento:"
+        app:layout_constraintTop_toBottomOf="@id/text_tot_portions_value"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/text_last_update_value"/>
+
+    <TextView
+        android:id="@+id/text_last_update_value"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:textSize="16sp"
+        android:padding="8dp"
+        android:textStyle="bold"
+        app:layout_constraintTop_toBottomOf="@id/text_tot_portions_value"
+        app:layout_constraintStart_toEndOf="@id/text_last_update_label"
+        app:layout_constraintEnd_toStartOf="@+id/remove_item_from_tag_button"/>
+
+
+
+    <ImageButton
+        android:id="@+id/remove_item_from_tag_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/minus_icon"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:layout_margin="8dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

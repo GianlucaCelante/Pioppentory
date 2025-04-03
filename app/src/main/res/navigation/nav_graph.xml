@@ -1,6 +1,82 @@
-<?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/nav_graph">
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/itemFragment">
 
+    <fragment
+        android:id="@+id/itemFragment"
+        android:name="it.pioppi.business.fragment.ItemFragment"
+        android:label="Prodotti"
+        tools:layout="@layout/fragment_item" >
+        <action
+            android:id="@+id/action_itemFragment_to_itemDetailFragment"
+            app:destination="@id/itemDetailFragment" />
+        <action
+            android:id="@+id/action_itemFragment_to_itemHistoryFragment"
+            app:destination="@id/itemHistoryFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/itemDetailFragment"
+        android:name="it.pioppi.business.fragment.ItemDetailFragment"
+        android:label="Dettagli prodotto"
+        tools:layout="@layout/fragment_item_detail" >
+        <argument
+            android:name="scannedCode"
+            app:argType="string" />
+        <action
+            android:id="@+id/action_itemDetailFragment_to_itemTagsFragment"
+            app:destination="@id/itemTagsFragment" />
+        <action
+            android:id="@+id/action_itemDetailFragment_to_fullScreenImageDialogFragment"
+            app:destination="@id/fullScreenImageDialogFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/itemTagsFragment"
+        android:name="it.pioppi.business.fragment.ItemTagsFragment"
+        android:label="Tag"
+        tools:layout="@layout/fragment_item_tags">
+        <action
+            android:id="@+id/action_itemTagsFragment_to_itemDetailFragment"
+            app:destination="@id/itemDetailFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/itemHistoryFragment"
+        android:name="it.pioppi.business.fragment.ItemHistoryFragment"
+        android:label="Storico"
+        tools:layout="@layout/fragment_item_history" />
+
+    <fragment
+        android:id="@+id/settingsFragment"
+        android:name="it.pioppi.business.fragment.SettingsFragment"
+        android:label="Impostazioni"
+        tools:layout="@layout/fragment_settings" >
+        <action
+            android:id="@+id/action_settingsFragment_to_bluetoothFragment"
+            app:destination="@id/bluetoothFragment" />
+    </fragment>
+
+    <!-- Azione globale per navigare al ItemDetailFragment -->
+    <action
+        android:id="@+id/action_global_to_itemDetailFragment"
+        app:destination="@id/itemDetailFragment" />
+    <fragment
+        android:id="@+id/bluetoothFragment"
+        android:name="it.pioppi.business.fragment.BluetoothFragment"
+        android:label=""/>
+    <fragment
+        android:id="@+id/driveImageSelectionFragment"
+        android:name="it.pioppi.business.fragment.DriveImageSelectionFragment"
+        android:label="Drive"
+        tools:layout="@layout/fragment_image_selection_from_drive" />
+    <fragment
+        android:id="@+id/fullScreenImageDialogFragment"
+        android:name="it.pioppi.business.fragment.FullScreenImageDialogFragment">
+        <action
+            android:id="@+id/action_fullScreenImageDialogFragment_to_driveImageSelectionFragment"
+            app:destination="@id/driveImageSelectionFragment" />
+    </fragment>
 </navigation>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <!-- Dimensioni del dot -->
+    <size
+        android:width="8dp"
+        android:height="8dp" />
+    <!-- Colore per il dot non selezionato -->
+    <solid android:color="@color/grey_dark" />
+</shape>
