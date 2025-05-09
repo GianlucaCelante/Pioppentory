@@ -1,6 +1,10 @@
 package it.pioppi.business.manager;
 
 import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
+import android.net.NetworkInfo;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -116,6 +120,17 @@ public class GoogleDriveManager {
         LoggerManager.getInstance().log("uploadLog started for file: " + fileName, "INFO");
 
         new Thread(() -> {
+
+            if (!isNetworkAvailable(context)) {
+                new Handler(Looper.getMainLooper()).post(() ->
+                        Toast.makeText(context,
+                                "Nessuna connessione: upload log saltato",
+                                Toast.LENGTH_LONG
+                        ).show()
+                );
+                return;
+            }
+
             // 1) Assicuro che la cartella principale esista
             try {
                 ensureMainFolderExists();
@@ -224,6 +239,16 @@ public class GoogleDriveManager {
         LoggerManager.getInstance().log("uploadFile started for file: " + fileName, "INFO");
 
         new Thread(() -> {
+
+            if (!isNetworkAvailable(context)) {
+                new Handler(Looper.getMainLooper()).post(() ->
+                        Toast.makeText(context,
+                                "Nessuna connessione: upload file saltato",
+                                Toast.LENGTH_LONG
+                        ).show()
+                );
+                return;
+            }
             // 1) Assicuro che la cartella principale esista
             try {
                 ensureMainFolderExists();
@@ -427,6 +452,25 @@ public class GoogleDriveManager {
             return false;
         }
     }
+
+    private boolean isNetworkAvailable(Context context) {
+        ConnectivityManager cm =
+                (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        if (cm == null) return false;
+
+        // Prendo la rete attiva (null se non ce n'è)
+        Network network = cm.getActiveNetwork();
+        if (network == null) return false;
+
+        // Controllo le capability di quella rete
+        NetworkCapabilities caps = cm.getNetworkCapabilities(network);
+        if (caps == null) return false;
+
+        // Verifico che abbia accesso internet (e, opzionale, che sia valida per dati)
+        return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                && caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED);
+    }
+
 
 
 }

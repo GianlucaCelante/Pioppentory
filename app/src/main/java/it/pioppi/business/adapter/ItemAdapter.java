@@ -21,10 +21,13 @@ import com.google.android.material.card.MaterialCardView;
 
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -32,6 +35,7 @@ import it.pioppi.R;
 import it.pioppi.business.dto.item.ItemDto;
 import it.pioppi.business.dto.item.detail.ItemDetailDto;
 import it.pioppi.business.dto.item.quantity.QuantityTypeDto;
+import it.pioppi.business.dto.provider.ProviderDto;
 import it.pioppi.business.manager.ItemUtilityManager;
 import it.pioppi.database.model.QuantityPurpose;
 import it.pioppi.database.model.QuantityTypeEnum;
@@ -62,15 +66,17 @@ public class ItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private final OnQuantityTypeChangeListener quantityTypeChangeListener;
     private final Context context;
     private final Map<UUID, Integer> currentQuantityIndices = new HashMap<>();
+    private boolean groupByProvider = false;
 
 
-    public ItemAdapter(List<ItemDto> itemList, OnItemClickListener listener, OnItemLongClickListener longListener, OnQuantityTypeChangeListener quantityTypeChangeListener, Context context) {
+
+    public ItemAdapter(List<ItemDto> itemList, List<ProviderDto> providers, OnItemClickListener listener, OnItemLongClickListener longListener, OnQuantityTypeChangeListener quantityTypeChangeListener, Context context) {
         this.context = context;
         this.listener = listener;
         this.longListener = longListener;
         this.quantityTypeChangeListener = quantityTypeChangeListener;
         setHasStableIds(true);
-        setItemList(itemList);
+        setItemList(itemList, providers);
     }
 
     private List<Object> generateItemListWithHeaders(List<ItemDto> items) {
@@ -107,15 +113,19 @@ public class ItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         return new ArrayList<>(itemListWithHeaders);
     }
 
-    // Il metodo setItemList rimane invariato
-    public void setItemList(List<ItemDto> itemList) {
-        if (itemList != null) {
-            List<ItemDto> originalItems = new ArrayList<>(itemList);
-            itemListWithHeaders.clear();
-            itemListWithHeaders.addAll(generateItemListWithHeaders(originalItems));
-            notifyDataSetChanged();
+    public void setItemList(List<ItemDto> itemList, List<ProviderDto> allProviders) {
+        if (itemList == null) return;
+        itemListWithHeaders.clear();
+        if (groupByProvider) {
+            // usa il raggruppamento per provider
+            itemListWithHeaders.addAll(generateItemListByProvider(itemList, allProviders));
+        } else {
+            // raggruppamento alfabetico
+            itemListWithHeaders.addAll(generateItemListWithHeaders(itemList));
         }
+        notifyDataSetChanged();
     }
+
 
     public void setQuantityTypes(List<QuantityTypeDto> quantityTypes) {
         this.quantityTypes = quantityTypes;
@@ -125,6 +135,10 @@ public class ItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     public void setItemDetails(List<ItemDetailDto> itemDetailsDto) {
         this.itemDetailsDto = itemDetailsDto;
         notifyDataSetChanged();
+    }
+
+    public void setGroupByProvider(boolean groupByProvider) {
+        this.groupByProvider = groupByProvider;
     }
 
     @NonNull
@@ -363,6 +377,33 @@ public class ItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         float density = context.getResources().getDisplayMetrics().density;
         return Math.round((float) dp * density);
     }
+
+    private List<Object> generateItemListByProvider(List<ItemDto> items, List<ProviderDto> providers) {
+        Map<UUID, String> providerNames = providers.stream()
+                .collect(Collectors.toMap(ProviderDto::getId, ProviderDto::getName));
+
+        // raggruppa items per providerId (null → “Senza fornitore”)
+        Map<String, List<ItemDto>> grouped = new HashMap<>();
+        for (ItemDto item : items) {
+            String name = providerNames.getOrDefault(item.getProviderId(), "Senza fornitore");
+            grouped.computeIfAbsent(name, k -> new ArrayList<>()).add(item);
+        }
+
+        // ordina i gruppi alfabeticamente per nome provider
+        List<String> headers = new ArrayList<>(grouped.keySet());
+        headers.sort(String.CASE_INSENSITIVE_ORDER);
+
+        // ricompone la lista: per ogni header → header + suoi item (ordinati A→Z)
+        List<Object> result = new ArrayList<>();
+        for (String header : headers) {
+            result.add(header);
+            List<ItemDto> list = grouped.get(header);
+            Objects.requireNonNull(list).sort(Comparator.comparing(ItemDto::getName, String.CASE_INSENSITIVE_ORDER));
+            result.addAll(list);
+        }
+        return result;
+    }
+
 
     @Override
     public int getItemCount() {

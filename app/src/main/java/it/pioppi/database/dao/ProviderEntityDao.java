@@ -40,4 +40,7 @@ public interface ProviderEntityDao extends BaseDao<ProviderEntity> {
     @Query("SELECT * FROM provider WHERE id = :id")
     ProviderEntity getProviderById(UUID id);
 
+    @Query("SELECT * FROM provider")
+    List<ProviderEntity> getAllProviders();
+
 }

@@ -36,6 +36,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.imageview.ShapeableImageView;
 
@@ -52,6 +53,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import it.pioppi.business.manager.ItemUtilityManager;
@@ -137,39 +139,60 @@ public class ItemDetailFragment extends Fragment implements QuantityTypeAdapter.
         Bundle bundle = getArguments();
         if (bundle != null) {
             try {
-                if(bundle.getString(ConstantUtils.ITEM_ID) != null) {
+                if (bundle.containsKey(ConstantUtils.ITEM_ID)) {
                     itemId = UUID.fromString(bundle.getString(ConstantUtils.ITEM_ID));
-                } else if(bundle.getString(ConstantUtils.SCANNED_CODE) != null) {
-                    itemId = fetchItemWithDetailByBarcode(bundle.getString(ConstantUtils.SCANNED_CODE));
+
+                } else if (bundle.containsKey(ConstantUtils.SCANNED_CODE)) {
+                    String scannedCode = bundle.getString(ConstantUtils.SCANNED_CODE);
+                    itemId = fetchItemWithDetailByBarcode(scannedCode);
                     generalItemViewModel.setLastVisitedItemId(itemId);
+
                 } else {
-                    throw new IllegalArgumentException("Item details not found");
+                    requireActivity().runOnUiThread(() -> Toast.makeText(requireContext(),"Nessun barcode o ID item fornito", Toast.LENGTH_SHORT).show());
+                    return view;
                 }
-                LoggerManager.getInstance().log("onCreateView: ItemId ottenuto: " + itemId, "DEBUG");
 
-                ItemWithDetailAndQuantityTypeDto dto = fetchItemWithDetailAndQuantityTypeById(itemId);
-                LoggerManager.getInstance().log("onCreateView: DTO ottenuto per l'item", "DEBUG");
+                LoggerManager.getInstance().log(
+                        "onCreateView: ItemId ottenuto: " + itemId,
+                        "DEBUG"
+                );
 
+                // 5) Carico i dati completi dell'item
+                ItemWithDetailAndQuantityTypeDto dto =
+                        fetchItemWithDetailAndQuantityTypeById(itemId);
+                LoggerManager.getInstance().log(
+                        "onCreateView: DTO ottenuto per l'item",
+                        "DEBUG"
+                );
+
+                // 6) Popolo la ViewModel
                 generalItemViewModel.updateItem(dto.getItem());
                 generalItemViewModel.updateItemDetail(dto.getItemDetail());
                 generalItemViewModel.updateQuantityTypes(dto.getQuantityTypes());
 
+            } catch (IllegalArgumentException iae) {
+                // barcode o argomenti non validi: toast e ritorno anticipato
+                Toast.makeText(requireContext(),
+                                "Prodotto non trovato per il barcode fornito",
+                                Toast.LENGTH_SHORT)
+                        .show();
+                LoggerManager.getInstance().log(
+                        "onCreateView: IllegalArgumentException: " + iae.getMessage(),
+                        "WARN"
+                );
+                return view;
 
             } catch (ExecutionException | InterruptedException e) {
+                // errori di I/O o threading: log e toast di errore generico
                 LoggerManager.getInstance().logException(e);
-                throw new RuntimeException(e);
-            } catch (IllegalArgumentException ex) {
-                Toast.makeText(requireContext(), "Errore nel caricamento dell'item, Item non esiste", Toast.LENGTH_SHORT).show();
-                LoggerManager.getInstance().log("onCreateView: Errore nel caricamento dell'item, Item non esiste", "ERROR");
+                Toast.makeText(requireContext(),
+                                "Errore interno nel recupero dell'item",
+                                Toast.LENGTH_SHORT)
+                        .show();
                 return view;
             }
-        } else {
-            Toast.makeText(requireContext(), "Errore nel caricamento dell'item, Item non esiste", Toast.LENGTH_SHORT).show();
-            LoggerManager.getInstance().log("onCreateView: Errore nel caricamento dell'item, Bundle null", "ERROR");
-            return view;
         }
-
-        // Set up touch listener to hide keyboard when touch happens outside EditText
+            // Set up touch listener to hide keyboard when touch happens outside EditText
         setupUI(view);
 
         // PROVIDER
@@ -350,7 +373,16 @@ public class ItemDetailFragment extends Fragment implements QuantityTypeAdapter.
                     .filter(i -> i.getId().equals(itemId))
                     .findFirst().orElse(null);
 
-            CardView statusCard = requireView().findViewById(R.id.item_name_tot_portions);
+            MaterialCardView statusCard = requireView().findViewById(R.id.item_name_tot_portions);
+            if (Objects.requireNonNull(item).isChecked()) {
+                statusCard.setStrokeWidth(10);
+                statusCard.setStrokeColor(
+                        ContextCompat.getColor(requireContext(), R.color.connected_device_background)
+                );
+            } else {
+                statusCard.setStrokeWidth(0);
+            }
+
             ItemUtilityManager.updateItemStatus(requireContext(), Objects.requireNonNull(item), statusCard, totPortions, weekendRequirement);
         });
     }
@@ -529,8 +561,8 @@ public class ItemDetailFragment extends Fragment implements QuantityTypeAdapter.
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 // Normalizza il testo nei due campi, come nell'adapter
-                String normalizedSaturday = ItemUtilityManager.normalizeText(portionsRequiredOnSaturday.getText().toString());
-                String normalizedSunday = ItemUtilityManager.normalizeText(portionsRequiredOnSunday.getText().toString());
+                String normalizedSaturday = normalizeText(portionsRequiredOnSaturday.getText().toString());
+                String normalizedSunday = normalizeText(portionsRequiredOnSunday.getText().toString());
 
                 if (!normalizedSaturday.equals(portionsRequiredOnSaturday.getText().toString())) {
                     int selStart = portionsRequiredOnSaturday.getSelectionStart();
@@ -757,20 +789,29 @@ public class ItemDetailFragment extends Fragment implements QuantityTypeAdapter.
         return future.get();
     }
 
-    private UUID fetchItemWithDetailByBarcode(String barcode) throws ExecutionException, InterruptedException {
-        LoggerManager.getInstance().log("fetchItemWithDetailByBarcode: Recupero item per barcode " + barcode, "DEBUG");
-        Future<UUID> future = executorService.submit(() -> {
-            ItemEntityDao itemEntityDao = appDatabase.itemEntityDao();
-            UUID itemId = UUID.fromString(itemEntityDao.getItemByBarcode(barcode));
-            if (itemId != null) {
-                return itemId;
-            } else {
-                throw new IllegalArgumentException();
-            }
-        });
+    /**
+     * Recupera l'itemId da database o lancia IllegalArgumentException
+     * se non c'è alcun record con quel barcode.
+     */
+    private UUID fetchItemWithDetailByBarcode(String barcode)
+            throws ExecutionException, InterruptedException {
+        LoggerManager.getInstance()
+                .log("fetchItemWithDetailByBarcode: Recupero item per barcode " + barcode, "DEBUG");
 
-        return future.get();
+        // eseguo la query in background e attendo il risultato
+        Future<String> futureId = executorService.submit(() ->
+                appDatabase.itemEntityDao().getItemByBarcode(barcode)
+        );
+        String idStr = futureId.get(); // qui attendo davvero
+
+        if (idStr == null || idStr.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Nessun prodotto trovato con barcode: " + barcode
+            );
+        }
+        return UUID.fromString(idStr);
     }
+
 
     protected void prefillFields(View view) {
         LoggerManager.getInstance().log("prefillFields: Pre-compilazione dei campi", "DEBUG");
@@ -914,8 +955,8 @@ public class ItemDetailFragment extends Fragment implements QuantityTypeAdapter.
                 .collect(Collectors.toList());
 
         // Calcola i totali in base allo stato attuale della lista
-        Long totPortionsAvailable = ItemUtilityManager.calculateTotPortions(quantityTypeDtos, QuantityPurpose.AVAILABLE);
-        Long totPortionsToBeOrdered = ItemUtilityManager.calculateTotPortions(quantityTypeDtos, QuantityPurpose.TO_BE_ORDERED);
+        Long totPortionsAvailable = calculateTotPortions(quantityTypeDtos, QuantityPurpose.AVAILABLE);
+        Long totPortionsToBeOrdered = calculateTotPortions(quantityTypeDtos, QuantityPurpose.TO_BE_ORDERED);
         long totPortionsAvailablePlusOrdered = totPortionsAvailable + totPortionsToBeOrdered;
 
         TextView totPortionsAvailableTextView = requireView().findViewById(R.id.tot_portions_avalaible);

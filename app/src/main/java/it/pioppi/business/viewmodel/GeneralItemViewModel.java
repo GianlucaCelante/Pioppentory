@@ -1,5 +1,6 @@
 package it.pioppi.business.viewmodel;
 
+import androidx.annotation.Nullable;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
@@ -18,6 +19,7 @@ import it.pioppi.business.dto.item.ItemDto;
 import it.pioppi.business.dto.item.tag.ItemTagDto;
 import it.pioppi.business.dto.item.detail.ItemDetailDto;
 import it.pioppi.business.dto.item.quantity.QuantityTypeDto;
+import it.pioppi.business.dto.provider.ProviderDto;
 import it.pioppi.database.model.ItemStatus;
 import it.pioppi.utils.ConstantUtils;
 
@@ -40,12 +42,21 @@ public class GeneralItemViewModel extends ViewModel {
     private final MutableLiveData<List<ItemDetailDto>> itemDetails = new MutableLiveData<>();
     private final MutableLiveData<Map<UUID, Set<UUID>>> itemTagJoins = new MutableLiveData<>();
     private final MutableLiveData<List<QuantityTypeDto>> quantityTypes = new MutableLiveData<>();
+    private final MutableLiveData<List<ProviderDto>> providers = new MutableLiveData<>();
+    private final MutableLiveData<List<ProviderDto>> filterProviders = new MutableLiveData<>();
+
 
     private UUID lastVisitedItemId;
 
     public GeneralItemViewModel() {
         filteredItems.addSource(items, itemList -> applyFilter());
         filteredItems.addSource(barcodeScanned, q -> applyFilter());
+        filteredItems.addSource(itemTags, itemTagList -> applyFilter());
+        filteredItems.addSource(itemDetails, itemDetailList -> applyFilter());
+        filteredItems.addSource(quantityTypes, quantityTypeList -> applyFilter());
+        filteredItems.addSource(itemTagJoins, itemTagJoinList -> applyFilter());
+        filteredItems.addSource(providers, provider -> applyFilter());
+        filteredItems.addSource(filterProviders, provider -> applyFilter());
     }
 
     // Metodi per Items e filtraggio
@@ -87,6 +98,15 @@ public class GeneralItemViewModel extends ViewModel {
         if (filterStatus != null) {
             filteredList = filteredList.stream()
                     .filter(item -> item.getStatus() != null && item.getStatus().equals(filterStatus))
+                    .collect(Collectors.toList());
+        }
+
+        List<ProviderDto> toFilter = filterProviders.getValue();
+        if (toFilter != null && !toFilter.isEmpty()) {
+            filteredList = filteredList.stream()
+                    .filter(item -> toFilter.stream()
+                            .anyMatch(p -> p.getId().equals(item.getProviderId()))
+                    )
                     .collect(Collectors.toList());
         }
 
@@ -252,4 +272,19 @@ public class GeneralItemViewModel extends ViewModel {
         return lastVisitedItemId;
     }
 
+    public List<ProviderDto> getProviders() {
+        return providers.getValue();
+    }
+
+    public void setProviders(List<ProviderDto> providers) {
+        this.providers.setValue(providers);
+    }
+
+    public List<ProviderDto> getFilterProviders() {
+        return filterProviders.getValue();
+    }
+
+    public void setFilterProviders(List<ProviderDto> filterProviders) {
+        this.filterProviders.setValue(filterProviders);
+    }
 }

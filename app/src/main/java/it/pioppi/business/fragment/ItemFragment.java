@@ -35,6 +35,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.time.LocalDate;
@@ -42,6 +43,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -57,6 +59,7 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import it.pioppi.business.dto.item.quantity.QuantityTypeDto;
+import it.pioppi.business.dto.provider.ProviderDto;
 import it.pioppi.business.manager.ItemUtilityManager;
 import it.pioppi.database.model.QuantityPurpose;
 import it.pioppi.utils.ConstantUtils;
@@ -89,6 +92,8 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
     private RecyclerView recyclerView;
     private ItemEntityRepository itemEntityRepository;
     private AlertDialog newItemDialog;
+    private boolean isProviderMode = false;
+
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -105,6 +110,8 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
             List<ItemDetailDto> itemDetailDtoList = loadItemDetails();
             List<ItemTagJoinDto> itemTagJoinDtoList = loadItemTagJoin();
             List<QuantityTypeDto> quantityTypeDtoList = loadQuantityTypes();
+            List<ProviderDto> providerDtoList = loadProviders();
+
             Map<UUID, Set<UUID>> itemTagJoinMap = new HashMap<>();
             for (ItemTagJoinDto join : itemTagJoinDtoList) {
                 itemTagJoinMap.computeIfAbsent(join.getTagId(), k -> new HashSet<>()).add(join.getItemId());
@@ -113,6 +120,7 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
             generalItemViewModel.setItems(itemDtoList);
             generalItemViewModel.setItemDetails(itemDetailDtoList);
             generalItemViewModel.setQuantityTypes(quantityTypeDtoList);
+            generalItemViewModel.setProviders(providerDtoList);
             LoggerManager.getInstance().log("onCreate: Items e ItemDetails caricati. Items: " + itemDtoList.size() + ", ItemDetails: " + itemDetailDtoList.size(), "DEBUG");
         } catch (ExecutionException | InterruptedException e) {
             LoggerManager.getInstance().logException(e);
@@ -165,10 +173,11 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
         });
 
         recyclerView = view.findViewById(R.id.recycler_view_items);
-        itemAdapter = new ItemAdapter(new ArrayList<>(), this, this, this, getContext());
+        itemAdapter = new ItemAdapter(new ArrayList<>(), new ArrayList<>(), this, this, this, getContext());
 
         generalItemViewModel.getFilteredItems().observe(getViewLifecycleOwner(), itemList -> {
-            itemAdapter.setItemList(itemList);
+            itemAdapter.setGroupByProvider(isProviderMode);
+            itemAdapter.setItemList(itemList, generalItemViewModel.getProviders());
             GridLayoutManager layoutManager = new GridLayoutManager(getContext(), 5);
             layoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
                 @Override
@@ -270,6 +279,9 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                     return true;
                 } else if (itemId == R.id.filter_by_status_green) {
                     filterItemsByStatus(ItemStatus.GREEN);
+                    return true;
+                } else if (itemId == R.id.filter_by_provider) {
+                    showProviderFilterDialog();
                     return true;
                 }
                 return false;
@@ -455,7 +467,7 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                             generalItemViewModel.setItems(currentItems);
                             generalItemViewModel.setItemDetails(currentDetails);
 
-                            itemAdapter.setItemList(currentItems);
+                            itemAdapter.setItemList(currentItems, generalItemViewModel.getProviders());
                             NavController navController = NavHostFragment.findNavController(this);
                             Bundle bundle = new Bundle();
                             bundle.putString("itemId", itemId.toString());
@@ -512,6 +524,20 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
         });
         future.get();
         return quantityTypeDtos;
+    }
+
+    private List<ProviderDto> loadProviders() throws ExecutionException, InterruptedException {
+        LoggerManager.getInstance().log("loadProviders: Caricamento providers", "DEBUG");
+        List<ProviderDto> providerDtos = new ArrayList<>();
+        Future<?> future = executorService.submit(() -> {
+            List<ProviderEntity> providerEntities = appDatabase.providerEntityDao().getAllProviders();
+            providerEntities.forEach(providerEntity -> {
+                ProviderDto providerDto = EntityDtoMapper.entityToDto(providerEntity);
+                providerDtos.add(providerDto);
+            });
+        });
+        future.get();
+        return providerDtos;
     }
 
     @Override
@@ -619,13 +645,17 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
     }
 
     private void filterItemsByNameAscending() {
+        isProviderMode = false;
         generalItemViewModel.setFilterCheckedOnly(null);
         generalItemViewModel.setFilterStatus(null);
         generalItemViewModel.setSortOrder("ASC");
+        generalItemViewModel.setFilterProviders(null);
         recyclerView.smoothScrollToPosition(0);
     }
 
     private void filterItemsByNameDescending() {
+        isProviderMode = false;
+        generalItemViewModel.setFilterProviders(null);
         generalItemViewModel.setFilterCheckedOnly(null);
         generalItemViewModel.setFilterStatus(null);
         generalItemViewModel.setSortOrder("DESC");
@@ -633,15 +663,51 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
     }
 
     private void filterCheckedItems() {
+        isProviderMode = false;
+        generalItemViewModel.setFilterProviders(null);
         generalItemViewModel.setFilterStatus(null);
         generalItemViewModel.setFilterCheckedOnly(true);
         recyclerView.smoothScrollToPosition(0);
     }
 
     private void filterItemsByStatus(ItemStatus status) {
+        isProviderMode = false;
+        generalItemViewModel.setFilterProviders(null);
         generalItemViewModel.setFilterCheckedOnly(null);
         generalItemViewModel.setFilterStatus(status);
         recyclerView.smoothScrollToPosition(0);
+    }
+
+    private void showProviderFilterDialog() {
+
+        generalItemViewModel.setFilterCheckedOnly(null);
+        generalItemViewModel.setFilterStatus(null);
+        List<ProviderDto> all = generalItemViewModel.getProviders();
+        all.sort(Comparator.comparing(ProviderDto::getName, String.CASE_INSENSITIVE_ORDER));
+
+        String[] labels = new String[all.size() + 1];
+        labels[0] = "Tutti i fornitori";
+        for (int i = 0; i < all.size(); i++) {
+            labels[i + 1] = all.get(i).getName();
+        }
+
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Filtra per fornitore")
+                .setItems(labels, (dialog, which) -> {
+                    if (which == 0) {
+                        // provider-mode su tutti
+                        isProviderMode = true;
+                        generalItemViewModel.setFilterProviders(null);
+                    } else {
+                        // seleziono uno specifico → torno ad A→Z
+                        isProviderMode = true;
+                        generalItemViewModel.setFilterProviders(
+                                Collections.singletonList(all.get(which - 1))
+                        );
+                    }
+                })
+                .setNegativeButton("Annulla", null)
+                .show();
     }
 
     @Override
