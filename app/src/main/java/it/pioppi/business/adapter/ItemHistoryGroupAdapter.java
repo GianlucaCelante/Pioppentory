@@ -11,7 +11,6 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
@@ -24,17 +23,16 @@ import it.pioppi.business.manager.GoogleDriveManager;
 
 public class ItemHistoryGroupAdapter extends RecyclerView.Adapter<ItemHistoryGroupAdapter.GroupViewHolder> {
 
-    private static final String SUFFIX_FILE_NAME = "-report.csv";
-    private final List<ItemHistoryGroupDto> groupList;
-    private GoogleDriveManager googleDriveManager;
-
-    public ItemHistoryGroupAdapter(List<ItemHistoryGroupDto> groupList, GoogleDriveManager googleDriveManager) {
-        this.groupList = groupList;
-        this.googleDriveManager = googleDriveManager;
+    public interface OnExportClickListener {
+        void onExport(ItemHistoryGroupDto group);
     }
 
-    public void setGoogleDriveManager(GoogleDriveManager manager) {
-        this.googleDriveManager = manager;
+    private final List<ItemHistoryGroupDto> groupList;
+    private final OnExportClickListener exportListener;
+
+    public ItemHistoryGroupAdapter(List<ItemHistoryGroupDto> groupList, OnExportClickListener exportListener) {
+        this.groupList = groupList;
+        this.exportListener = exportListener;
     }
 
     @NonNull
@@ -48,7 +46,7 @@ public class ItemHistoryGroupAdapter extends RecyclerView.Adapter<ItemHistoryGro
     @Override
     public void onBindViewHolder(@NonNull GroupViewHolder holder, int position) {
         ItemHistoryGroupDto group = groupList.get(position);
-        holder.textViewDate.setText(DateTimeUtils.formatForDisplay(group.getInventoryClosureDate()));
+        holder.textViewDate.setText(DateTimeUtils.formatForDisplayLocalDate(group.getInventoryClosureDate()));
 
         List<ItemHistoryDto> itemHistories = group.getItemHistories();
         itemHistories.sort(Comparator.comparing(ItemHistoryDto::getItemName));
@@ -57,30 +55,12 @@ public class ItemHistoryGroupAdapter extends RecyclerView.Adapter<ItemHistoryGro
         holder.recyclerViewItems.setLayoutManager(new LinearLayoutManager(holder.recyclerViewItems.getContext(), LinearLayoutManager.HORIZONTAL, false));
         holder.recyclerViewItems.setAdapter(entryAdapter);
 
-        holder.exportToExcelButton.setOnClickListener(v -> {
-            new androidx.appcompat.app.AlertDialog.Builder(v.getContext())
-                    .setTitle("Conferma esportazione")
-                    .setMessage("Sei sicuro di voler generare ed esportare il file CSV?")
-                    .setPositiveButton("Sì", (dialog, which) -> {
-                        // Genera il CSV per il gruppo corrente
-                        String csvContent = ExportToCsvManager.generateCsvContentForSingleGroup(group);
-                        if (csvContent.isEmpty()) {
-                            Toast.makeText(v.getContext(), "Il report è vuoto", Toast.LENGTH_SHORT).show();
-                            return;
-                        }
-
-                        String fileName = group.getInventoryClosureDate() + SUFFIX_FILE_NAME;
-
-                        if (googleDriveManager != null) {
-                            Toast.makeText(v.getContext(), "Caricamento in corso...", Toast.LENGTH_SHORT).show();
-                            googleDriveManager.uploadFile(fileName, csvContent, v.getContext(), GoogleDriveManager.MIME_TYPE_CSV);
-                        } else {
-                            Toast.makeText(v.getContext(), "Google Drive non è inizializzato", Toast.LENGTH_SHORT).show();
-                        }
-                    })
-                    .setNegativeButton("No", (dialog, which) -> dialog.dismiss())
-                    .show();
-        });
+        holder.exportToExcelButton.setOnClickListener(v -> new androidx.appcompat.app.AlertDialog.Builder(v.getContext())
+                .setTitle("Conferma esportazione")
+                .setMessage("Sei sicuro di voler generare ed esportare il file CSV?")
+                .setPositiveButton("Sì", (dialog, which) -> exportListener.onExport(group))
+                .setNegativeButton("No", (dialog, which) -> dialog.dismiss())
+                .show());
 
     }
 

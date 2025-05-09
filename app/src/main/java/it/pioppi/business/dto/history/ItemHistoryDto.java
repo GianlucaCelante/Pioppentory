@@ -1,7 +1,10 @@
 package it.pioppi.business.dto.history;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
+
+import it.pioppi.business.dto.item.quantity.QuantityTypeDto;
 
 public class ItemHistoryDto {
 
@@ -15,8 +18,10 @@ public class ItemHistoryDto {
     private LocalDate deliveryDate;
     private String barcode;
     private String note;
+    private UUID itemId;
+    private List<QuantityTypeDto> quantityTypes;
 
-    public ItemHistoryDto(String providerName, String itemName, Long quantityPresent, Long quantityOrdered, Long portionsPerWeekend, LocalDate inventoryClosureDate, LocalDate deliveryDate, String barcode, String note) {
+    public ItemHistoryDto(String providerName, String itemName, Long quantityPresent, Long quantityOrdered, Long portionsPerWeekend, LocalDate inventoryClosureDate, LocalDate deliveryDate, String barcode, String note, UUID itemId, List<QuantityTypeDto> quantityTypes) {
         this.providerName = providerName;
         this.itemName = itemName;
         this.quantityPresent = quantityPresent;
@@ -26,6 +31,9 @@ public class ItemHistoryDto {
         this.deliveryDate = deliveryDate;
         this.barcode = barcode;
         this.note = note;
+        this.itemId = itemId;
+        this.quantityTypes = quantityTypes;
+
     }
 
     public ItemHistoryDto() {
@@ -110,4 +118,21 @@ public class ItemHistoryDto {
     public void setNote(String note) {
         this.note = note;
     }
+
+    public UUID getItemId() {
+        return itemId;
+    }
+
+    public void setItemId(UUID itemId) {
+        this.itemId = itemId;
+    }
+
+    public List<QuantityTypeDto> getQuantityTypes() {
+        return quantityTypes;
+    }
+
+    public void setQuantityTypes(List<QuantityTypeDto> quantityTypes) {
+        this.quantityTypes = quantityTypes;
+    }
+
 }

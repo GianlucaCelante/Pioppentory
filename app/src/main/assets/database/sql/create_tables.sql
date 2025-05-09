@@ -72,6 +72,7 @@ CREATE TABLE IF NOT EXISTS `ITEM_HISTORY` (
     `provider_name` TEXT,
     `item_name` TEXT,
     `quantity_present` INTEGER,
+    `quantity_and_description_and_units` TEXT,
     `quantity_ordered` INTEGER,
     `portions_per_weekend` INTEGER,
     `inventory_closure_date` TEXT,
@@ -105,6 +106,7 @@ CREATE INDEX IF NOT EXISTS `index_ITEM_provider_id` ON `ITEM` (`provider_id`);
 CREATE INDEX IF NOT EXISTS `index_ITEM_DETAIL_item_id` ON `ITEM_DETAIL` (`item_id`);
 CREATE INDEX IF NOT EXISTS `index_QUANTITY_TYPE_item_id` ON `QUANTITY_TYPE` (`item_id`);
 CREATE INDEX IF NOT EXISTS `index_ITEM_HISTORY_id` ON `ITEM_HISTORY` (`id`);
+CREATE INDEX IF NOT EXISTS `index_ITEM_HISTORY_item_id` ON `ITEM_HISTORY` (`item_id`);
 CREATE INDEX IF NOT EXISTS `index_ITEM_TAG_id` ON `ITEM_TAG`(`id`);
 CREATE INDEX `index_ITEM_TAG_JOIN_itemId` ON `ITEM_TAG_JOIN`(`item_id`);
 CREATE INDEX `index_ITEM_TAG_JOIN_tagId` ON `ITEM_TAG_JOIN`(`tag_id`);

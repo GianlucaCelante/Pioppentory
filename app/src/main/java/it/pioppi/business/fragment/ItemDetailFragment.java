@@ -141,6 +141,7 @@ public class ItemDetailFragment extends Fragment implements QuantityTypeAdapter.
                     itemId = UUID.fromString(bundle.getString(ConstantUtils.ITEM_ID));
                 } else if(bundle.getString(ConstantUtils.SCANNED_CODE) != null) {
                     itemId = fetchItemWithDetailByBarcode(bundle.getString(ConstantUtils.SCANNED_CODE));
+                    generalItemViewModel.setLastVisitedItemId(itemId);
                 } else {
                     throw new IllegalArgumentException("Item details not found");
                 }

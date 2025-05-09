@@ -24,10 +24,9 @@ public class GoogleDriveLogUploader implements LogUploader {
         try {
 
             File file = new File(filePath);
-            googleDriveManager.uploadFile(file.getName(),
+            googleDriveManager.uploadLog(file.getName(),
                     readFileContent(file),
-                    context,
-                    GoogleDriveManager.MIME_TYPE_TEXT);
+                    context);
             LoggerManager.getInstance().log("GoogleDriveLogUploader", "Caricamento del file " + filePath + " su Google Drive...");
             return true;
         } catch (Exception e) {

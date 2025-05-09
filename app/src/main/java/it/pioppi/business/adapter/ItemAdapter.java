@@ -267,7 +267,7 @@ public class ItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                         .findFirst()
                         .orElse(null);
 
-                int weekendRequirement = itemDetailDto != null ? itemDetailDto.getPortionsPerWeekend() : 0;
+                int weekendRequirement = itemDetailDto != null && itemDetailDto.getPortionsPerWeekend() != null ? itemDetailDto.getPortionsPerWeekend() : 0;
                 ItemUtilityManager.updateItemStatus(context, item, itemHolder.materialCardView, totPortions, weekendRequirement);
 
 

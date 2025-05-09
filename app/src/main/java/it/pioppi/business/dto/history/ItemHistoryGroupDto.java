@@ -12,6 +12,10 @@ public class ItemHistoryGroupDto {
         this.itemHistories = histories;
     }
 
+    public ItemHistoryGroupDto() {
+
+    }
+
     public LocalDate getInventoryClosureDate() {
         return inventoryClosureDate;
     }

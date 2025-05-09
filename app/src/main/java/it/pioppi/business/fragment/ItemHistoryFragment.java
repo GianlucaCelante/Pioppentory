@@ -6,6 +6,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
@@ -15,15 +16,19 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import it.pioppi.R;
 import it.pioppi.business.adapter.ItemHistoryGroupAdapter;
+import it.pioppi.business.dto.history.ItemHistoryGroupDto;
+import it.pioppi.business.manager.ExportToCsvManager;
 import it.pioppi.business.manager.GoogleDriveManager;
 import it.pioppi.business.viewmodel.ItemHistoryViewModel;
 import it.pioppi.utils.LoggerManager;
 
-public class ItemHistoryFragment extends Fragment {
+public class ItemHistoryFragment extends Fragment implements ItemHistoryGroupAdapter.OnExportClickListener {
 
     private RecyclerView recyclerViewItemHistory;
     private ItemHistoryGroupAdapter groupAdapter;
     private ItemHistoryViewModel viewModel;
+    private GoogleDriveManager googleDriveManager;
+
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -46,8 +51,8 @@ public class ItemHistoryFragment extends Fragment {
         viewModel.getItemHistoryGroups().observe(getViewLifecycleOwner(), groupList -> {
             LoggerManager.getInstance().log("onCreateView: Osservati " + groupList.size() + " gruppi di item history", "DEBUG");
             // Recupera il GoogleDriveManager dalla MainActivity
-            GoogleDriveManager driveManager = ((it.pioppi.business.activity.MainActivity) requireActivity()).getGoogleDriveManager();
-            groupAdapter = new ItemHistoryGroupAdapter(groupList, driveManager);
+            googleDriveManager = ((it.pioppi.business.activity.MainActivity) requireActivity()).getGoogleDriveManager();
+            groupAdapter = new ItemHistoryGroupAdapter(groupList, this);
             recyclerViewItemHistory.setAdapter(groupAdapter);
         });
 
@@ -64,4 +69,21 @@ public class ItemHistoryFragment extends Fragment {
         }
         super.onPrepareOptionsMenu(menu);
     }
+
+    @Override
+    public void onExport(ItemHistoryGroupDto group) {
+        String csv = ExportToCsvManager.generateCsvContentForSingleGroup(group);
+        if (csv.isEmpty()) {
+            Toast.makeText(getContext(), "Il report è vuoto", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String fileName = group.getInventoryClosureDate() + "-report.csv";
+        Toast.makeText(getContext(), "Caricamento in corso…", Toast.LENGTH_SHORT).show();
+        googleDriveManager.uploadFile(
+                fileName,
+                csv,
+                getContext()
+        );
+    }
+
 }

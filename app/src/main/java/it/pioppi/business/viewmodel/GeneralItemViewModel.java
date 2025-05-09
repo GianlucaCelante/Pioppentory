@@ -30,7 +30,7 @@ public class GeneralItemViewModel extends ViewModel {
     private List<ItemDto> originalItems = new ArrayList<>();
 
     private final MutableLiveData<List<ItemDto>> items = new MutableLiveData<>();
-    private final MutableLiveData<String> query = new MutableLiveData<>("");
+    private final MutableLiveData<String> barcodeScanned = new MutableLiveData<>("");
     private final MediatorLiveData<List<ItemDto>> filteredItems = new MediatorLiveData<>();
 
     // Gestione degli ItemTags e degli ItemDetails
@@ -41,9 +41,11 @@ public class GeneralItemViewModel extends ViewModel {
     private final MutableLiveData<Map<UUID, Set<UUID>>> itemTagJoins = new MutableLiveData<>();
     private final MutableLiveData<List<QuantityTypeDto>> quantityTypes = new MutableLiveData<>();
 
+    private UUID lastVisitedItemId;
+
     public GeneralItemViewModel() {
         filteredItems.addSource(items, itemList -> applyFilter());
-        filteredItems.addSource(query, q -> applyFilter());
+        filteredItems.addSource(barcodeScanned, q -> applyFilter());
     }
 
     // Metodi per Items e filtraggio
@@ -62,13 +64,13 @@ public class GeneralItemViewModel extends ViewModel {
     }
 
     public void setQuery(String query) {
-        this.query.setValue(query);
+        this.barcodeScanned.setValue(query);
     }
 
     private void applyFilter() {
         List<ItemDto> filteredList = new ArrayList<>(originalItems);
 
-        String q = query.getValue();
+        String q = barcodeScanned.getValue();
         if (q != null && !q.isEmpty()) {
             filteredList = filteredList.stream()
                     .filter(item -> (item.getName() != null && item.getName().toLowerCase().contains(q.toLowerCase()))
@@ -235,16 +237,19 @@ public class GeneralItemViewModel extends ViewModel {
         return itemTagJoins.getValue();
     }
 
-    public boolean itemBelongsToTag(UUID itemId, UUID tagId) {
-        Set<UUID> itemsForTag = itemTagJoins.getValue().get(tagId);
-        return itemsForTag != null && itemsForTag.contains(itemId);
-    }
-
     public void updateItemImageUrl(UUID itemId, String imageUrl) {
         Objects.requireNonNull(items.getValue()).stream()
                 .filter(item -> item.getId().equals(itemId))
                 .findFirst()
                 .ifPresent(item -> item.setImageUrl(imageUrl));
+    }
+
+    public void setLastVisitedItemId(UUID lastVisitedItemId) {
+        this.lastVisitedItemId = lastVisitedItemId;
+    }
+
+    public UUID getLastVisitedItemId() {
+        return lastVisitedItemId;
     }
 
 }

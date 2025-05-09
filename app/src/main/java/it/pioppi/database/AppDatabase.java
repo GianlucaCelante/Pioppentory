@@ -5,10 +5,13 @@ import static it.pioppi.utils.ConstantUtils.APP_DATABASE;
 import android.content.Context;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
 import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
 import androidx.room.TypeConverters;
+import androidx.room.migration.Migration;
+import androidx.sqlite.db.SupportSQLiteDatabase;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -36,7 +39,7 @@ import it.pioppi.utils.ConstantUtils;
 
 @Database(entities = {ItemEntity.class, ItemDetailEntity.class, ProviderEntity.class, QuantityTypeEntity.class,
         ItemTagEntity.class, ItemTagJoinEntity.class, ItemFTSEntity.class, ItemHistoryEntity.class},
-        version = 410)
+        version = 412)
 @TypeConverters({Converters.class})
 public abstract class AppDatabase extends RoomDatabase {
 
@@ -59,7 +62,7 @@ public abstract class AppDatabase extends RoomDatabase {
                 if (INSTANCE == null) {
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(), AppDatabase.class, APP_DATABASE)
                             .createFromAsset("database/pioppi.db")
-                            .fallbackToDestructiveMigration()
+                            .addMigrations(MIGRATION_410_411, MIGRATION_411_412)
                             .build();
                 }
                 copyDatabaseFromAssets(context);
@@ -85,5 +88,70 @@ public abstract class AppDatabase extends RoomDatabase {
             }
         }
     }
+
+    public static final Migration MIGRATION_410_411 = new Migration(410, 411) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase database) {
+            database.execSQL(
+                    "ALTER TABLE ITEM_HISTORY " +
+                            "ADD COLUMN quantity_and_description_and_units TEXT DEFAULT ''"
+            );
+        }
+    };
+
+    public static final Migration MIGRATION_411_412 = new Migration(411, 412) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase db) {
+            // 1) Disabilito i vincoli
+            db.execSQL("PRAGMA foreign_keys=OFF;");
+
+            // 2) Creo la nuova tabella senza `quantity_and_description_and_units` e con `item_id`
+            db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `item_history_new` (" +
+                            "  `id` TEXT NOT NULL, " +
+                            "  `provider_name` TEXT, " +
+                            "  `item_name` TEXT, " +
+                            "  `quantity_present` INTEGER, " +
+                            "  `quantity_ordered` INTEGER, " +
+                            "  `portions_per_weekend` INTEGER, " +
+                            "  `inventory_closure_date` TEXT, " +
+                            "  `delivery_date` TEXT, " +
+                            "  `barcode` TEXT, " +
+                            "  `note` TEXT, " +
+                            "  `creation_date` TEXT, " +
+                            "  `last_update` TEXT, " +
+                            "  `item_id` TEXT, " +
+                            "  PRIMARY KEY(`id`)" +
+                            ");"
+            );
+
+            // 3) Copio i dati, mettendo NULL in item_id
+            db.execSQL(
+                    "INSERT INTO `item_history_new` (" +
+                            "  `id`, `provider_name`, `item_name`, `quantity_present`, " +
+                            "  `quantity_ordered`, `portions_per_weekend`, `inventory_closure_date`, " +
+                            "  `delivery_date`, `barcode`, `note`, `creation_date`, `last_update`, `item_id`" +
+                            ") SELECT " +
+                            "  `id`, `provider_name`, `item_name`, `quantity_present`, " +
+                            "  `quantity_ordered`, `portions_per_weekend`, `inventory_closure_date`, " +
+                            "  `delivery_date`, `barcode`, `note`, `creation_date`, `last_update`, NULL " +
+                            "FROM `ITEM_HISTORY`;"
+            );
+
+            // 4) Elimino la vecchia e rinomino
+            db.execSQL("DROP TABLE `ITEM_HISTORY`;");
+            db.execSQL("ALTER TABLE `item_history_new` RENAME TO `ITEM_HISTORY`;");
+
+            // 5) Ricreo l'indice su id (come si aspettava Room)
+            db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_ITEM_HISTORY_id` " +
+                            "ON `ITEM_HISTORY`(`id`);"
+            );
+
+            // 6) Riabilito i vincoli
+            db.execSQL("PRAGMA foreign_keys=ON;");
+        }
+    };
+
 
 }

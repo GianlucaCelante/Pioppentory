@@ -2,15 +2,18 @@ package it.pioppi.database.entity;
 
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
+import androidx.room.Ignore;
 import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
 import org.jetbrains.annotations.NotNull;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.StringJoiner;
 import java.util.UUID;
 
+import it.pioppi.database.model.QuantityTypeEnum;
 import it.pioppi.utils.ConstantUtils;
 
 @Entity(
@@ -43,8 +46,10 @@ public class ItemHistoryEntity extends BaseEntity {
     private String barcode;
     @ColumnInfo(name = "note")
     private String note;
+    @ColumnInfo(name = "item_id")
+    private UUID itemId;
 
-    public ItemHistoryEntity(@NotNull UUID id, String providerName, String itemName, Long quantityPresent, Long quantityOrdered, Long portionsPerWeekend, LocalDate inventoryClosureDate, LocalDate deliveryDate, String barcode, String note) {
+    public ItemHistoryEntity(@NotNull UUID id, String providerName, String itemName, Long quantityPresent, Long quantityOrdered, Long portionsPerWeekend, LocalDate inventoryClosureDate, LocalDate deliveryDate, String barcode, String note, UUID itemId) {
         this.id = id;
         this.providerName = providerName;
         this.itemName = itemName;
@@ -55,6 +60,7 @@ public class ItemHistoryEntity extends BaseEntity {
         this.deliveryDate = deliveryDate;
         this.barcode = barcode;
         this.note = note;
+        this.itemId = itemId;
     }
 
     public ItemHistoryEntity() {
@@ -140,6 +146,13 @@ public class ItemHistoryEntity extends BaseEntity {
         this.deliveryDate = deliveryDate;
     }
 
+    public UUID getItemId() {
+        return itemId;
+    }
+
+    public void setItemId(UUID itemId) {
+        this.itemId = itemId;
+    }
 
     @Override
     public String toString() {
@@ -154,6 +167,7 @@ public class ItemHistoryEntity extends BaseEntity {
                 .add("deliveryDate=" + deliveryDate)
                 .add("barcode='" + barcode + "'")
                 .add("note='" + note + "'")
+                .add("itemId=" + itemId)
                 .toString();
     }
 }

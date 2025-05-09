@@ -40,4 +40,7 @@ public interface QuantityTypeEntityDao extends BaseDao<QuantityTypeEntity> {
     @Query("SELECT * FROM quantity_type")
     List<QuantityTypeEntity> getAll();
 
+    @Query("SELECT * FROM quantity_type WHERE item_id = :itemId")
+    List<QuantityTypeEntity> getAllByItemId(UUID itemId);
+
 }

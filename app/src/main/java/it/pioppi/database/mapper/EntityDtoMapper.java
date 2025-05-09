@@ -414,6 +414,7 @@ public class EntityDtoMapper {
         itemHistoryEntity.setDeliveryDate(itemHistoryDto.getDeliveryDate());
         itemHistoryEntity.setBarcode(itemHistoryDto.getBarcode());
         itemHistoryEntity.setNote(itemHistoryDto.getNote());
+        itemHistoryEntity.setItemId(itemHistoryDto.getItemId());
         return itemHistoryEntity;
     }
 
@@ -443,6 +444,7 @@ public class EntityDtoMapper {
         itemHistoryDto.setDeliveryDate(itemHistoryEntity.getDeliveryDate());
         itemHistoryDto.setBarcode(itemHistoryEntity.getBarcode());
         itemHistoryDto.setNote(itemHistoryEntity.getNote());
+        itemHistoryDto.setItemId(itemHistoryEntity.getItemId());
         return itemHistoryDto;
     }
 

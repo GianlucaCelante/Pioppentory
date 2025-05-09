@@ -194,6 +194,18 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
         });
 
         LoggerManager.getInstance().log("onCreateView: Vista creata con successo", "INFO");
+
+        view.post(() -> {
+            UUID targetId = generalItemViewModel.getLastVisitedItemId();
+            if (targetId != null) {
+                int targetPosition = findPositionForItemId(targetId);
+                if (targetPosition != -1) {
+                    recyclerView.smoothScrollToPosition(targetPosition);
+                }
+
+                generalItemViewModel.setLastVisitedItemId(null);
+            }
+        });
         return view;
     }
 
@@ -363,9 +375,10 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                     historyRecord.setItemName(item.getName());
                     historyRecord.setBarcode(item.getBarcode());
                     historyRecord.setQuantityPresent(item.getTotPortions());
-                    historyRecord.setQuantityOrdered(itemEntity.itemDetail.getQuantityToBeOrdered());
-                    historyRecord.setPortionsPerWeekend(Long.valueOf(itemEntity.itemDetail.getPortionsPerWeekend()));
-                    historyRecord.setDeliveryDate(LocalDate.from(itemEntity.itemDetail.getDeliveryDate()));
+                    historyRecord.setItemId(item.getId());
+                    historyRecord.setQuantityOrdered(itemEntity.itemDetail.getQuantityToBeOrdered() != null ? itemEntity.itemDetail.getQuantityToBeOrdered() : 0L);
+                    historyRecord.setPortionsPerWeekend(itemEntity.itemDetail.getPortionsPerWeekend() != null ? Long.valueOf(itemEntity.itemDetail.getPortionsPerWeekend()) : 0L);
+                    historyRecord.setDeliveryDate(itemEntity.itemDetail.getDeliveryDate() != null ? LocalDate.from(itemEntity.itemDetail.getDeliveryDate()) : null);
                     historyRecord.setProviderName(providerEntity != null ? providerEntity.getName() : null);
                     historyRecord.setNote(item.getNote() != null ? item.getNote() : "");
                     historyRecord.setCreationDate(closureDate);
@@ -519,6 +532,9 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
         if (item == null || item.getId() == null) {
             return;
         }
+
+        generalItemViewModel.setLastVisitedItemId(item.getId());
+
         NavController navController = NavHostFragment.findNavController(this);
         Bundle bundle = new Bundle();
         bundle.putString("itemId", item.getId().toString());
@@ -606,26 +622,26 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
         generalItemViewModel.setFilterCheckedOnly(null);
         generalItemViewModel.setFilterStatus(null);
         generalItemViewModel.setSortOrder("ASC");
-        recyclerView.scrollToPosition(0);
+        recyclerView.smoothScrollToPosition(0);
     }
 
     private void filterItemsByNameDescending() {
         generalItemViewModel.setFilterCheckedOnly(null);
         generalItemViewModel.setFilterStatus(null);
         generalItemViewModel.setSortOrder("DESC");
-        recyclerView.scrollToPosition(0);
+        recyclerView.smoothScrollToPosition(0);
     }
 
     private void filterCheckedItems() {
         generalItemViewModel.setFilterStatus(null);
         generalItemViewModel.setFilterCheckedOnly(true);
-        recyclerView.scrollToPosition(0);
+        recyclerView.smoothScrollToPosition(0);
     }
 
     private void filterItemsByStatus(ItemStatus status) {
         generalItemViewModel.setFilterCheckedOnly(null);
         generalItemViewModel.setFilterStatus(status);
-        recyclerView.scrollToPosition(0);
+        recyclerView.smoothScrollToPosition(0);
     }
 
     @Override
@@ -637,7 +653,7 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
     @Override
     public void onQuantityTypeChanged(QuantityTypeDto updatedQuantityType) {
 
-        ItemDto itemDto = generalItemViewModel.getItems().getValue().stream()
+        ItemDto itemDto = Objects.requireNonNull(generalItemViewModel.getItems().getValue()).stream()
                 .filter(item -> item.getId().equals(updatedQuantityType.getItemId()))
                 .findFirst()
                 .orElse(null);
@@ -654,10 +670,25 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
 
         }
 
-        executorService.execute(() -> {
+        executorService.submit(() -> {
             QuantityTypeEntity updatedEntity = EntityDtoMapper.dtoToEntity(updatedQuantityType);
             appDatabase.quantityTypeEntityDao().upsert(updatedEntity);
             appDatabase.itemEntityDao().update(EntityDtoMapper.dtoToEntity(itemDto));
         });
+
     }
+
+    private int findPositionForItemId(UUID targetId) {
+        List<Object> itemsWithHeaders = itemAdapter.getItemListWithHeaders();
+        for (int i = 0; i < itemsWithHeaders.size(); i++) {
+            Object obj = itemsWithHeaders.get(i);
+            if (obj instanceof ItemDto) {
+                if (((ItemDto) obj).getId().equals(targetId)) {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
+
 }

@@ -2,7 +2,9 @@
 agp = "8.9.1"
 androidLoggingLog4j = "1.0.3"
 assetDelivery = "2.3.0"
+commonsCsv = "1.10.0"
 glide = "4.12.0"
+jacksonDatabind = "2.15.2"
 koinAndroid = "3.1.2"
 kotlin = "1.9.0"
 coreKtx = "1.15.0"
@@ -43,9 +45,11 @@ androidx-room-paging = { module = "androidx.room:room-paging", version.ref = "ro
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomPaging" }
 androidx-room-testing = { module = "androidx.room:room-testing", version.ref = "roomPaging" }
 asset-delivery = { module = "com.google.android.play:asset-delivery", version.ref = "assetDelivery" }
+commons-csv = { module = "org.apache.commons:commons-csv", version.ref = "commonsCsv" }
 glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
 google-api-client-android = { module = "com.google.api-client:google-api-client-android", version = "2.7.2" }
 google-api-services-drive = { module = "com.google.apis:google-api-services-drive", version = "v3-rev20250220-2.0.0" }
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jacksonDatabind" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }

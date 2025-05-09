@@ -42,7 +42,7 @@ public class ItemHistoryItemAdapter extends RecyclerView.Adapter<ItemHistoryItem
         holder.textViewQuantityPresent.setText("Quantità presente: " + itemHistory.getQuantityPresent());
         holder.textViewQuantityOrdered.setText("Quantità da ordinare: " + itemHistory.getQuantityOrdered());
         holder.textViewPortionsPerWeekend.setText("Fabbisogno weekend: " + itemHistory.getPortionsPerWeekend());
-        holder.textViewDeliveryDate.setText("Data consegna: " + DateTimeUtils.formatForDisplay(itemHistory.getDeliveryDate()));
+        holder.textViewDeliveryDate.setText("Data consegna: " + DateTimeUtils.formatForDisplayLocalDate(itemHistory.getDeliveryDate()));
         holder.textViewProviderName.setText("Fornitore: " + itemHistory.getProviderName());
         holder.textViewNote.setText("Note: " + itemHistory.getNote());
     }

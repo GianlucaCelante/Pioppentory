@@ -112,79 +112,242 @@ public class GoogleDriveManager {
         return content;
     }
 
-    public void uploadFile(String fileName, String fileContent, Context context, String mimeType) {
-        LoggerManager.getInstance().log("uploadFile started for file: " + fileName, "INFO");
-        new Thread(() -> {
-            try {
-                // Assicurati che la cartella esista
-                ensureMainFolderExists();
+    public void uploadLog(String fileName, String logContent, Context context) {
+        LoggerManager.getInstance().log("uploadLog started for file: " + fileName, "INFO");
 
-                LoggerManager.getInstance().log("Verifying if file '" + fileName + "' exists in folder ID: " + folderId, "DEBUG");
+        new Thread(() -> {
+            // 1) Assicuro che la cartella principale esista
+            try {
+                ensureMainFolderExists();
+            } catch (IOException e) {
+                LoggerManager.getInstance().logException(e);
+                new Handler(Looper.getMainLooper()).post(() ->
+                        Toast.makeText(context,
+                                "Errore creazione/verifica cartella Drive:\n" + e.getMessage(),
+                                Toast.LENGTH_LONG
+                        ).show()
+                );
+                return;
+            }
+
+            try {
+                // 2a) Controllo se esiste già un file con quel nome
                 String query = "name = '" + fileName + "' and '" + folderId + "' in parents and trashed = false";
-                FileList fileList = driveService.files().list()
+                FileList fileList = driveService.files()
+                        .list()
                         .setQ(query)
                         .setSpaces("drive")
-                        .setFields("files(id, name)")
+                        .setFields("files(id,name)")
                         .execute();
 
                 if (fileList.getFiles() != null && !fileList.getFiles().isEmpty()) {
-                    LoggerManager.getInstance().log("File '" + fileName + "' exists. Merging file contents.", "DEBUG");
-                    // Il file esiste: scarica il contenuto e uniscilo con il nuovo contenuto
-                    String existingFileId = fileList.getFiles().get(0).getId();
-                    String existingContent = downloadFileContent(existingFileId);
-                    // Se il file è di log (TXT), potresti usare una logica di merge diversa da quella dei CSV
-                    String mergedContent = ExportToCsvManager.mergeCsvContents(existingContent, fileContent);
+                    // 2b) File esistente → download + append
+                    String existingId = fileList.getFiles().get(0).getId();
+                    String existingContent = downloadFileContent(existingId);
 
-                    // Aggiorna il file esistente con il contenuto unito
-                    ByteArrayContent updatedContent = new ByteArrayContent(mimeType, mergedContent.getBytes());
-                    File updatedFile = driveService.files().update(existingFileId, null, updatedContent)
+                    // semplicemente appendo il nuovo log
+                    String merged = existingContent
+                            + (existingContent.endsWith("\n") ? "" : "\n")
+                            + logContent;
+
+                    ByteArrayContent updated = new ByteArrayContent(
+                            MIME_TYPE_TEXT,
+                            merged.getBytes(StandardCharsets.UTF_8)
+                    );
+                    driveService.files()
+                            .update(existingId, null, updated)
                             .setFields("id")
                             .execute();
-                    LoggerManager.getInstance().log("File updated successfully. New file ID: " + updatedFile.getId(), "INFO");
 
-                    new Handler(Looper.getMainLooper()).post(() -> {
-                        Toast.makeText(context, "File aggiornato su Drive: " + fileName, Toast.LENGTH_LONG).show();
-                        LoggerManager.getInstance().clearLogFile();
-                    });
+                    LoggerManager.getInstance().log("Log file aggiornato su Drive: " + fileName, "INFO");
+                    new Handler(Looper.getMainLooper()).post(() ->
+                            Toast.makeText(context,
+                                    "Log aggiornato su Drive: " + fileName,
+                                    Toast.LENGTH_LONG
+                            ).show()
+                    );
+
                 } else {
-                    LoggerManager.getInstance().log("File '" + fileName + "' does not exist. Creating new file.", "DEBUG");
-                    byte[] fileContentBytes = fileContent.getBytes();
-                    File fileMetadata = new File();
-                    fileMetadata.setName(fileName);
-                    fileMetadata.setMimeType(mimeType);
-                    if (folderId != null) {
-                        fileMetadata.setParents(Collections.singletonList(folderId));
-                    }
-                    driveServiceHelper.uploadFile(fileMetadata, fileContentBytes, new DriveServiceHelper.UploadCallback() {
-                        @Override
-                        public void onUploadSuccess(String fileId) {
-                            LoggerManager.getInstance().log("File uploaded successfully. File ID: " + fileId, "INFO");
-                            new Handler(Looper.getMainLooper()).post(() -> {
-                                Toast.makeText(context, "File caricato su Drive: " + fileName, Toast.LENGTH_LONG).show();
-                                LoggerManager.getInstance().clearLogFile();
-                            });
+                    // 2c) File non esiste → upload nuovo
+                    File meta = new File();
+                    meta.setName(fileName);
+                    meta.setMimeType(MIME_TYPE_TEXT);
+                    meta.setParents(Collections.singletonList(folderId));
 
-                        }
-
-                        @Override
-                        public void onUploadFailed(Exception e) {
-                            LoggerManager.getInstance().log("Upload failed for file: " + fileName, "ERROR");
-                            new Handler(Looper.getMainLooper()).post(() -> {
-                                Toast.makeText(context, "File caricato su Drive: " + fileName, Toast.LENGTH_LONG).show();
-                            });
-
-                        }
-                    });
+                    driveServiceHelper.uploadFile(meta, logContent.getBytes(StandardCharsets.UTF_8),
+                            new DriveServiceHelper.UploadCallback() {
+                                @Override
+                                public void onUploadSuccess(String newFileId) {
+                                    LoggerManager.getInstance().log(
+                                            "Log file caricato con successo: " + newFileId, "INFO"
+                                    );
+                                    new Handler(Looper.getMainLooper()).post(() ->
+                                            Toast.makeText(context,
+                                                    "Log caricato su Drive: " + fileName,
+                                                    Toast.LENGTH_LONG
+                                            ).show()
+                                    );
+                                }
+                                @Override
+                                public void onUploadFailed(Exception ex) {
+                                    LoggerManager.getInstance().log(
+                                            "Upload log fallito per file: " + fileName, "ERROR"
+                                    );
+                                    new Handler(Looper.getMainLooper()).post(() ->
+                                            Toast.makeText(context,
+                                                    "Upload log fallito: " + ex.getMessage(),
+                                                    Toast.LENGTH_LONG
+                                            ).show()
+                                    );
+                                }
+                            }
+                    );
                 }
+
+            } catch (IOException ioe) {
+                // gestisce errori di I/O (list, download, update)
+                LoggerManager.getInstance().logException(ioe);
+                new Handler(Looper.getMainLooper()).post(() ->
+                        Toast.makeText(context,
+                                "Errore I/O durante upload log su Drive:\n" + ioe.getMessage(),
+                                Toast.LENGTH_LONG
+                        ).show()
+                );
+            }
+
+            LoggerManager.getInstance().log("uploadLog completed for file: " + fileName, "INFO");
+        }).start();
+    }
+
+
+    public void uploadFile(String fileName, String fileContent, Context context) {
+        LoggerManager.getInstance().log("uploadFile started for file: " + fileName, "INFO");
+
+        new Thread(() -> {
+            // 1) Assicuro che la cartella principale esista
+            try {
+                ensureMainFolderExists();
             } catch (IOException e) {
                 LoggerManager.getInstance().logException(e);
-                new Handler(Looper.getMainLooper()).post(() -> {
-                    Toast.makeText(context, "Errore nella creazione della cartella su Drive: " + fileName, Toast.LENGTH_LONG).show();
-                });
+                new Handler(Looper.getMainLooper()).post(() ->
+                        Toast.makeText(context,
+                                "Errore creazione/verifica cartella Drive:\n" + e.getMessage(),
+                                Toast.LENGTH_LONG
+                        ).show()
+                );
+                return;
             }
+
+            // 2) Provo a listare, fare merge e upload
+            try {
+                // 2a) Verifica esistenza del file
+                String query = "name = '" + fileName + "' and '" + folderId + "' in parents and trashed = false";
+                FileList fileList = driveService.files()
+                        .list()
+                        .setQ(query)
+                        .setSpaces("drive")
+                        .setFields("files(id,name)")
+                        .execute();
+
+                if (fileList.getFiles() != null && !fileList.getFiles().isEmpty()) {
+                    // 2b) File esistente → download + merge
+                    String existingId = fileList.getFiles().get(0).getId();
+                    String existingContent = downloadFileContent(existingId);
+
+                    String mergedContent;
+                    try {
+                        mergedContent = ExportToCsvManager.mergeCsvContentsViaDto(existingContent, fileContent);
+                    } catch (IOException e) {
+                        throw new RuntimeException(
+                                "Errore parsing CSV: controlla formato e header", e
+                        );
+                    }
+
+                    // 2c) Upload del CSV unito
+                    ByteArrayContent updated = new ByteArrayContent(
+                            MIME_TYPE_CSV,
+                            mergedContent.getBytes(StandardCharsets.UTF_8)
+                    );
+                    driveService.files()
+                            .update(existingId, null, updated)
+                            .setFields("id")
+                            .execute();
+
+                    LoggerManager.getInstance().log(
+                            "File aggiornato con successo su Drive: " + fileName, "INFO"
+                    );
+                    new Handler(Looper.getMainLooper()).post(() ->
+                            Toast.makeText(context,
+                                    "File aggiornato su Drive: " + fileName,
+                                    Toast.LENGTH_LONG
+                            ).show()
+                    );
+
+                } else {
+                    // 2d) File non esiste → upload nuovo
+                    File meta = new File();
+                    meta.setName(fileName);
+                    meta.setMimeType(MIME_TYPE_CSV);
+                    meta.setParents(Collections.singletonList(folderId));
+
+                    driveServiceHelper.uploadFile(meta, fileContent.getBytes(StandardCharsets.UTF_8),
+                            new DriveServiceHelper.UploadCallback() {
+                                @Override
+                                public void onUploadSuccess(String newFileId) {
+                                    LoggerManager.getInstance().log(
+                                            "File caricato con successo su Drive: " + newFileId, "INFO"
+                                    );
+                                    new Handler(Looper.getMainLooper()).post(() ->
+                                            Toast.makeText(context,
+                                                    "File caricato su Drive: " + fileName,
+                                                    Toast.LENGTH_LONG
+                                            ).show()
+                                    );
+                                }
+                                @Override
+                                public void onUploadFailed(Exception ex) {
+                                    LoggerManager.getInstance().log(
+                                            "Upload fallito per file: " + fileName, "ERROR"
+                                    );
+                                    new Handler(Looper.getMainLooper()).post(() ->
+                                            Toast.makeText(context,
+                                                    "Upload fallito: " + ex.getMessage(),
+                                                    Toast.LENGTH_LONG
+                                            ).show()
+                                    );
+                                }
+                            }
+                    );
+                }
+
+            } catch (RuntimeException rte) {
+                // qui finiscono gli errori di parsing CSV rilanciati sopra
+                LoggerManager.getInstance().logException(rte);
+                new Handler(Looper.getMainLooper()).post(() ->
+                        Toast.makeText(context,
+                                "Configurazione parser CSV errata:\n" + rte.getMessage(),
+                                Toast.LENGTH_LONG
+                        ).show()
+                );
+                return;
+
+            } catch (IOException ioe) {
+                // qui finiscono gli errori di I/O (list, download, update)
+                LoggerManager.getInstance().logException(ioe);
+                new Handler(Looper.getMainLooper()).post(() ->
+                        Toast.makeText(context,
+                                "Errore I/O durante upload su Drive:\n" + ioe.getMessage(),
+                                Toast.LENGTH_LONG
+                        ).show()
+                );
+                return;
+            }
+
             LoggerManager.getInstance().log("uploadFile completed for file: " + fileName, "INFO");
         }).start();
     }
+
+
 
     public void uploadImage(String fileName, byte[] imageContent, ImageUploadCallback callback) {
         new Thread(() -> {
