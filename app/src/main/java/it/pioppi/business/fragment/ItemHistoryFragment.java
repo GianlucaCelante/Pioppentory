@@ -35,6 +35,8 @@ public class ItemHistoryFragment extends Fragment implements ItemHistoryGroupAda
         super.onCreate(savedInstanceState);
         LoggerManager.getInstance().log("onCreate: Inizializzazione di ItemHistoryFragment", "INFO");
         setHasOptionsMenu(true);
+        googleDriveManager = ((it.pioppi.business.activity.MainActivity) requireActivity()).getGoogleDriveManager();
+
         // Ottieni l'istanza del ViewModel
         viewModel = new ViewModelProvider(this, ViewModelProvider.AndroidViewModelFactory.getInstance(requireActivity().getApplication()))
                 .get(ItemHistoryViewModel.class);
@@ -51,7 +53,6 @@ public class ItemHistoryFragment extends Fragment implements ItemHistoryGroupAda
         viewModel.getItemHistoryGroups().observe(getViewLifecycleOwner(), groupList -> {
             LoggerManager.getInstance().log("onCreateView: Osservati " + groupList.size() + " gruppi di item history", "DEBUG");
             // Recupera il GoogleDriveManager dalla MainActivity
-            googleDriveManager = ((it.pioppi.business.activity.MainActivity) requireActivity()).getGoogleDriveManager();
             groupAdapter = new ItemHistoryGroupAdapter(groupList, this);
             recyclerViewItemHistory.setAdapter(groupAdapter);
         });
@@ -72,6 +73,12 @@ public class ItemHistoryFragment extends Fragment implements ItemHistoryGroupAda
 
     @Override
     public void onExport(ItemHistoryGroupDto group) {
+
+        if (googleDriveManager == null) {
+            Toast.makeText(getContext(), "Attendi il login a Google Drive", Toast.LENGTH_LONG).show();
+            return;
+        }
+
         String csv = ExportToCsvManager.generateCsvContentForSingleGroup(group);
         if (csv.isEmpty()) {
             Toast.makeText(getContext(), "Il report è vuoto", Toast.LENGTH_SHORT).show();

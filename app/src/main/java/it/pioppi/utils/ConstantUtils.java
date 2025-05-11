@@ -47,6 +47,7 @@ public class ConstantUtils {
     // SETTINGS
     public static final String RESET_CHOICES = "Reset conferme popup";
     public static final String BACKUP_DB = "Backup database";
+    public static final String RESTORE_DB = "Ripristina database";
     public static final String BLUETOOTH = "Bluetooth";
 
 }

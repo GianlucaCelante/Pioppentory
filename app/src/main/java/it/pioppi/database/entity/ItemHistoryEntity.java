@@ -19,7 +19,8 @@ import it.pioppi.utils.ConstantUtils;
 @Entity(
         tableName = ConstantUtils.ITEM_HISTORY_TABLE_NAME,
         indices = {
-                @Index("id")
+                @Index("id"),
+                @Index("item_id")
         }
 )
 public class ItemHistoryEntity extends BaseEntity {

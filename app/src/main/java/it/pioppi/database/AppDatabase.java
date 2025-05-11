@@ -62,7 +62,7 @@ public abstract class AppDatabase extends RoomDatabase {
                 if (INSTANCE == null) {
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(), AppDatabase.class, APP_DATABASE)
                             .createFromAsset("database/pioppi.db")
-                            .addMigrations(MIGRATION_410_411, MIGRATION_411_412)
+                            //.addMigrations(MIGRATION_410_411, MIGRATION_411_412)
                             .build();
                 }
                 copyDatabaseFromAssets(context);

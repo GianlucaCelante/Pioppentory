@@ -732,7 +732,7 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                     break;
                 }
             }
-            generalItemViewModel.setQuantityTypes(globalQuantityTypes);
+            itemAdapter.updateSingleQuantity(updatedQuantityType);
 
         }
 

@@ -153,6 +153,42 @@ public class ItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
     }
 
+    @Override
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position,
+                                 @NonNull List<Object> payloads) {
+        if (!payloads.isEmpty() && holder instanceof ItemViewHolder) {
+            //  ✓ Qui gestisci solo la parte di UI che cambia:
+            QuantityTypeDto updatedQt = (QuantityTypeDto) payloads.get(0);
+            ItemViewHolder h = (ItemViewHolder) holder;
+
+            // Ricava la lista dei quantityType per questo item
+            List<QuantityTypeDto> list = quantityTypes.stream()
+                    .filter(q -> q.getItemId().equals(updatedQt.getItemId())
+                            && QuantityPurpose.AVAILABLE.equals(q.getPurpose()))
+                    .collect(Collectors.toList());
+
+            // Trova l’indice del quantityType aggiornato
+            int idx = 0;
+            for (int i = 0; i < list.size(); i++) {
+                if (list.get(i).getId().equals(updatedQt.getId())) {
+                    idx = i;
+                    break;
+                }
+            }
+            h.currentQuantityTypeIndex = idx;
+
+            // Aggiorna solo la UI di quantità e totPortions
+            updateQuantityTypeUI(h, list);
+            long tot = ItemUtilityManager.calculateTotPortions(list, QuantityPurpose.AVAILABLE);
+            h.totPortions.setText(String.valueOf(tot));
+
+        } else {
+            // payloads è vuoto → fall back al binding completo
+            onBindViewHolder(holder, position);
+        }
+    }
+
+
     @SuppressLint("ClickableViewAccessibility")
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
@@ -326,6 +362,28 @@ public class ItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
         }
     }
+
+    public void updateSingleQuantity(QuantityTypeDto updatedQt) {
+        // 1. aggiorna la lista interna quantityTypes
+        for (int i = 0; i < quantityTypes.size(); i++) {
+            if (quantityTypes.get(i).getId().equals(updatedQt.getId())) {
+                quantityTypes.set(i, updatedQt);
+                break;
+            }
+        }
+
+        // 2. trova la posizione dell’ItemDto corrispondente nella lista con header
+        UUID itemId = updatedQt.getItemId();
+        for (int pos = 0; pos < itemListWithHeaders.size(); pos++) {
+            Object o = itemListWithHeaders.get(pos);
+            if (o instanceof ItemDto && ((ItemDto) o).getId().equals(itemId)) {
+                // 3. notifica solo quell’item
+                notifyItemChanged(pos, updatedQt);
+                return;
+            }
+        }
+    }
+
 
     private void updateQuantityTypeUI(ItemViewHolder holder, List<QuantityTypeDto> quantityTypeDtos) {
         if (quantityTypeDtos == null || quantityTypeDtos.isEmpty()) {

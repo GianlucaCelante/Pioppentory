@@ -72,7 +72,6 @@ CREATE TABLE IF NOT EXISTS `ITEM_HISTORY` (
     `provider_name` TEXT,
     `item_name` TEXT,
     `quantity_present` INTEGER,
-    `quantity_and_description_and_units` TEXT,
     `quantity_ordered` INTEGER,
     `portions_per_weekend` INTEGER,
     `inventory_closure_date` TEXT,
@@ -81,6 +80,7 @@ CREATE TABLE IF NOT EXISTS `ITEM_HISTORY` (
     `note` TEXT,
     `creation_date` TEXT,
     `last_update` TEXT,
+    `item_id` TEXT,
     PRIMARY KEY(`id`)
 );
 

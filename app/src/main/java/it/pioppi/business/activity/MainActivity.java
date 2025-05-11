@@ -96,22 +96,21 @@ public class MainActivity extends AppCompatActivity {
         setupBottomNavigationBar();
 
         // Configura Google Sign-In con lo scope per Google Drive
+        // Configura Google Sign-In
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestEmail()
                 .requestScopes(new Scope(DRIVE_SCOPE))
                 .build();
         googleSignInClient = GoogleSignIn.getClient(this, gso);
 
-        // Registra il launcher per il risultato del Sign-In usando la nuova API Activity Result
+        // Registra il launcher per il risultato del Sign-In
         signInLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
-                    if (result.getResultCode() == Activity.RESULT_OK) {
-                        Intent data = result.getData();
-                        Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
+                    if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
+                        Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(result.getData());
                         try {
                             GoogleSignInAccount account = task.getResult(Exception.class);
-                            Log.d("MainActivity", "Sign-In effettuato");
                             initializeDriveService(account);
                         } catch (Exception e) {
                             Log.e("MainActivity", "Errore durante il Sign-In", e);
@@ -120,13 +119,23 @@ public class MainActivity extends AppCompatActivity {
                 }
         );
 
-        // Esegui il Sign-In all'avvio se l'utente non è già autenticato
-        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
-        if (account == null) {
-            signIn();
-        } else {
-            initializeDriveService(account);
-        }
+        // **Nuovo approccio: prova il silent sign-in**
+        attemptSilentSignIn();
+    }
+
+    /** Nuovo metodo in MainActivity **/
+    private void attemptSilentSignIn() {
+        googleSignInClient.silentSignIn()
+                .addOnSuccessListener(this, account -> {
+                    // Se ha già accettato tutti gli scope, arriva qui
+                    Log.d("MainActivity", "SilentSignIn OK");
+                    initializeDriveService(account);
+                })
+                .addOnFailureListener(this, e -> {
+                    // Altrimenti mostro il picker
+                    Log.d("MainActivity", "SilentSignIn fallito, prompt login");
+                    signIn();
+                });
     }
 
     // Metodo per avviare il processo di Sign-In
