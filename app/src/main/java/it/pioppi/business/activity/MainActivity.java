@@ -95,15 +95,12 @@ public class MainActivity extends AppCompatActivity {
 
         setupBottomNavigationBar();
 
-        // Configura Google Sign-In con lo scope per Google Drive
-        // Configura Google Sign-In
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestEmail()
                 .requestScopes(new Scope(DRIVE_SCOPE))
                 .build();
         googleSignInClient = GoogleSignIn.getClient(this, gso);
 
-        // Registra il launcher per il risultato del Sign-In
         signInLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
@@ -123,7 +120,6 @@ public class MainActivity extends AppCompatActivity {
         attemptSilentSignIn();
     }
 
-    /** Nuovo metodo in MainActivity **/
     private void attemptSilentSignIn() {
         googleSignInClient.silentSignIn()
                 .addOnSuccessListener(this, account -> {
@@ -139,7 +135,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // Metodo per avviare il processo di Sign-In
-    private void signIn() {
+    public void signIn() {
         Intent signInIntent = googleSignInClient.getSignInIntent();
         signInLauncher.launch(signInIntent);
     }
@@ -159,7 +155,7 @@ public class MainActivity extends AppCompatActivity {
                 .build();
 
         googleDriveManager = new GoogleDriveManager(driveService);
-        // La logica per settare il LogUploader è stata rimossa perché ora viene gestita in Pioppentory
+        Toast.makeText(this, "Accesso a Drive riuscito", Toast.LENGTH_SHORT).show();
         Log.d("MainActivity", "Drive Service inizializzato");
     }
 
@@ -245,4 +241,23 @@ public class MainActivity extends AppCompatActivity {
 
         navController.navigate(R.id.itemDetailFragment, bundle, navOptions);
     }
+
+    /**
+     * Forza il cambio account: esegue il sign-out e poi rilancia il picker Google Sign-In.
+     * Usato dal DriveSettingsFragment.
+     */
+    public void changeDriveAccount() {
+        if (googleSignInClient == null) {
+            Toast.makeText(this, "Non connesso al Drive", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        // 1) Sign-out dall’account corrente
+        googleSignInClient.signOut()
+                .addOnCompleteListener(this, task -> {
+                    Log.d("MainActivity", "Drive sign-out completato, mostro account picker");
+                    // 2) Dopo il sign-out, rilancio il picker
+                    signIn();
+                });
+    }
+
 }

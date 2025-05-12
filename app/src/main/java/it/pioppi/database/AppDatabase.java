@@ -66,13 +66,10 @@ public abstract class AppDatabase extends RoomDatabase {
                                     context.getApplicationContext(),
                                     AppDatabase.class,
                                     APP_DATABASE
-                            )
-                            // per gestire future migration senza crash
-                            .fallbackToDestructiveMigration();
+                            );
 
                     if (hasPrebuilt) {
-                        builder = builder
-                                .createFromAsset("database/pioppi.db");
+                        builder = builder.createFromAsset("database/pioppi.db");
                     } else {
                         builder = builder
                                 .addCallback(new RoomDatabase.Callback() {
@@ -99,7 +96,6 @@ public abstract class AppDatabase extends RoomDatabase {
         return INSTANCE;
     }
 
-    // utility: verifica se l’asset esiste
     private static boolean assetExists(Context ctx, String assetPath) {
         try (InputStream is = ctx.getAssets().open(assetPath)) {
             return true;
@@ -108,7 +104,6 @@ public abstract class AppDatabase extends RoomDatabase {
         }
     }
 
-    // utility: legge e splitta per “;” + newline
     private static void executeSqlFile(SupportSQLiteDatabase db,
                                        Context ctx,
                                        String assetPath) {

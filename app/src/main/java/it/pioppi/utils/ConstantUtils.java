@@ -49,5 +49,9 @@ public class ConstantUtils {
     public static final String BACKUP_DB = "Backup database";
     public static final String RESTORE_DB = "Ripristina database";
     public static final String BLUETOOTH = "Bluetooth";
+    public static final String DRIVE = "Google Drive";
 
+    // Drive settings fragment
+    public static final String DRIVE_RETRY = "Ritenta connessione";
+    public static final String DRIVE_CHANGE_ACCOUNT = "Cambia account";
 }

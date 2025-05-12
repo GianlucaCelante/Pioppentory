@@ -57,6 +57,9 @@
         <action
             android:id="@+id/action_settingsFragment_to_bluetoothFragment"
             app:destination="@id/bluetoothFragment" />
+        <action
+            android:id="@+id/action_settingsFragment_to_googleDriveSettingsFragment"
+            app:destination="@id/googleDriveSettingsFragment" />
     </fragment>
 
     <!-- Azione globale per navigare al ItemDetailFragment -->
@@ -79,4 +82,8 @@
             android:id="@+id/action_fullScreenImageDialogFragment_to_driveImageSelectionFragment"
             app:destination="@id/driveImageSelectionFragment" />
     </fragment>
+    <fragment
+        android:id="@+id/googleDriveSettingsFragment"
+        android:name="it.pioppi.business.fragment.GoogleDriveSettingsFragment"
+        android:label="Impostazioni Drive" />
 </navigation>

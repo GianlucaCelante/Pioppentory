@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -23,6 +24,7 @@ import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.sqlite.db.SupportSQLiteDatabase;
 import androidx.work.impl.constraints.ConstraintsState;
 
 import java.io.File;
@@ -36,7 +38,13 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 import it.pioppi.R;
 import it.pioppi.business.adapter.SettingAdapter;
@@ -44,6 +52,7 @@ import it.pioppi.business.dto.settings.BaseSettingDto;
 import it.pioppi.business.dto.settings.ComplexSettingDto;
 import it.pioppi.business.dto.settings.SettingType;
 import it.pioppi.business.dto.settings.SimpleSettingDto;
+import it.pioppi.database.AppDatabase;
 import it.pioppi.utils.ConstantUtils;
 import it.pioppi.utils.DateTimeUtils;
 import it.pioppi.utils.LoggerManager;
@@ -51,7 +60,8 @@ import it.pioppi.utils.LoggerManager;
 public class SettingsFragment extends Fragment implements SettingAdapter.OnSettingClickListener {
 
     private List<BaseSettingDto> settings;
-    private ActivityResultLauncher<Intent> createDocumentLauncher;
+    private ActivityResultLauncher<Intent> backupLauncher;
+    private ActivityResultLauncher<Intent> restoreLauncher;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -60,12 +70,23 @@ public class SettingsFragment extends Fragment implements SettingAdapter.OnSetti
         setHasOptionsMenu(true);
         LoggerManager.getInstance().log("SettingsFragment onCreate completed", "INFO");
 
-        createDocumentLauncher = registerForActivityResult(
+        backupLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
                     if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
                         Uri uri = result.getData().getData();
-                        backupDatabaseToUri(uri);
+                        backupDatabaseToUri(uri);   // <<—— qui il vero backup
+                    }
+                }
+        );
+
+        // 2) Restore: apre il file ZIP e chiede conferma
+        restoreLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
+                        Uri uri = result.getData().getData();
+                        showRestoreConfirmationDialog(uri);
                     }
                 }
         );
@@ -93,6 +114,8 @@ public class SettingsFragment extends Fragment implements SettingAdapter.OnSetti
         settings = new ArrayList<>();
         settings.add(new ComplexSettingDto(ConstantUtils.BLUETOOTH, "Open Bluetooth fragment",
                 R.drawable.bluetooth_signal_icon, BluetoothFragment.class));
+        settings.add(new ComplexSettingDto(ConstantUtils.DRIVE,"Google Drive settings",
+                R.drawable.drive_icon, GoogleDriveSettingsFragment.class));
         settings.add(new SimpleSettingDto<>(ConstantUtils.RESET_CHOICES, "Ripristina il dialogo di conferma per la deselezione",
                 R.drawable.reset_icon, null));
         settings.add(new SimpleSettingDto<>(ConstantUtils.BACKUP_DB, "Crea una copia di backup del database locale",
@@ -112,6 +135,12 @@ public class SettingsFragment extends Fragment implements SettingAdapter.OnSetti
                 LoggerManager.getInstance().log("Navigating to BluetoothFragment", "DEBUG");
                 NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment);
                 navController.navigate(R.id.action_settingsFragment_to_bluetoothFragment, null);
+            }
+
+            if(setting.getName().equals(ConstantUtils.DRIVE)) {
+                LoggerManager.getInstance().log("Navigating to DriveSettingsFragment", "DEBUG");
+                NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment);
+                navController.navigate(R.id.action_settingsFragment_to_googleDriveSettingsFragment, null);
             }
 
         } else {
@@ -146,46 +175,74 @@ public class SettingsFragment extends Fragment implements SettingAdapter.OnSetti
     }
 
     private void backupDatabaseWithSAF() {
+        String dbFileName = ConstantUtils.APP_DATABASE;
+        File dbFile = requireContext().getDatabasePath(dbFileName);
+        if (!dbFile.exists()) {
+            Toast.makeText(requireContext(),
+                    "Nessun database trovato da esportare (" + dbFile.getAbsolutePath() + ")",
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        // 1) Checkpoint WAL e chiusura DB
+        performWalCheckpoint();
+        AppDatabase.getInstance(requireContext()).close();
+
+        // 2) Creazione dello ZIP via SAF
         Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
-        // Imposta il MIME type, ad esempio per un database SQLite
-        intent.setType("application/octet-stream");
+        intent.setType("application/zip");
+        String now = DateTimeUtils.formatForDisplayToDate(
+                ZonedDateTime.now(ZoneId.of(ConstantUtils.ZONE_ID))
+        );
+        intent.putExtra(Intent.EXTRA_TITLE,
+                ConstantUtils.DB_NAME + "_bk-" + now + ".zip");
+        backupLauncher.launch(intent);
+    }
 
-        String now = DateTimeUtils.formatForDisplayToDate(ZonedDateTime.now(ZoneId.of(ConstantUtils.ZONE_ID)));
-        intent.putExtra(Intent.EXTRA_TITLE, ConstantUtils.DB_NAME + "_bk-" + now + ".db");
-        createDocumentLauncher.launch(intent);
+    private void performWalCheckpoint() {
+        SupportSQLiteDatabase sqldb = AppDatabase.getInstance(requireContext())
+                        .getOpenHelper()
+                        .getWritableDatabase();
+
+        try (Cursor c = sqldb.query("PRAGMA wal_checkpoint(FULL)", new Object[]{})) {
+        }
     }
 
     private void backupDatabaseToUri(Uri uri) {
-        File dbFile = requireContext().getDatabasePath(ConstantUtils.DB_NAME + ".db");
+        // nome e path del DB
+        String dbFileName = ConstantUtils.APP_DATABASE;
+        File dbFile = requireContext().getDatabasePath(dbFileName);
         File walFile = new File(dbFile.getAbsolutePath() + "-wal");
         File shmFile = new File(dbFile.getAbsolutePath() + "-shm");
 
-        try (OutputStream os = requireContext().getContentResolver().openOutputStream(uri);
-             java.util.zip.ZipOutputStream zos = new java.util.zip.ZipOutputStream(os)) {
+        try (OutputStream os = requireContext()
+                .getContentResolver()
+                .openOutputStream(uri);
+             ZipOutputStream zos = new ZipOutputStream(os)) {
 
-            if (os == null) {
-                Toast.makeText(requireContext(), "Errore: OutputStream nullo", Toast.LENGTH_LONG).show();
-                return;
-            }
-
-            writeFileToZip(dbFile, ConstantUtils.DB_NAME + ".db", zos);
-            if (walFile.exists()) writeFileToZip(walFile, ConstantUtils.DB_NAME + ".db-wal", zos);
-            if (shmFile.exists()) writeFileToZip(shmFile, ConstantUtils.DB_NAME + ".db-shm", zos);
+            // file DB principale
+            writeFileToZip(dbFile, dbFileName, zos);
+            // WAL e SHM se presenti
+            if (walFile.exists()) writeFileToZip(walFile, dbFileName + "-wal", zos);
+            if (shmFile.exists()) writeFileToZip(shmFile, dbFileName + "-shm", zos);
 
             zos.finish();
-            Toast.makeText(requireContext(), "Backup completato", Toast.LENGTH_LONG).show();
+            Toast.makeText(requireContext(),
+                    "Backup completato", Toast.LENGTH_LONG).show();
             LoggerManager.getInstance().log("Backup ZIP completato", "INFO");
 
         } catch (IOException e) {
             LoggerManager.getInstance().logException(e);
-            Toast.makeText(requireContext(), "Backup fallito: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            Toast.makeText(requireContext(),
+                    "Backup fallito: " + e.getMessage(),
+                    Toast.LENGTH_LONG).show();
         }
     }
 
-    private void writeFileToZip(File file, String entryName, java.util.zip.ZipOutputStream zos) throws IOException {
+    private void writeFileToZip(File file, String entryName, ZipOutputStream zos) throws IOException {
         try (FileInputStream fis = new FileInputStream(file)) {
-            zos.putNextEntry(new java.util.zip.ZipEntry(entryName));
+            zos.putNextEntry(new ZipEntry(entryName));
             byte[] buffer = new byte[1024];
             int length;
             while ((length = fis.read(buffer)) > 0) {
@@ -195,23 +252,84 @@ public class SettingsFragment extends Fragment implements SettingAdapter.OnSetti
         }
     }
 
-    private final ActivityResultLauncher<Intent> restoreFilePickerLauncher =
-            registerForActivityResult(
-                    new ActivityResultContracts.StartActivityForResult(),
-                    result -> {
-                        if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
-                            Uri uri = result.getData().getData();
-                            if (uri != null) {
-                                showRestoreConfirmationDialog(uri);
-                            }
-                        }
-                    });
+
+    private void restoreDatabaseFromUri(Uri zipUri) {
+
+        File dbFile = requireContext().getDatabasePath(ConstantUtils.APP_DATABASE);
+        File dbDir  = dbFile.getParentFile();
+        if (dbDir == null || !dbDir.exists()) {
+            Toast.makeText(requireContext(),
+                    "Cartella database non trovata", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        // Validazione dello ZIP
+        Set<String> required = new HashSet<>(
+                Arrays.asList(
+                        ConstantUtils.APP_DATABASE,
+                        ConstantUtils.APP_DATABASE + "-wal",
+                        ConstantUtils.APP_DATABASE + "-shm"
+                ));
+        Set<String> found = new HashSet<>();
+
+        try (InputStream is = requireContext().getContentResolver().openInputStream(zipUri);
+             ZipInputStream zis = new ZipInputStream(is)) {
+
+            ZipEntry entry;
+            // Primo pass: controllo nomi entry
+            while ((entry = zis.getNextEntry()) != null) {
+                found.add(entry.getName());
+                zis.closeEntry();
+            }
+
+            if (!found.containsAll(required)) {
+                Toast.makeText(requireContext(),
+                        "Backup non valido: mancano file nel pacchetto", Toast.LENGTH_LONG).show();
+                return;
+            }
+        } catch (IOException e) {
+            LoggerManager.getInstance().logException(e);
+            Toast.makeText(requireContext(),
+                    "Errore validazione backup: " + e.getMessage(),
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        try (InputStream is = requireContext().getContentResolver().openInputStream(zipUri);
+             ZipInputStream zis = new ZipInputStream(is)) {
+
+            byte[] buffer = new byte[1024];
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                // CREA IL FILE di destinazione nella cartella dbDir
+                File outFile = new File(dbDir, entry.getName());
+                // Se esiste già, sovrascrivi
+                try (FileOutputStream fos = new FileOutputStream(outFile)) {
+                    int len;
+                    while ((len = zis.read(buffer)) > 0) {
+                        fos.write(buffer, 0, len);
+                    }
+                }
+                zis.closeEntry();
+            }
+
+            Toast.makeText(requireContext(),
+                    "Ripristino completato", Toast.LENGTH_LONG).show();
+            LoggerManager.getInstance().log("Database ripristinato da ZIP", "INFO");
+
+        } catch (IOException e) {
+            LoggerManager.getInstance().logException(e);
+            Toast.makeText(requireContext(),
+                    "Ripristino fallito: " + e.getMessage(),
+                    Toast.LENGTH_LONG).show();
+        }
+    }
 
     private void openFileExplorerToRestore() {
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType("application/zip");
-        restoreFilePickerLauncher.launch(intent);
+        restoreLauncher.launch(intent);
     }
 
     private void showRestoreConfirmationDialog(Uri uri) {
@@ -233,40 +351,7 @@ public class SettingsFragment extends Fragment implements SettingAdapter.OnSetti
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
             startActivity(intent);
             requireActivity().finish();
-            Runtime.getRuntime().exit(0); // forza chiusura totale
+            Runtime.getRuntime().exit(0);
         }
     }
-
-    private void restoreDatabaseFromUri(Uri zipUri) {
-        File dbDir = requireContext().getDatabasePath(ConstantUtils.DB_NAME + ".db").getParentFile();
-        if (dbDir == null) {
-            Toast.makeText(requireContext(), "Cartella database non trovata", Toast.LENGTH_LONG).show();
-            return;
-        }
-
-        try (InputStream is = requireContext().getContentResolver().openInputStream(zipUri);
-             java.util.zip.ZipInputStream zis = new java.util.zip.ZipInputStream(is)) {
-
-            java.util.zip.ZipEntry entry;
-            byte[] buffer = new byte[1024];
-            while ((entry = zis.getNextEntry()) != null) {
-                File outFile = new File(dbDir, entry.getName());
-                try (FileOutputStream fos = new FileOutputStream(outFile)) {
-                    int len;
-                    while ((len = zis.read(buffer)) > 0) {
-                        fos.write(buffer, 0, len);
-                    }
-                }
-                zis.closeEntry();
-            }
-
-            Toast.makeText(requireContext(), "Ripristino completato", Toast.LENGTH_LONG).show();
-            LoggerManager.getInstance().log("Database ripristinato da ZIP", "INFO");
-
-        } catch (IOException e) {
-            LoggerManager.getInstance().logException(e);
-            Toast.makeText(requireContext(), "Ripristino fallito: " + e.getMessage(), Toast.LENGTH_LONG).show();
-        }
-    }
-
 }
