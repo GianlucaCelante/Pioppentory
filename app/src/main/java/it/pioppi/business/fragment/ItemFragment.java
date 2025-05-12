@@ -178,19 +178,20 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
         generalItemViewModel.getFilteredItems().observe(getViewLifecycleOwner(), itemList -> {
             itemAdapter.setGroupByProvider(isProviderMode);
             itemAdapter.setItemList(itemList, generalItemViewModel.getProviders());
-            GridLayoutManager layoutManager = new GridLayoutManager(getContext(), 5);
-            layoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
-                @Override
-                public int getSpanSize(int position) {
-                    return itemAdapter.getItemViewType(position) == ConstantUtils.TYPE_HEADER ? 5 : 1;
-                }
-            });
-            recyclerView.setLayoutManager(layoutManager);
-            recyclerView.setHasFixedSize(true);
-            recyclerView.setVerticalScrollBarEnabled(true);
-            recyclerView.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
-            recyclerView.setAdapter(itemAdapter);
         });
+
+        GridLayoutManager layoutManager = new GridLayoutManager(getContext(), 5);
+        layoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
+            @Override
+            public int getSpanSize(int position) {
+                return itemAdapter.getItemViewType(position) == ConstantUtils.TYPE_HEADER ? 5 : 1;
+            }
+        });
+        recyclerView.setLayoutManager(layoutManager);
+        recyclerView.setHasFixedSize(true);
+        recyclerView.setVerticalScrollBarEnabled(true);
+        recyclerView.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
+        recyclerView.setAdapter(itemAdapter);
 
         generalItemViewModel.getQuantityTypes().observe(getViewLifecycleOwner(), quantityTypeList -> itemAdapter.setQuantityTypes(quantityTypeList));
         generalItemViewModel.getItemDetails().observe(getViewLifecycleOwner(), itemDetailList -> itemAdapter.setItemDetails(itemDetailList));
@@ -724,6 +725,10 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                 .findFirst()
                 .orElse(null);
 
+        if(itemDto == null) {
+            return;
+        }
+
         List<QuantityTypeDto> globalQuantityTypes = generalItemViewModel.getQuantityTypes().getValue();
         if (globalQuantityTypes != null) {
             for (int i = 0; i < globalQuantityTypes.size(); i++) {
@@ -733,6 +738,8 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
                 }
             }
             itemAdapter.updateSingleQuantity(updatedQuantityType);
+            itemDto.setChecked(true);
+            generalItemViewModel.updateItem(itemDto);
 
         }
 

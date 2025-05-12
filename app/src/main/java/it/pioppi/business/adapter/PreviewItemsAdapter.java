@@ -32,11 +32,11 @@ public class PreviewItemsAdapter extends RecyclerView.Adapter<PreviewItemsAdapte
     @Override
     public void onBindViewHolder(@NonNull PreviewItemsAdapter.ViewHolder holder, int position) {
         ItemDto item = itemList.get(position);
+        String note = item.getNote() != null ? item.getNote() : "";
         holder.itemNameTextView.setText(item.getName());
         holder.itemTotPortionsTextView.setText("Totale Porzioni: " + item.getTotPortions());
-        holder.itemNoteTextView.setText("Note: " + item.getNote());
+        holder.itemNoteTextView.setText("Note: " + note);
 
-        // Aggiungi altri campi se necessario
     }
 
     @Override
