@@ -59,14 +59,6 @@ CREATE TABLE IF NOT EXISTS `QUANTITY_TYPE` (
     FOREIGN KEY(`item_id`) REFERENCES `ITEM`(`id`) ON DELETE CASCADE
 );
 
--- Creazione della tabella virtuale per la ricerca full-text
-CREATE VIRTUAL TABLE item_fts USING fts4(
-    content=`ITEM`,
-    name,
-    barcode
-
-);
-
 CREATE TABLE IF NOT EXISTS `ITEM_HISTORY` (
     `id` TEXT NOT NULL,
     `provider_name` TEXT,
