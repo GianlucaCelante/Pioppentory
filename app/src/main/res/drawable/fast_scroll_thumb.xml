@@ -1,0 +1,18 @@
+<!-- drawable/fast_scroll_thumb.xml -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="true">
+        <shape android:shape="rectangle">
+            <!-- width più ampia per tocco più comodo -->
+            <size android:width="20dp" android:height="48dp"/>
+            <solid android:color="@color/black"/>
+            <corners android:radius="4dp"/>
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <size android:width="11dp" android:height="48dp"/>
+            <solid android:color="@color/grey"/>
+            <corners android:radius="4dp"/>
+        </shape>
+    </item>
+</selector>

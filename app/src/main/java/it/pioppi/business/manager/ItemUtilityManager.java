@@ -1,8 +1,10 @@
 package it.pioppi.business.manager;
 
 import android.content.Context;
+import android.widget.LinearLayout;
 
 import androidx.cardview.widget.CardView;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.content.ContextCompat;
 
 import java.util.List;
@@ -39,6 +41,19 @@ public class ItemUtilityManager {
         } else {
             item.setStatus(ItemStatus.RED);
             cardView.setCardBackgroundColor(ContextCompat.getColor(context, R.color.red));
+        }
+    }
+
+    public static void updateItemStatus(Context context, ItemDto item, LinearLayout cardView, Long totPortions, int weekendRequirement) {
+
+        item.setTotPortions(totPortions);
+
+        if (totPortions >= weekendRequirement) {
+            item.setStatus(ItemStatus.GREEN);
+            cardView.setBackgroundColor(ContextCompat.getColor(context, R.color.green));
+        } else {
+            item.setStatus(ItemStatus.RED);
+            cardView.setBackgroundColor(ContextCompat.getColor(context, R.color.red));
         }
     }
 

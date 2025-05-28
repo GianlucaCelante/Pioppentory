@@ -8,22 +8,22 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.bumptech.glide.Glide;
 import com.google.android.material.card.MaterialCardView;
 
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -66,6 +66,7 @@ public class ItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private final OnQuantityTypeChangeListener quantityTypeChangeListener;
     private final Context context;
     private final Map<UUID, Integer> currentQuantityIndices = new HashMap<>();
+    private final Map<UUID, Integer> currentRequirementIndices = new HashMap<>();
     private boolean groupByProvider = false;
 
 
@@ -148,7 +149,7 @@ public class ItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             View headerView = LayoutInflater.from(parent.getContext()).inflate(R.layout.sticky_header, parent, false);
             return new HeaderViewHolder(headerView);
         } else {
-            View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.card_item, parent, false);
+            View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.card_item_new, parent, false);
             return new ItemViewHolder(itemView);
         }
     }
@@ -206,49 +207,36 @@ public class ItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             itemHolder.itemName.setText(item.getName());
             itemHolder.totPortions.setText(String.valueOf(item.getTotPortions()));
 
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-            String formattedDateTime = item.getCheckDate() != null ? item.getCheckDate().format(formatter) : "";
-            itemHolder.checkDate.setText(formattedDateTime);
-
-            itemHolder.hasNote.setVisibility(item.getNote() != null && !item.getNote().isEmpty() ? View.VISIBLE : View.INVISIBLE);
-
             itemHolder.itemView.setOnClickListener(v -> listener.onItemClick(item));
             itemHolder.itemView.setOnLongClickListener(v -> {
                 longListener.onItemLongClick(item, v);
                 return true;
             });
 
-
-            if (item.getImageUrl() != null && !item.getImageUrl().isEmpty()) {
-                Glide.with(context).load(item.getImageUrl()).placeholder(R.drawable.placeholder_thin).into(itemHolder.itemImage);
-            } else {
-                itemHolder.itemImage.setImageResource(R.drawable.placeholder_thin);
-            }
-
             if(item.getStatus() == null) {
-                itemHolder.materialCardView.setCardBackgroundColor(ContextCompat.getColor(context, R.color.white));
+                itemHolder.itemCard.setCardBackgroundColor(ContextCompat.getColor(context, R.color.white));
             } else {
                 switch (item.getStatus()) {
                     case WHITE:
-                        itemHolder.materialCardView.setCardBackgroundColor(ContextCompat.getColor(context, R.color.white));
+                        itemHolder.itemCard.setCardBackgroundColor(ContextCompat.getColor(context, R.color.white));
                         break;
                     case GREEN:
-                        itemHolder.materialCardView.setCardBackgroundColor(ContextCompat.getColor(context, R.color.green));
+                        itemHolder.itemCard.setCardBackgroundColor(ContextCompat.getColor(context, R.color.green));
                         break;
                     case RED:
-                        itemHolder.materialCardView.setCardBackgroundColor(ContextCompat.getColor(context, R.color.red));
+                        itemHolder.itemCard.setCardBackgroundColor(ContextCompat.getColor(context, R.color.red));
                         break;
                     default:
-                        itemHolder.materialCardView.setCardBackgroundColor(ContextCompat.getColor(context, R.color.white));
+                        itemHolder.itemCard.setCardBackgroundColor(ContextCompat.getColor(context, R.color.white));
                         break;
                 }
             }
 
             if(item.isChecked()) {
-                itemHolder.materialCardView.setStrokeWidth(10);
-                itemHolder.materialCardView.setStrokeColor(ContextCompat.getColor(context, R.color.connected_device_background));
+                itemHolder.itemCard.setStrokeWidth(dpToPx(2));
+                itemHolder.itemCard.setStrokeColor(ContextCompat.getColor(context, R.color.connected_device_background));
             } else {
-                itemHolder.materialCardView.setStrokeWidth(0);
+                itemHolder.itemCard.setStrokeWidth(0);
             }
 
             int currentIndex = currentQuantityIndices.getOrDefault(item.getId(), 0);
@@ -293,6 +281,68 @@ public class ItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 return true;
             });
 
+            ItemDetailDto detailDto = itemDetailsDto.stream()
+                    .filter(d -> d.getItemId().equals(item.getId()))
+                    .findFirst()
+                    .orElse(null);
+
+            List<String> dayNames = Arrays.asList("Sabato", "Domenica", "Weekend", "Festivi", "Record");
+
+
+            List<Integer> dayValues = detailDto != null
+                    ? Arrays.asList(
+                    detailDto.getPortionsRequiredOnSaturday(),
+                    detailDto.getPortionsRequiredOnSunday(),
+                    detailDto.getPortionsPerWeekend(),
+                    detailDto.getPortionsOnHoliday(),
+                    detailDto.getMaxPortionsSold()
+            )
+                    : Collections.nCopies(dayNames.size(), 0);
+
+            Map<String,Integer> dailyRequirements = new LinkedHashMap<>();
+            for (int i = 0; i < dayNames.size(); i++) {
+                dailyRequirements.put(dayNames.get(i), dayValues.get(i));
+            }
+
+            int reqIndex = currentRequirementIndices.getOrDefault(item.getId(), 0);
+            if (reqIndex >= dailyRequirements.size()) reqIndex = 0;
+            itemHolder.currentRequirementIndex = reqIndex;
+
+            updateRequirementUI(itemHolder, dailyRequirements);
+
+            GestureDetector reqGesture = new GestureDetector(context, new SwipeGestureListener(new SwipeGestureListener.OnSwipeListener() {
+                @Override
+                public void onSwipeLeft() {
+                    if (itemHolder.currentRequirementIndex < dailyRequirements.size() - 1) {
+                        itemHolder.currentRequirementIndex++;
+                        currentRequirementIndices.put(item.getId(), itemHolder.currentRequirementIndex);
+                        updateRequirementUI(itemHolder, dailyRequirements);
+                    }
+                }
+                @Override
+                public void onSwipeRight() {
+                    if (itemHolder.currentRequirementIndex > 0) {
+                        itemHolder.currentRequirementIndex--;
+                        currentRequirementIndices.put(item.getId(), itemHolder.currentRequirementIndex);
+                        updateRequirementUI(itemHolder, dailyRequirements);
+                    }
+                }
+            }));
+            itemHolder.quantityNeededSection.setOnTouchListener((v, event) -> {
+                reqGesture.onTouchEvent(event);
+                switch (event.getActionMasked()) {
+                    case MotionEvent.ACTION_DOWN:
+                        v.animate().scaleX(0.95f).scaleY(0.95f).setDuration(100).start();
+                        break;
+                    case MotionEvent.ACTION_UP:
+                    case MotionEvent.ACTION_CANCEL:
+                        v.animate().scaleX(1f).scaleY(1f).setDuration(100).start();
+                        v.performClick();
+                        break;
+                }
+                return true;
+            });
+
             itemHolder.increaseQuantityType.setOnClickListener(v -> {
                 if (quantityTypeDtos.isEmpty() || itemHolder.currentQuantityTypeIndex >= quantityTypeDtos.size()) {
                     return;
@@ -313,12 +363,12 @@ public class ItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 itemHolder.totPortions.setText(String.valueOf(totPortions));
 
                 ItemDetailDto itemDetailDto = itemDetailsDto.stream()
-                        .filter(detail -> detail.getItemId().equals(item.getId()))
+                        .filter(d -> d.getItemId().equals(item.getId()))
                         .findFirst()
                         .orElse(null);
 
                 int weekendRequirement = itemDetailDto != null && itemDetailDto.getPortionsPerWeekend() != null ? itemDetailDto.getPortionsPerWeekend() : 0;
-                ItemUtilityManager.updateItemStatus(context, item, itemHolder.materialCardView, totPortions, weekendRequirement);
+                ItemUtilityManager.updateItemStatus(context, item, itemHolder.itemCard, totPortions, weekendRequirement);
 
 
                 if (quantityTypeChangeListener != null) {
@@ -352,7 +402,7 @@ public class ItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                             .orElse(null);
 
                     int weekendRequirement = itemDetailDto != null ? itemDetailDto.getPortionsPerWeekend() : 0;
-                    ItemUtilityManager.updateItemStatus(context, item, itemHolder.materialCardView, totPortions, weekendRequirement);
+                    ItemUtilityManager.updateItemStatus(context, item, itemHolder.itemCard, totPortions, weekendRequirement);
 
                     if (quantityTypeChangeListener != null) {
                         quantityTypeChangeListener.onQuantityTypeChanged(currentQuantityType);
@@ -387,7 +437,7 @@ public class ItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     private void updateQuantityTypeUI(ItemViewHolder holder, List<QuantityTypeDto> quantityTypeDtos) {
         if (quantityTypeDtos == null || quantityTypeDtos.isEmpty()) {
-            holder.quantityType.setText("");
+            holder.quantityType.setText("Unknown");
             holder.quantityTypeValue.setText("0");
             holder.dotsIndicator.removeAllViews();
             return;
@@ -430,6 +480,51 @@ public class ItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
     }
 
+    private void updateRequirementUI(ItemViewHolder holder, Map<String,Integer> reqs) {
+        if (reqs == null || reqs.isEmpty()) {
+            holder.dotsIndicatorQuantityNeeded.removeAllViews();
+            holder.quantityNeededString.setText("");
+            return;
+        }
+
+        int pageCount = reqs.size();
+        int index = holder.currentRequirementIndex;
+
+        // se non ho ancora creato i dot, li genero
+        if (holder.dotsIndicatorQuantityNeeded.getChildCount() != pageCount) {
+            holder.dotsIndicatorQuantityNeeded.removeAllViews();
+            for (int i = 0; i < pageCount; i++) {
+                View dot = new View(context);
+                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dpToPx(6), dpToPx(6));
+                lp.setMargins(dpToPx(2), 0, dpToPx(2), 0);
+                dot.setLayoutParams(lp);
+                dot.setBackgroundResource(R.drawable.dot_unselected);
+                holder.dotsIndicatorQuantityNeeded.addView(dot);
+            }
+        }
+
+        // aggiorno selezione
+        for (int i = 0; i < pageCount; i++) {
+            View dot = holder.dotsIndicatorQuantityNeeded.getChildAt(i);
+            dot.setBackgroundResource(i == index
+                    ? R.drawable.dot_selected
+                    : R.drawable.dot_unselected);
+        }
+
+        // estraggo la chiave corrente per la label
+        String key = new ArrayList<>(reqs.keySet()).get(index);
+        holder.quantityNeededString.setText(key);
+
+        // estraggo il valore corrente per la label
+        Integer value = reqs.get(key);
+        if (value != null) {
+            holder.quantityNeededValue.setText(String.valueOf(value));
+        } else {
+            holder.quantityNeededValue.setText("0");
+        }
+    }
+
+
     // Metodo di utilità per convertire dp in pixel
     private int dpToPx(int dp) {
         float density = context.getResources().getDisplayMetrics().density;
@@ -469,27 +564,29 @@ public class ItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     }
 
     static class ItemViewHolder extends RecyclerView.ViewHolder {
-        TextView itemName, totPortions, checkDate, quantityType, quantityTypeValue;
-        ImageView hasNote, itemImage;
-        MaterialCardView materialCardView;
-        LinearLayout quantityTypeSection    , dotsIndicator;
+        TextView itemName, totPortions, quantityType, quantityTypeValue, quantityNeededString, quantityNeededValue;
+        LinearLayout quantityTypeSection, dotsIndicator, dotsIndicatorQuantityNeeded, quantityNeededSection;
+        MaterialCardView itemCard;
         ImageButton increaseQuantityType, decreaseQuantityType;
         int currentQuantityTypeIndex = 0;
+        int currentRequirementIndex = 0;
 
         ItemViewHolder(View itemView) {
             super(itemView);
+            itemCard = itemView.findViewById(R.id.item_card);
             itemName = itemView.findViewById(R.id.item_name_card);
             totPortions = itemView.findViewById(R.id.tot_portions);
-            checkDate = itemView.findViewById(R.id.check_date);
-            hasNote = itemView.findViewById(R.id.has_note);
-            materialCardView = itemView.findViewById(R.id.card_item);
-            itemImage = itemView.findViewById(R.id.item_image);
             quantityTypeSection = itemView.findViewById(R.id.quantity_type_section);
             quantityType = itemView.findViewById(R.id.tv_quantity_type);
             quantityTypeValue = itemView.findViewById(R.id.tv_quantity_value);
             dotsIndicator = itemView.findViewById(R.id.dots_indicator);
+            dotsIndicatorQuantityNeeded = itemView.findViewById(R.id.dots_indicator_quantity_needed);
             increaseQuantityType = itemView.findViewById(R.id.btn_increase_quantity);
             decreaseQuantityType = itemView.findViewById(R.id.btn_decrease_quantity);
+            quantityNeededSection = itemView.findViewById(R.id.quantity_needed_section);
+            quantityNeededString = itemView.findViewById(R.id.quantity_needed_string);
+            quantityNeededValue = itemView.findViewById(R.id.quantity_needed_value);
+
         }
     }
 

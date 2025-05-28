@@ -304,6 +304,9 @@ public class BluetoothFragment extends Fragment implements BluetoothDevicesAdapt
             } else {
                 Toast.makeText(getContext(), "Permesso Bluetooth negato", Toast.LENGTH_SHORT).show();
                 LoggerManager.getInstance().log("Toast: Permesso Bluetooth negato", "ERROR");
+
+                // Chiudi il fragment
+                requireActivity().onBackPressed();
             }
         } else if (requestCode == ConstantUtils.REQUEST_LOCATION_PERMISSION) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
@@ -311,9 +314,13 @@ public class BluetoothFragment extends Fragment implements BluetoothDevicesAdapt
             } else {
                 Toast.makeText(getContext(), "Permesso di localizzazione negato", Toast.LENGTH_SHORT).show();
                 LoggerManager.getInstance().log("Toast: Permesso di localizzazione negato", "ERROR");
+
+                // Chiudi il fragment se la localizzazione è rifiutata
+                requireActivity().onBackPressed();
             }
         }
     }
+
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -321,11 +328,15 @@ public class BluetoothFragment extends Fragment implements BluetoothDevicesAdapt
         LoggerManager.getInstance().log("onActivityResult: requestCode = " + requestCode + ", resultCode = " + resultCode, "DEBUG");
         if (requestCode == ConstantUtils.REQUEST_ENABLE_BT) {
             if (resultCode == Activity.RESULT_OK) {
-                // Il Bluetooth è abilitato
+                // Il Bluetooth è abilitato, carica i dispositivi
                 fetchPairedDevices();
             } else {
+                // L'utente ha rifiutato di abilitare il Bluetooth, chiudi il fragment
                 Toast.makeText(getContext(), "Bluetooth non abilitato", Toast.LENGTH_SHORT).show();
                 LoggerManager.getInstance().log("Toast: Bluetooth non abilitato", "ERROR");
+
+                // Chiudi il fragment e torna indietro
+                requireActivity().onBackPressed();
             }
         } else if (requestCode == ConstantUtils.REQUEST_DISCOVERABLE) {
             if (resultCode == Activity.RESULT_CANCELED) {
@@ -337,6 +348,7 @@ public class BluetoothFragment extends Fragment implements BluetoothDevicesAdapt
             }
         }
     }
+
 
     private void enableBluetooth() {
         LoggerManager.getInstance().log("enableBluetooth: Verifica stato Bluetooth", "DEBUG");
@@ -350,8 +362,12 @@ public class BluetoothFragment extends Fragment implements BluetoothDevicesAdapt
             }
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableBtIntent, ConstantUtils.REQUEST_ENABLE_BT);
+        } else {
+            // Se il Bluetooth è già abilitato, procedi
+            fetchPairedDevices();
         }
     }
+
 
 
     @Override

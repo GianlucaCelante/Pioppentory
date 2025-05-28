@@ -158,8 +158,7 @@ public class ItemDetailFragment extends Fragment implements QuantityTypeAdapter.
                 );
 
                 // 5) Carico i dati completi dell'item
-                ItemWithDetailAndQuantityTypeDto dto =
-                        fetchItemWithDetailAndQuantityTypeById(itemId);
+                ItemWithDetailAndQuantityTypeDto dto = fetchItemWithDetailAndQuantityTypeById(itemId);
                 LoggerManager.getInstance().log(
                         "onCreateView: DTO ottenuto per l'item",
                         "DEBUG"
@@ -372,6 +371,10 @@ public class ItemDetailFragment extends Fragment implements QuantityTypeAdapter.
             ItemDto item = Objects.requireNonNull(generalItemViewModel.getItems().getValue()).stream()
                     .filter(i -> i.getId().equals(itemId))
                     .findFirst().orElse(null);
+
+            if(item == null) {
+                return;
+            }
 
             MaterialCardView statusCard = requireView().findViewById(R.id.item_name_tot_portions);
             if (Objects.requireNonNull(item).isChecked()) {
@@ -948,6 +951,10 @@ public class ItemDetailFragment extends Fragment implements QuantityTypeAdapter.
                 .filter(item -> item.getId().equals(itemId))
                 .findFirst()
                 .orElse(null);
+
+        if(itemDto == null) {
+            return;
+        }
 
         // Ottieni la lista dei QuantityTypeEnum che è già aggiornata (gli oggetti sono gli stessi modificati dai TextWatcher)
         List<QuantityTypeDto> quantityTypeDtos = generalItemViewModel.getQuantityTypes().getValue().stream()

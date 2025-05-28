@@ -180,14 +180,7 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
             itemAdapter.setItemList(itemList, generalItemViewModel.getProviders());
         });
 
-        GridLayoutManager layoutManager = new GridLayoutManager(getContext(), 5);
-        layoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
-            @Override
-            public int getSpanSize(int position) {
-                return itemAdapter.getItemViewType(position) == ConstantUtils.TYPE_HEADER ? 5 : 1;
-            }
-        });
-        recyclerView.setLayoutManager(layoutManager);
+        recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setHasFixedSize(true);
         recyclerView.setVerticalScrollBarEnabled(true);
         recyclerView.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
@@ -210,7 +203,7 @@ public class ItemFragment extends Fragment implements ItemAdapter.OnItemClickLis
             if (targetId != null) {
                 int targetPosition = findPositionForItemId(targetId);
                 if (targetPosition != -1) {
-                    recyclerView.smoothScrollToPosition(targetPosition);
+                    recyclerView.scrollToPosition(targetPosition);
                 }
 
                 generalItemViewModel.setLastVisitedItemId(null);

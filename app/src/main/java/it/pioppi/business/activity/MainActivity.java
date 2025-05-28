@@ -23,10 +23,6 @@ import androidx.navigation.NavController;
 import androidx.navigation.NavOptions;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.NavigationUI;
-import androidx.work.BackoffPolicy;
-import androidx.work.ExistingWorkPolicy;
-import androidx.work.OneTimeWorkRequest;
-import androidx.work.WorkManager;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
@@ -42,8 +38,11 @@ import com.google.api.services.drive.Drive;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicReference;
 
 import it.pioppi.utils.ConstantUtils;
 import it.pioppi.R;
@@ -60,6 +59,7 @@ public class MainActivity extends AppCompatActivity {
     private GeneralItemViewModel generalItemViewModel;
     private ItemFTSEntityDao itemFTSEntityDao;
     private ExecutorService executorService;
+    private AppDatabase appDatabase;
 
     // Google Sign-In & Drive integration
     private static final String DRIVE_SCOPE = "https://www.googleapis.com/auth/drive";
@@ -71,6 +71,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        appDatabase = AppDatabase.getInstance(this);
 
         Log.d("MainActivity", "Registering BroadcastReceiver for scanned code events");
         // Registra il receiver per intercettare gli eventi di scansione
@@ -234,6 +236,19 @@ public class MainActivity extends AppCompatActivity {
     private void openDetailFragment(String scannedCode) {
         Bundle bundle = new Bundle();
         bundle.putString(ConstantUtils.SCANNED_CODE, scannedCode);
+
+        AtomicReference<String> itemId = new AtomicReference<>();
+        Future<?> future = executorService.submit(() -> itemId.set(appDatabase.itemEntityDao().getItemByBarcode(scannedCode)));
+        try {
+            future.get();
+        } catch (ExecutionException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+        if(itemId.get() == null) {
+            Toast.makeText(this, "Nessun articolo trovato con barcode: " + scannedCode, Toast.LENGTH_SHORT).show();
+            return;
+        }
 
         NavOptions navOptions = new NavOptions.Builder()
                 .setPopUpTo(R.id.itemDetailFragment, true)
