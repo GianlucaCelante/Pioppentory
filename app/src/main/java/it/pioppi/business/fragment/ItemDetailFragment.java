@@ -19,6 +19,8 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CalendarView;
 import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -88,7 +90,6 @@ public class ItemDetailFragment extends Fragment implements QuantityTypeAdapter.
     private AppDatabase appDatabase;
     private ExecutorService executorService;
     private RecyclerView quantityTypesAvailable;
-    private RecyclerView quantityTypesToBeOrdered;
     private ItemEntityRepository itemEntityRepository;
     private GeneralItemViewModel generalItemViewModel;
 
@@ -111,7 +112,7 @@ public class ItemDetailFragment extends Fragment implements QuantityTypeAdapter.
                              Bundle savedInstanceState) {
 
         LoggerManager.getInstance().log("onCreateView: Inizio creazione della view", "INFO");
-        View view = inflater.inflate(R.layout.fragment_item_detail, container, false);
+        View view = inflater.inflate(R.layout.fragment_item_detail_new, container, false);
 
         if (savedInstanceState != null) {
             EditText itemNameTextView = view.findViewById(R.id.item_name_card_detail);
@@ -130,10 +131,6 @@ public class ItemDetailFragment extends Fragment implements QuantityTypeAdapter.
             portionsOnHolidayEditText.setText(savedInstanceState.getString("portions_on_holiday", ""));
             maxPortionsSoldEditText.setText(savedInstanceState.getString("max_portions_sold", ""));
 
-            // Ripristina la data selezionata, se necessario
-            selectedDateMillis = savedInstanceState.getLong("selectedDateMillis", System.currentTimeMillis());
-            CalendarView deliveryDateCalendarView = view.findViewById(R.id.delivery_date);
-            deliveryDateCalendarView.setDate(selectedDateMillis);
         }
 
         Bundle bundle = getArguments();
@@ -216,19 +213,8 @@ public class ItemDetailFragment extends Fragment implements QuantityTypeAdapter.
         });
 
         quantityTypesAvailable = setupRecyclerViewAndButtonForQuantityTypes(view, inflater, R.id.recycler_view_quantity_available, R.id.add_quantity_type_available, QuantityPurpose.AVAILABLE);
-        quantityTypesToBeOrdered = setupRecyclerViewAndButtonForQuantityTypes(view, inflater, R.id.recycler_view_quantity_to_be_ordered, R.id.add_quantity_type_to_be_ordered, QuantityPurpose.TO_BE_ORDERED);
 
         prefillFields(view);
-
-        CalendarView deliveryDateCalendarView = view.findViewById(R.id.delivery_date);
-        selectedDateMillis = deliveryDateCalendarView.getDate();
-
-        deliveryDateCalendarView.setOnDateChangeListener((view1, year, month, dayOfMonth) -> {
-            Calendar calendar = Calendar.getInstance();
-            calendar.set(year, month, dayOfMonth);
-            selectedDateMillis = calendar.getTimeInMillis();
-            LoggerManager.getInstance().log("onCreateView: Data di consegna aggiornata", "DEBUG");
-        });
 
         updatePortionsNeededForWeekendWhenPortionsRequiredOnSaturdayAndOnSundayChanged(view);
 
@@ -278,7 +264,7 @@ public class ItemDetailFragment extends Fragment implements QuantityTypeAdapter.
         });
 
 
-        ShapeableImageView imagePreview = view.findViewById(R.id.item_image_preview);
+        ImageView imagePreview = view.findViewById(R.id.item_image_preview);
         String imageUrl = Objects.requireNonNull(generalItemViewModel.getItems().getValue()).stream()
                 .filter(item -> item.getId().equals(itemId))
                 .findAny().map(ItemDto::getImageUrl).orElse(null);
@@ -376,7 +362,7 @@ public class ItemDetailFragment extends Fragment implements QuantityTypeAdapter.
                 return;
             }
 
-            MaterialCardView statusCard = requireView().findViewById(R.id.item_name_tot_portions);
+            MaterialCardView statusCard = requireView().findViewById(R.id.product_card);
             if (Objects.requireNonNull(item).isChecked()) {
                 statusCard.setStrokeWidth(10);
                 statusCard.setStrokeColor(
@@ -860,8 +846,6 @@ public class ItemDetailFragment extends Fragment implements QuantityTypeAdapter.
                 .findFirst().orElse(null);
 
         if (itemDetail != null) {
-            TextView totPortionsToBeOrderedTextView = view.findViewById(R.id.tot_portions_to_be_ordered);
-            totPortionsToBeOrderedTextView.setText(String.valueOf(itemDetail.getQuantityToBeOrdered() != null ? itemDetail.getQuantityToBeOrdered() : 0));
 
             EditText portionsRequiredOnSaturdayEditText = view.findViewById(R.id.portions_required_on_saturday);
             Integer portionsRequiredOnSaturday = itemDetail.getPortionsRequiredOnSaturday() != null ? itemDetail.getPortionsRequiredOnSaturday() : 0;
@@ -882,13 +866,6 @@ public class ItemDetailFragment extends Fragment implements QuantityTypeAdapter.
             EditText maxPortionsSold = view.findViewById(R.id.max_portions_sold);
             maxPortionsSold.setText(String.valueOf(itemDetail.getMaxPortionsSold() != null ? itemDetail.getMaxPortionsSold() : 0));
 
-            CalendarView deliveryDateCalendarView = view.findViewById(R.id.delivery_date);
-            ZonedDateTime deliveryDate = itemDetail.getDeliveryDate();
-            if (deliveryDate != null) {
-                long dateMillis = deliveryDate.toInstant().toEpochMilli();
-                deliveryDateCalendarView.setDate(dateMillis);
-                selectedDateMillis = dateMillis;
-            }
             LoggerManager.getInstance().log("prefillFields: Campi dettagli precompilati", "DEBUG");
         }
 
@@ -907,11 +884,6 @@ public class ItemDetailFragment extends Fragment implements QuantityTypeAdapter.
         QuantityTypeAdapter adapterAvailable = (QuantityTypeAdapter) quantityTypesAvailable.getAdapter();
         if(adapterAvailable != null) {
             adapterAvailable.setQuantityTypes(quantityTypeAvailable);
-        }
-
-        QuantityTypeAdapter adapterToBeOrdered = (QuantityTypeAdapter) quantityTypesToBeOrdered.getAdapter();
-        if(adapterToBeOrdered != null) {
-            adapterToBeOrdered.setQuantityTypes(quantityTypeToBeOrdered);
         }
         LoggerManager.getInstance().log("prefillFields: Quantity types aggiornati", "DEBUG");
     }
@@ -967,21 +939,17 @@ public class ItemDetailFragment extends Fragment implements QuantityTypeAdapter.
         long totPortionsAvailablePlusOrdered = totPortionsAvailable + totPortionsToBeOrdered;
 
         TextView totPortionsAvailableTextView = requireView().findViewById(R.id.tot_portions_avalaible);
-        TextView totPortionsToBeOrderedTextView = requireView().findViewById(R.id.tot_portions_to_be_ordered);
-        TextView totPortionsAvailablePlusOrderedTextView = requireView().findViewById(R.id.tot_portions_avalaible_plus_ordered);
         TextView portionsPerWeekendTextView = requireView().findViewById(R.id.portions_per_weekend);
         totPortionsAvailableTextView.setText(String.valueOf(totPortionsAvailable));
-        totPortionsToBeOrderedTextView.setText(String.valueOf(totPortionsToBeOrdered));
-        totPortionsAvailablePlusOrderedTextView.setText(String.valueOf(totPortionsAvailablePlusOrdered));
 
         int portionsPerWeekend = Integer.parseInt(portionsPerWeekendTextView.getText().toString().isEmpty() ? "0" : portionsPerWeekendTextView.getText().toString());
         if (totPortionsAvailablePlusOrdered >= portionsPerWeekend) {
             Objects.requireNonNull(itemDto).setStatus(ItemStatus.GREEN);
-            CardView itemNameAndTotPortionsCardView = requireView().findViewById(R.id.item_name_tot_portions);
+            MaterialCardView itemNameAndTotPortionsCardView = requireView().findViewById(R.id.product_card);
             itemNameAndTotPortionsCardView.setCardBackgroundColor(ContextCompat.getColor(requireView().getContext(), R.color.green));
         } else {
             Objects.requireNonNull(itemDto).setStatus(ItemStatus.RED);
-            CardView itemNameAndTotPortionsCardView = requireView().findViewById(R.id.item_name_tot_portions);
+            MaterialCardView itemNameAndTotPortionsCardView = requireView().findViewById(R.id.product_card);
             itemNameAndTotPortionsCardView.setCardBackgroundColor(ContextCompat.getColor(requireView().getContext(), R.color.red));
         }
     }

@@ -81,7 +81,7 @@ public class DriveImageSelectionFragment extends Fragment implements ImageListCa
         swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
 
         RecyclerView recyclerView = view.findViewById(R.id.recyclerViewImages);
-        recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 4));
+        recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 3));
         adapter = new DriveImageAdapter(this);
         recyclerView.setAdapter(adapter);
 

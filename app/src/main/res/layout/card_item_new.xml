@@ -17,7 +17,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:weightSum="9">
+        android:weightSum="10">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -45,7 +45,7 @@
                     android:ellipsize="end"
                     android:maxLines="2"
                     android:text="Prova di nome molto lungo per testare l'overflow"
-                    android:textColor="@android:color/black"
+
                     android:textSize="14sp"
                     android:textStyle="bold" />
 
@@ -62,7 +62,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/tot_portions_ita"
-                        android:textColor="@android:color/black"
+
                         android:textStyle="bold"
                         android:textSize="12sp" />
 
@@ -70,7 +70,7 @@
                         android:id="@+id/tot_portions"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textColor="@android:color/black"
+
                         android:text="3"
                         android:textSize="14sp"
                         android:textStyle="bold"/>
@@ -83,7 +83,7 @@
                 android:id="@+id/quantity_type_section"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="2"
+                android:layout_weight="3"
                 android:layout_marginStart="6dp"
                 android:orientation="horizontal"
                 android:gravity="center_vertical">
@@ -101,7 +101,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:textColor="@android:color/black"
+
                     android:orientation="vertical"
                     android:gravity="center">
 
@@ -112,7 +112,7 @@
                         android:singleLine="true"
                         android:ellipsize="end"
                         android:text="Prova"
-                        android:textColor="@android:color/black"
+
                         android:textAlignment="center"
                         android:textSize="12sp"
                         android:textStyle="bold" />
@@ -123,7 +123,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
                         android:text="0"
-                        android:textColor="@android:color/black"
+
                         android:textSize="14sp"
                         android:textStyle="bold" />
 
@@ -161,7 +161,7 @@
                     android:id="@+id/quantity_needed_string"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="@android:color/black"
+
                     android:textStyle="bold"
                     android:textSize="12sp" />
 
@@ -170,7 +170,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textSize="14sp"
-                    android:textColor="@android:color/black"
+
                     android:textStyle="bold" />
 
                 <LinearLayout

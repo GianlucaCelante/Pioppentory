@@ -214,11 +214,11 @@ public class ItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             });
 
             if(item.getStatus() == null) {
-                itemHolder.itemCard.setCardBackgroundColor(ContextCompat.getColor(context, R.color.white));
+                itemHolder.itemCard.setCardBackgroundColor(ContextCompat.getColor(context, R.color.grey_light));
             } else {
                 switch (item.getStatus()) {
                     case WHITE:
-                        itemHolder.itemCard.setCardBackgroundColor(ContextCompat.getColor(context, R.color.white));
+                        itemHolder.itemCard.setCardBackgroundColor(ContextCompat.getColor(context, R.color.grey_light));
                         break;
                     case GREEN:
                         itemHolder.itemCard.setCardBackgroundColor(ContextCompat.getColor(context, R.color.green));
@@ -227,7 +227,7 @@ public class ItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                         itemHolder.itemCard.setCardBackgroundColor(ContextCompat.getColor(context, R.color.red));
                         break;
                     default:
-                        itemHolder.itemCard.setCardBackgroundColor(ContextCompat.getColor(context, R.color.white));
+                        itemHolder.itemCard.setCardBackgroundColor(ContextCompat.getColor(context, R.color.grey_light));
                         break;
                 }
             }
@@ -265,7 +265,17 @@ public class ItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                         currentQuantityIndices.put(item.getId(), itemHolder.currentQuantityTypeIndex);
                     }
                 }
-            }));
+            }) {
+                @Override
+                public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+                    // Modifica la sensibilità del movimento (la velocità dello swipe)
+                    // Aumenta la sensibilità per rilevare uno swipe più velocemente
+                    if (Math.abs(distanceX) > 100) {
+                        return super.onScroll(e1, e2, distanceX, distanceY);
+                    }
+                    return false;
+                }
+            });
             itemHolder.quantityTypeSection.setOnTouchListener((v, event) -> {
                 gestureDetector.onTouchEvent(event);
                 switch (event.getActionMasked()) {
@@ -327,7 +337,17 @@ public class ItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                         updateRequirementUI(itemHolder, dailyRequirements);
                     }
                 }
-            }));
+            }) {
+                @Override
+                public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+                    // Modifica la sensibilità del movimento (la velocità dello swipe)
+                    // Aumenta la sensibilità per rilevare uno swipe più velocemente
+                    if (Math.abs(distanceX) > 100) {
+                        return super.onScroll(e1, e2, distanceX, distanceY);
+                    }
+                    return false;
+                }
+            });
             itemHolder.quantityNeededSection.setOnTouchListener((v, event) -> {
                 reqGesture.onTouchEvent(event);
                 switch (event.getActionMasked()) {

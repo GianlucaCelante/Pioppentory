@@ -23,7 +23,7 @@
                 android:title="Z - A" />
             <item
                 android:id="@+id/filter_by_status_white"
-                android:title="Non controllati - BIANCHI"
+                android:title="Non controllati - GRIGIO"
                 />
             <item
                 android:id="@+id/filter_by_status_blue"
